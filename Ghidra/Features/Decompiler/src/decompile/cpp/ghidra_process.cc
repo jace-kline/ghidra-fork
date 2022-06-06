@@ -13,6 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <fstream>
+
 #include "ghidra_process.hh"
 #include "flow.hh"
 #include "blockaction.hh"
@@ -61,6 +63,12 @@ void connect_to_console(Funcdata *fd)
 }
 
 #endif
+
+// Globals
+
+// logging globals
+const string logfilepath = "/tmp/ghidra_decompiler.log";
+ofstream logstream;
 
 vector<ArchitectureGhidra *> archlist; // List of architectures currently running
 
@@ -476,6 +484,9 @@ int4 GhidraCapability::readCommand(istream &sin,ostream &out)
     type = ArchitectureGhidra::readToAnyBurst(sin); // Align ourselves
   } while(type != 2);
   ArchitectureGhidra::readStringStream(sin,function);
+  // log function (command) name here...
+  logstream << function << endl;
+  // done
   map<string,GhidraCommand *>::const_iterator iter;
   iter = commandmap.find(function);
   if (iter == commandmap.end()) {
@@ -513,6 +524,7 @@ void GhidraDecompCapability::initialize(void)
 int main(int argc,char **argv)
 
 {
+  logstream = ofstream(logfilepath);
   signal(SIGSEGV, &ArchitectureGhidra::segvHandler);  // Exit on SEGV errors
   CapabilityPoint::initializeAll();
   int4 status = 0;
@@ -520,5 +532,6 @@ int main(int argc,char **argv)
     status = GhidraCapability::readCommand(cin,cout);
   }
   GhidraCapability::shutDown();
+  logstream.close();
 }
 
