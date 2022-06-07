@@ -7,7 +7,9 @@ ADDITIONAL_FLAGS=
 SLEIGHVERSION=sleigh-2.1.0
 
 EXTENSION_POINT=../../../../../../../ghidra.ext-u/Ghidra/Features/DecompilerExtensions/src/decompile/cpp
-GHIDRA_BIN=../../../../../../../ghidra.bin
+# GHIDRA_BIN=../../../../../../../ghidra.bin
+# the path where the current Ghidra build is extracted
+GHIDRA_BIN=$(GHIDRA_BUILD)
 
 OS = $(shell uname -s)
 CPU = $(shell uname -m)
@@ -411,4 +413,3 @@ reallyclean:	clean
 	rm -rf coreext_*.cc coreext_*.hh ghidraext_*.cc ghidraext_*.hh consoleext_*.cc consoleext_*.hh
 	rm -rf com_dbg com_opt test_dbg ghi_dbg ghi_opt sla_dbg sla_opt
 	rm -f $(EXECS) TAGS *~
-

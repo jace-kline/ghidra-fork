@@ -18,6 +18,7 @@
 #include "ghidra_process.hh"
 #include "flow.hh"
 #include "blockaction.hh"
+#include "streambufs.hh" // for overriding the default cin/cout for logging
 
 #ifdef __REMOTE_SOCKET__
 
@@ -65,10 +66,6 @@ void connect_to_console(Funcdata *fd)
 #endif
 
 // Globals
-
-// logging globals
-const string logfilepath = "/tmp/ghidra_decompiler.log";
-ofstream logstream;
 
 vector<ArchitectureGhidra *> archlist; // List of architectures currently running
 
@@ -484,9 +481,6 @@ int4 GhidraCapability::readCommand(istream &sin,ostream &out)
     type = ArchitectureGhidra::readToAnyBurst(sin); // Align ourselves
   } while(type != 2);
   ArchitectureGhidra::readStringStream(sin,function);
-  // log function (command) name here...
-  logstream << function << endl;
-  // done
   map<string,GhidraCommand *>::const_iterator iter;
   iter = commandmap.find(function);
   if (iter == commandmap.end()) {
@@ -524,12 +518,18 @@ void GhidraDecompCapability::initialize(void)
 int main(int argc,char **argv)
 
 {
-  logstream = ofstream(logfilepath);
+  // cin/cout logging capture setup
+  const string logfilepath = "/tmp/ghidra_decompiler.log";
+  ofstream logstream(logfilepath);
+  // inteestream sin(cin, logstream);
+  outteestream sout(cout, logstream);
+  logstream << "Testing testing 123\n";
+
   signal(SIGSEGV, &ArchitectureGhidra::segvHandler);  // Exit on SEGV errors
   CapabilityPoint::initializeAll();
   int4 status = 0;
   while(status == 0) {
-    status = GhidraCapability::readCommand(cin,cout);
+    status = GhidraCapability::readCommand(cin,sout);
   }
   GhidraCapability::shutDown();
   logstream.close();
