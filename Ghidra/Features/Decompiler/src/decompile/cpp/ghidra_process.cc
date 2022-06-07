@@ -519,19 +519,19 @@ int main(int argc,char **argv)
 
 {
   // cin/cout logging capture setup
-  const string logfilepath = "/tmp/ghidra_decompiler.log";
-  ofstream logstream(logfilepath);
-  // inteestream sin(cin, logstream);
-  outteestream sout(cout, logstream);
-  logstream << "Testing testing 123\n";
+  // const string logfilepath = "/tmp/ghidra_decompiler.log";
+  // ofstream logstream(logfilepath);
+  // // inteestream sin(cin, logstream);
+  // outteestream sout(cout, logstream);
+  // logstream << "Testing testing 123\n";
 
   signal(SIGSEGV, &ArchitectureGhidra::segvHandler);  // Exit on SEGV errors
   CapabilityPoint::initializeAll();
   int4 status = 0;
   while(status == 0) {
-    status = GhidraCapability::readCommand(cin,sout);
+    status = GhidraCapability::readCommand(cin,cout);
   }
   GhidraCapability::shutDown();
-  logstream.close();
+  // logstream.close();
 }
 
