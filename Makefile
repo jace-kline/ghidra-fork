@@ -46,4 +46,13 @@ cleandecomp:
 
 reallycleandecomp:
 	make -C $(DECOMP_SRC_DIR) reallyclean
+
+launch:
+	$$GHIDRA_BUILD/ghidraRun
+
+launchdebug:
+	GHIDRA_DEBUG=1 $$GHIDRA_BUILD/ghidraRun
+
+kill:
+	python3 kill.py
 	

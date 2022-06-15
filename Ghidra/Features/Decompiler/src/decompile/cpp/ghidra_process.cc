@@ -13,7 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <fstream>
+
+// for `wait_for_debugger()` function
+#include <thread>
+#include <chrono>
 
 #include "ghidra_process.hh"
 #include "flow.hh"
@@ -515,15 +518,42 @@ void GhidraDecompCapability::initialize(void)
   commandmap["setOptions"] = new SetOptions();
 }
 
+// modify this global within the debugger -> `set debug = 1`
+volatile bool debug = false;
+
+bool get_env_bool(char * envvar) {
+    char * val = getenv(envvar);
+
+    bool flag = false;
+    if (val != nullptr) {
+      int v = 0;
+      try {
+        v = std::stoi(val);
+      } catch (...) {
+        v = 0;
+      }
+      flag = (v == 1);
+    }
+
+    return flag;
+}
+
+void wait_for_debugger() {
+  // if 'GHIDRA_DEBUG' environment variable is set to '1'...
+  char envvar[] = "GHIDRA_DEBUG";
+  if (get_env_bool(envvar)) {
+    // wait for debugger to `set debug = 1`
+    while(!debug) {
+      std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    }
+  }
+  // otherwise, we are not in debug mode
+}
+
 int main(int argc,char **argv)
 
 {
-  // cin/cout logging capture setup
-  // const string logfilepath = "/tmp/ghidra_decompiler.log";
-  // ofstream logstream(logfilepath);
-  // // inteestream sin(cin, logstream);
-  // outteestream sout(cout, logstream);
-  // logstream << "Testing testing 123\n";
+  wait_for_debugger(); // wait for debugger if 'GHIDRA_DEBUG' env variable is set to 1
 
   signal(SIGSEGV, &ArchitectureGhidra::segvHandler);  // Exit on SEGV errors
   CapabilityPoint::initializeAll();
@@ -532,6 +562,5 @@ int main(int argc,char **argv)
     status = GhidraCapability::readCommand(cin,cout);
   }
   GhidraCapability::shutDown();
-  // logstream.close();
 }
 

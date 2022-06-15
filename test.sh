@@ -1,2 +1,0 @@
-
-mv $GHIDRA_BUILD/ghidra*/* $GHIDRA_BUILD
