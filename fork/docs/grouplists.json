@@ -1,0 +1,29 @@
+{
+	"decompile": ["base", "protorecovery", "protorecovery_a", "deindirect", "localrecovery",
+					"deadcode", "typerecovery", "stackptrflow",
+					"blockrecovery", "stackvars", "deadcontrolflow", "switchnorm",
+					"cleanup", "merge", "dynamic", "casts", "analysis",
+					"fixateglobals", "fixateproto",
+					"segment", "returnsplit", "nodejoin", "doubleload", "doubleprecis",
+					"unreachable", "subvar", "floatprecision",
+					"conditionalexe", ""],
+
+	"jumptable": ["base", "noproto", "localrecovery", "deadcode", "stackptrflow",
+					"stackvars", "analysis", "segment", "subvar", "conditionalexe", ""],
+
+	"normalize": ["base", "protorecovery", "protorecovery_b", "deindirect", "localrecovery",
+					"deadcode", "stackptrflow", "normalanalysis",
+					"stackvars", "deadcontrolflow", "analysis", "fixateproto", "nodejoin",
+					"unreachable", "subvar", "floatprecision", "normalizebranches",
+					"conditionalexe", ""],
+
+	"paramid": ["base", "protorecovery", "protorecovery_b", "deindirect", "localrecovery",
+					"deadcode", "typerecovery", "stackptrflow", "siganalysis",
+					"stackvars", "deadcontrolflow", "analysis", "fixateproto",
+					"unreachable", "subvar", "floatprecision",
+					"conditionalexe", ""],
+
+	"register": ["base", "analysis", "subvar", ""],
+
+	"firstpass": ["base", ""]
+}

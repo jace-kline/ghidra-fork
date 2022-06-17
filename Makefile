@@ -54,5 +54,9 @@ launchdebug:
 	GHIDRA_DEBUG=1 $$GHIDRA_BUILD/ghidraRun
 
 kill:
-	python3 kill.py
+	python3 ./fork/scripts/kill.py
+
+reallykill:
+	kill $$(pidof java)
+	kill $$(pidof decompile)
 	

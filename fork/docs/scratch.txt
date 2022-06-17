@@ -1,0 +1,1 @@
+("base"|"protorecovery"|"protorecovery_a"|"deindirect"|"localrecovery"|"deadcode"|"typerecovery"|"stackptrflow"|"blockrecovery"|"stackvars"|"deadcontrolflow"|"switchnorm"|"cleanup"|"merge"|"dynamic"|"casts"|"analysis"|"fixateglobals"|"fixateproto"|"segment"|"returnsplit"|"nodejoin"|"doubleload"|"doubleprecis"|"unreachable"|"subvar"|"floatprecision"|"conditionalexe")
