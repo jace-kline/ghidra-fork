@@ -128,7 +128,7 @@ GROUP {
                     RuleSubvarAnd ("subvar") 
                     RuleSubvarSubpiece ("subvar") 
                     RuleSplitFlow ("subvar") 
-                    RulePtrFlow ("subvar",conf) 
+                    RulePtrFlow ("subvar") 
                     RuleSubvarCompZero ("subvar") 
                     RuleSubvarShift ("subvar") 
                     RuleSubvarZext ("subvar") 
