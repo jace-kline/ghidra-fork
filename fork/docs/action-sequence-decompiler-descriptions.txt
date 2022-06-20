@@ -1,0 +1,415 @@
+GROUP {
+    ActionStart ("base")
+      - Gather raw p-code for a function
+    ActionConstbase ("base")
+      - Search for input Varnodes that have been officially provided constant values
+    ActionDefaultParams ("base")
+      - Find a prototype for each sub-function
+    ActionExtraPopSetup ("base") 
+      - Define formal link between stack-pointer values before and after sub-function calls
+    ActionPrototypeTypes ("protorecovery")
+      - Lay down locked input and output data-type information
+    ActionFuncLink ("protorecovery") 
+      - Prepare for data-flow analysis of function parameters
+
+    REPEAT {
+        REPEAT {
+            ActionUnreachable ("base") 
+              - Remove unreachable blocks
+            ActionVarnodeProps ("base") 
+              - Transform based on Varnode properties, such as read-only and volatile
+            ActionHeritage ("base") 
+              - Build Static Single Assignment (SSA) representation for function
+            ActionParamDouble ("protorecovery") 
+              - Deal with situations that look like double precision parameters
+            ActionSegmentize ("base")
+              - Make sure pointers into segmented spaces have the correct form
+            ActionForceGoto ("blockrecovery") 
+              - Apply any overridden forced gotos
+            ActionDirectWrite ("protorecovery_a") 
+              - Mark Varnodes built out of legal parameters
+            ActionActiveParam ("protorecovery") 
+              - Determine active parameters to sub-functions
+            ActionReturnRecovery ("protorecovery") 
+              - Determine data-flow holding the return value of the function
+            ActionRestrictLocal ("localrecovery")  
+              - Restrict possible range of local variables
+            ActionDeadCode ("deadcode") 
+              - Dead code removal. Eliminate dead p-code ops
+            ActionDynamicMapping ("dynamic")  
+              - Attach dynamically mapped symbols to Varnodes in time for data-type propagation
+            ActionRestructureVarnode ("localrecovery") 
+              - Create symbols that map out the local stack-frame for the function
+            ActionSpacebase ("base") 	
+              - Mark Varnode objects that hold stack-pointer values and set-up special data-type
+            ActionNonzeroMask ("analysis") 
+              - Calculate the non-zero mask property on all Varnode objects
+            ActionInferTypes ("typerecovery") 
+              - Infer and propagate data-types
+
+            GROUP {
+                REPEAT {
+                    RuleEarlyRemoval ("deadcode")
+                      - Get rid of unused PcodeOp objects where we can guarantee the output is unused
+                    RuleTermOrder ("analysis")
+                      - Order the inputs to commutative operations
+                    RuleSelectCse ("analysis")
+                      - Look for common sub-expressions (built out of a restricted set of ops)
+                    RuleCollectTerms ("analysis")
+                      - Collect terms in a sum: V * c + V * d => V * (c + d)
+                    RulePullsubMulti ("analysis")
+                      - Pull SUBPIECE back through MULTIEQUAL
+                    RulePullsubIndirect ("analysis")
+                      - Pull-back SUBPIECE through INDIRECT
+                    RulePushMulti ("nodejoin")
+                      - Simplify MULTIEQUAL operations where the branches hold the same value
+                    RuleSborrow ("analysis") 
+                      - Simplify signed comparisons using INT_SBORROW
+                    RuleIntLessEqual ("analysis") 
+                      - Convert LESSEQUAL to LESS: V <= c => V < (c+1)
+                    RuleTrivialArith ("analysis") 
+                      - Simplify trivial arithmetic expressions
+                    RuleTrivialBool ("analysis") 
+                      - Simplify boolean expressions when one side is constant
+                    RuleTrivialShift ("analysis") 
+                      - Simplify trivial shifts: V << 0 => V, V << #64 => 0
+                    RuleSignShift ("analysis") 
+                      - Normalize sign-bit extraction: V >> 0x1f => (V s>> 0x1f) * -1
+                    RuleTestSign ("analysis") 
+                      - Convert sign-bit test to signed comparison: (V s>> 0x1f) != 0 => V s< 0
+                    RuleIdentityEl ("analysis") 
+                      - Collapse operations using identity element: V + 0 => V
+                    RuleOrMask ("analysis") 
+                      - Simplify INT_OR with full mask: V = W | 0xffff => V = W
+                    RuleAndMask ("analysis") 
+                      - Collapse unnecessary INT_AND
+                    RuleOrConsume ("analysis") 
+                      - Simply OR with unconsumed input: `V = A | B => V = B if nzm(A) & consume(V) == 0
+                    RuleOrCollapse ("analysis") 
+                      - Collapse unnecessary INT_OR
+                    RuleAndOrLump ("analysis") 
+                      - Collapse constants in logical expressions: (V & c) & d => V & (c & d)
+                    RuleShiftBitops ("analysis") 
+                      - Shifting away all non-zero bits of one-side of a logical/arithmetic op
+                    RuleRightShiftAnd ("analysis") 
+                      - Simplify INT_RIGHT and INT_SRIGHT ops where an INT_AND mask becomes unnecessary
+                    RuleNotDistribute ("analysis") 
+                      - Distribute BOOL_NEGATE: !(V && W) => !V || !W
+                    RuleHighOrderAnd ("analysis") 
+                      - Simplify INT_AND when applied to aligned INT_ADD: (V + c) & 0xfff0 => V + (c & 0xfff0)
+                    RuleAndDistribute ("analysis") 
+                      - Distribute INT_AND through INT_OR if result is simpler
+                    RuleAndCommute ("analysis") 
+                      - Commute INT_AND with INT_LEFT and INT_RIGHT: (V << W) & d => (V & (W >> c)) << c
+                    RuleAndPiece ("analysis") 
+                      - Convert PIECE to INT_ZEXT where appropriate: V & concat(W,X) => zext(X)
+                    RuleAndCompare ("analysis") 
+                      - Simplify INT_ZEXT and SUBPIECE in masked comparison: zext(V) & c == 0 => V & (c & mask) == 0
+                    RuleDoubleSub ("analysis") 
+                      - Simplify chained SUBPIECE: sub( sub(V,c), d) => sub(V, c+d)
+                    RuleDoubleShift ("analysis") 
+                      - Simplify chained shifts INT_LEFT and INT_RIGHT
+                    RuleDoubleArithShift ("analysis") 
+                      - Simplify two sequential INT_SRIGHT: (x s>> #c) s>> #d => x s>> saturate(#c + #d)
+                    RuleConcatShift ("analysis") 
+                      - Simplify INT_RIGHT canceling PIECE: concat(V,W) >> c => zext(V)
+                    RuleLeftRight ("analysis") 
+                      - Transform canceling INT_RIGHT or INT_SRIGHT of INT_LEFT
+                    RuleShiftCompare ("analysis") 
+                      - Transform shifts in comparisons: V >> c == d => V == (d << c)
+                    RuleShift2Mult ("analysis") 
+                      - Convert INT_LEFT to INT_MULT: V << 2 => V * 4
+                    RuleShiftPiece ("analysis") 
+                      - Convert "shift and add" to PIECE: (zext(V) << 16) + zext(W) => concat(V,W)
+                    RuleMultiCollapse ("analysis") 
+                      - Collapse MULTIEQUAL whose inputs all trace to the same value
+                    RuleIndirectCollapse ("analysis") 
+                      - Remove a CPUI_INDIRECT if its blocking PcodeOp is dead
+                    Rule2Comp2Mult ("analysis") 
+                      - Eliminate INT_2COMP: -V => V * -1
+                    RuleSub2Add ("analysis") 
+                      - Eliminate INT_SUB: V - W => V + W * -1
+                    RuleCarryElim ("analysis") 
+                      - Transform INT_CARRY using a constant: carry(V,c) => -c <= V
+                    RuleBxor2NotEqual ("analysis") 
+                      - Eliminate BOOL_XOR: V ^^ W => V != W
+                    RuleLess2Zero ("analysis") 
+                      - Simplify INT_LESS applied to extremal constants
+                    RuleLessEqual2Zero ("analysis") 
+                      - Simplify INT_LESSEQUAL applied to extremal constants
+                    RuleSLess2Zero ("analysis") 
+                      - Simplify INT_SLESS applied to 0 or -1
+                    RuleEqual2Zero ("analysis") 
+                      - Simplify INT_EQUAL applied to 0: 0 == V + W * -1 => V == W or 0 == V + c => V == -c
+                    RuleEqual2Constant ("analysis") 
+                      - Simplify INT_EQUAL applied to arithmetic expressions
+                    RuleThreeWayCompare ("analysis") 
+                      - Simplify expressions involving three-way comparisons
+                    RuleXorCollapse ("analysis") 
+                      - Eliminate INT_XOR in comparisons: (V ^ W) == 0 => V == W
+                    RuleAddMultCollapse ("analysis") 
+                      - Collapse constants in an additive or multiplicative expression
+                    RuleCollapseConstants ("analysis") 
+                      - Collapse constant expressions
+                    RuleTransformCpool ("analysis") 
+                      - Transform CPOOLREF operations by looking up the value in the constant pool
+                    RulePropagateCopy ("analysis") 
+                      - Propagate the input of a COPY to all the places that read the output
+                    RuleZextEliminate ("analysis") 
+                      - Eliminate INT_ZEXT in comparisons: zext(V) == c => V == c
+                    RuleSlessToLess ("analysis") 
+                      - Convert INT_SLESS to INT_LESS when comparing positive values
+                    RuleZextSless ("analysis") 
+                      - Transform INT_ZEXT and INT_SLESS: zext(V) s< c => V < c
+                    RuleBitUndistribute ("analysis") 
+                      - Undo distributed operations through INT_AND, INT_OR, and INT_XOR
+                    RuleBoolZext ("analysis") 
+                      - Simplify boolean expressions of the form zext(V) * -1
+                    RuleBooleanNegate ("analysis") 
+                      - Simplify comparisons with boolean values: V == false => !V, V == true => V
+                    RuleLogic2Bool ("analysis") 
+                      - Convert logical to boolean operations: V & W => V && W, V | W => V || W
+                    RuleSubExtComm ("analysis") 
+                      - Commute SUBPIECE and INT_ZEXT: sub(zext(V),c) => zext(sub(V,c))
+                    RuleSubCommute ("analysis") 
+                      - Commute SUBPIECE operations with earlier operations where possible
+                    RuleConcatCommute ("analysis") 
+                      - Commute PIECE with INT_AND, INT_OR, and INT_XOR
+                    RuleConcatZext ("analysis") 
+                      - Commute PIECE with INT_ZEXT: concat(zext(V),W) => zext(concat(V,W))
+                    RuleZextCommute ("analysis") 
+                      - Commute INT_ZEXT with INT_RIGHT: zext(V) >> W => zext(V >> W)
+                    RuleZextShiftZext ("analysis") 
+                      - Simplify multiple INT_ZEXT operations: zext( zext(V) << c ) => zext(V) << c
+                    RuleShiftAnd ("analysis") 
+                      - Eliminate any INT_AND when the bits it zeroes out are discarded by a shift
+                    RuleConcatZero ("analysis") 
+                      - Simplify concatenation with zero: concat(V,0) => zext(V) << c
+                    RuleConcatLeftShift ("analysis") 
+                      - Simplify concatenation of extended value: concat(V, zext(W) << c) => concat( concat(V,W), 0)
+                    RuleEmbed ("analysis") 
+                      - Simplify PIECE intended as embedding: concat(V, sub(W,0)) => W & 0xff | (zext(W) << 8)
+                    RuleSubZext ("analysis") 
+                      - Simplify INT_ZEXT applied to SUBPIECE expressions
+                    RuleSubCancel ("analysis") 
+                      - Simplify composition of SUBPIECE with INT_ZEXT or INT_SEXT
+                    RuleShiftSub ("analysis") 
+                      - Simplify SUBPIECE applied to INT_LEFT: sub( V << 8*c, c) => sub(V,0)
+                    RuleHumptyDumpty ("analysis") 
+                      - Simplify break and rejoin: concat( sub(V,c), sub(V,0) ) => V
+                    RuleDumptyHump ("analysis") 
+                      - Simplify join and break apart: sub( concat(V,W), c) => sub(W,c)
+                    RuleHumptyOr ("analysis") 
+                      - Simplify masked pieces INT_ORed together: (V & ff00) | (V & 00ff) => V
+                    RuleNegateIdentity ("analysis") 
+                      - Apply INT_NEGATE identities: V & ~V => #0, V | ~V -> #-1
+                    RuleSubNormal ("analysis") 
+                      - Pull-back SUBPIECE through INT_RIGHT and INT_SRIGHT
+                    RulePositiveDiv ("analysis") 
+                      - Signed division of positive values is unsigned division
+                    RuleDivTermAdd ("analysis") 
+                      - Simplify expressions associated with optimized division expressions
+                    RuleDivTermAdd2 ("analysis") 
+                      - Simplify another expression associated with optimized division
+                    RuleDivOpt ("analysis") 
+                      - Convert INT_MULT and shift forms into INT_DIV or INT_SDIV
+                    RuleSignForm ("analysis") 
+                      - Normalize sign extraction: sub(sext(V),c) => V s>> 31
+                    RuleSignDiv2 ("analysis") 
+                      - Convert INT_SRIGHT form into INT_SDIV: (V + -1*(V s>> 31)) s>> 1 => V s/ 2
+                    RuleSignNearMult ("analysis") 
+                      - Simplify division form: (V + (V s>> 0x1f)>>(32-n)) & (-1<<n) => (V s/ 2^n) * 2^n
+                    RuleModOpt ("analysis") 
+                      - Simplify expressions that optimize INT_REM and INT_SREM
+                    RuleSwitchSingle ("analysis") 
+                      - Convert BRANCHIND with only one computed destination to a BRANCH
+                    RuleCondNegate ("analysis") 
+                      - Flip conditions to match structuring cues
+                    RuleBoolNegate ("analysis") 
+                      - Apply a set of identities involving BOOL_NEGATE
+                    RuleLessEqual ("analysis") 
+                      - Simplify 'less than or equal': V < W || V == W => V <= W
+                    RuleLessNotEqual ("analysis") 
+                      - Simplify INT_LESSEQUAL && INT_NOTEQUAL: V <= W && V != W => V < W
+                    RuleLessOne ("analysis") 
+                      - Transform INT_LESS of 0 or 1: V < 1 => V == 0, V <= 0 => V == 0
+                    RuleRangeMeld ("analysis") 
+                      - Merge range conditions of the form: V s< c, c s< V, V == c, V != c
+                    RuleFloatRange ("analysis") 
+                      - Merge range conditions of the form: V f< c, c f< V, V f== c etc
+                    RulePiece2Zext ("analysis") 
+                      - Concatenation with 0 becomes an extension: V = concat(#0,W) => V = zext(W)
+                    RulePiece2Sext ("analysis") 
+                      - Concatenation with sign bits becomes an extension: concat( V s>> #0x1f , V) => sext(V)
+                    RulePopcountBoolXor ("analysis") 
+                      - Simplify boolean expressions that are combined through POPCOUNT
+                    RuleXorSwap ("analysis") 
+                    RuleSubvarAnd ("subvar") 
+                      - Perform SubVariableFlow analysis triggered by INT_AND
+                    RuleSubvarSubpiece ("subvar") 
+                      - Perform SubVariableFlow analysis triggered by SUBPIECE
+                    RuleSplitFlow ("subvar") 
+                      - Try to detect and split artificially joined Varnodes
+                    RulePtrFlow ("subvar") 
+                      - Mark Varnode and PcodeOp objects that are carrying or operating on pointers
+                    RuleSubvarCompZero ("subvar") 
+                      - Perform SubvariableFlow analysis triggered by testing of a single bit
+                    RuleSubvarShift ("subvar") 
+                      - Perform SubvariableFlow analysis triggered by INT_RIGHT
+                    RuleSubvarZext ("subvar") 
+                      - Perform SubvariableFlow analysis triggered by INT_ZEXT
+                    RuleSubvarSext ("subvar") 
+                      - Perform SubvariableFlow analysis triggered by INT_SEXT
+                    RuleNegateNegate ("analysis") 
+                      - Simplify INT_NEGATE chains: ~~V => V
+                    RuleConditionalMove ("conditionalexe") 
+                    RuleOrPredicate ("conditionalexe") 
+                    RuleFuncPtrEncoding ("analysis") 
+                      - Eliminate ARM/THUMB style masking of the low order bits on function pointers
+                    RuleSubfloatConvert ("floatprecision") 
+                      - Perform SubfloatFlow analysis triggered by FLOAT_FLOAT2FLOAT
+                    RuleFloatCast ("floatprecision") 
+                      - Replace (casttosmall)(casttobig)V with identity or with single cast
+                    RuleIgnoreNan ("floatprecision") 
+                      - Treat FLOAT_NAN as always evaluating to false
+                    RulePtraddUndo ("typerecovery") 
+                      - Remove PTRADD operations with mismatched data-type information
+                    RulePtrsubUndo ("typerecovery") 
+                      - Remove PTRSUB operations with mismatched data-type information
+                    RuleSegment ("segment") 
+                      - Propagate constants through a SEGMENTOP
+                    RulePiecePathology ("protorecovery") 
+                      - Search for concatenations with unlikely things to inform return/parameter consumption calculation
+                    RuleDoubleLoad ("doubleload") 
+                    RuleDoubleStore ("doubleprecis") 
+                    RuleDoubleIn ("doubleprecis") 
+                }
+
+                ActionLaneDivide ("base") 
+                  - Find Varnodes with a vectorized lane scheme and attempt to split the lanes
+                ActionMultiCse ("analysis") 
+                  - Perform Common Sub-expression Elimination on CPUI_MULTIEQUAL ops
+                ActionShadowVar ("analysis") 
+                  - Check for one CPUI_MULTIEQUAL input set defining more than one Varnode
+                ActionDeindirect ("deindirect") 
+                  - Eliminate locally constant indirect calls
+                ActionStackPtrFlow ("stackptrflow")
+                  - Analyze change to the stack pointer across sub-function calls
+            }
+
+            ActionRedundBranch ("deadcontrolflow")  
+              - Get rid of redundant branches: duplicate edges between the same input and output block
+            ActionBlockStructure ("blockrecovery")
+              - Structure control-flow using standard high-level code constructs
+            ActionConstantPtr ("typerecovery") 
+              - Check for constants, with pointer type, that correspond to global symbols
+
+            REPEAT {
+                RulePushPtr ("typerecovery") 
+                  - Push a Varnode with known pointer data-type to the bottom of its additive expression
+                RuleStructOffset0 ("typerecovery") 
+                  - Convert a LOAD or STORE to the first element of a structure to a PTRSUB
+                RulePtrArith ("typerecovery") 
+                  - Transform pointer arithmetic
+                RuleLoadVarnode ("stackvars") 
+                  - Convert LOAD operations using a constant offset to COPY
+                RuleStoreVarnode ("stackvars") 
+                  - Convert STORE operations using a constant offset to COPY
+            }
+
+            ActionDeterminedBranch ("unreachable") 
+              - Remove conditional branches if the condition is constant
+            ActionUnreachable ("unreachable") 
+              - Remove unreachable blocks
+            ActionNodeJoin ("nodejoin") 
+              - Look for conditional branch expressions that have been split and rejoin them
+            ActionConditionalExe ("conditionalexe") 
+              - Search for and remove various forms of redundant CBRANCH operations
+            ActionConditionalConst ("analysis") 
+              - Propagate conditional constants
+        }
+
+        ActionLikelyTrash ("protorecovery") 
+          - Get rid of registers with trash values
+        ActionDirectWrite ("protorecovery_a") 
+          - Mark Varnodes built out of legal parameters
+        ActionDeadCode  ("deadcode") 
+          - Dead code removal. Eliminate dead p-code ops
+        ActionDoNothing ("deadcontrolflow") 
+          - Remove blocks that do nothing
+        ActionSwitchNorm ("switchnorm") 
+          - Normalize jump-table construction
+        ActionReturnSplit ("returnsplit") 
+          - Split the epilog code of the function
+        ActionUnjustifiedParams ("protorecovery") 
+          - Adjust improperly justified parameters
+        ActionStartTypes ("typerecovery") 
+          - Allow type recovery to start happening
+        ActionActiveReturn ("protorecovery") 
+          - Determine which sub-functions have active output Varnodes
+    }
+
+    ActionStartCleanUp ("cleanup") 
+      - Start clean up after main transform phase
+
+    REPEAT {
+        RuleMultNegOne ("cleanup") 
+          - Cleanup: Convert INT_2COMP from INT_MULT: V * -1 => -V
+        RuleAddUnsigned ("cleanup") 
+          - Cleanup: Convert INT_ADD of constants to INT_SUB: V + 0xff... => V - 0x00...
+        Rule2Comp2Sub ("cleanup") 
+          - Cleanup: Convert INT_ADD back to INT_SUB: V + -W ==> V - W
+        RuleSubRight ("cleanup") 
+          - Cleanup: Convert truncation to cast: sub(V,c) => sub(V>>c*8,0)
+        RulePtrsubCharConstant ("cleanup") 
+          - Cleanup: Set-up to print string constants
+        RuleExtensionPush ("cleanup") 
+    }
+
+    ActionPreferComplement ("blockrecovery") 
+      - Attempt to normalize symmetric block structures
+    ActionStructureTransform ("blockrecovery") 
+    ActionAssignHigh ("merge") 
+      - Assign initial high-level HighVariable objects to each Varnode
+    ActionMergeRequired ("merge") 
+      - Make required Varnode merges as dictated by CPUI_MULTIEQUAL, CPUI_INDIRECT, and addrtied property
+    ActionMarkExplicit ("merge") 
+    ActionMarkImplied ("merge")  
+    ActionMergeMultiEntry ("merge") 
+      - Try to merge Varnodes specified by Symbols with multiple SymbolEntrys
+    ActionMergeCopy ("merge") 
+      - Try to merge the input and output Varnodes of a CPUI_COPY op
+    ActionDominantCopy ("merge") 
+      - Replace COPYs from the same source with a single dominant COPY
+    ActionDynamicSymbols ("dynamic") 
+      - Make final attachments of dynamically mapped symbols to Varnodes
+    ActionMarkIndirectOnly ("merge")  
+      - Mark illegal Varnode inputs used only in CPUI_INDIRECT ops
+    ActionMergeAdjacent ("merge") 
+      - Try to merge an op's input Varnode to its output, if they are at the same storage location
+    ActionMergeType ("merge") 
+      - Try to merge Varnodes of the same type (if they don't hold different values at the same time)
+    ActionHideShadow ("merge") 
+      - Locate shadow Varnodes and adjust them so they are hidden
+    ActionCopyMarker ("merge") 
+      - Mark COPY operations between Varnodes representing the object as non-printing
+    ActionOutputPrototype ("localrecovery") 
+      - Set the (already) recovered output data-type as a formal part of the prototype
+    ActionInputPrototype ("fixateproto") 
+      - Calculate the prototype for the function
+    ActionRestructureHigh ("localrecovery") 
+      - Create symbols that map out the local stack-frame for the function
+    ActionMapGlobals ("fixateglobals") 
+      - Create symbols for any discovered global variables in the function
+    ActionDynamicSymbols ("dynamic") 
+      - Make final attachments of dynamically mapped symbols to Varnodes
+    ActionNameVars ("merge") 
+    ActionSetCasts ("casts") 
+      - Fill-in CPUI_CAST p-code ops as required by the casting strategy
+    ActionFinalStructure ("blockrecovery") 
+      - Perform final organization of the control-flow structure
+    ActionPrototypeWarnings ("protorecovery") 
+      - Add warnings for prototypes that aren't modeled properly
+    ActionStop ("base")
+      - Do any post-processing after decompilation
+}
