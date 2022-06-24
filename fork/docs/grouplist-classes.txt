@@ -1,0 +1,229 @@
+base
+	ActionStart
+	ActionConstbase
+	ActionDefaultParams
+	ActionExtraPopSetup
+	ActionUnreachable
+	ActionVarnodeProps
+	ActionHeritage
+	ActionSegmentize
+	ActionSpacebase
+	ActionLaneDivide
+	ActionStop
+protorecovery
+	ActionPrototypeTypes
+	ActionFuncLink
+	ActionParamDouble
+	ActionActiveParam
+	ActionReturnRecovery
+	RulePiecePathology
+	ActionLikelyTrash
+	ActionUnjustifiedParams
+	ActionActiveReturn
+	ActionPrototypeWarnings
+blockrecovery
+	ActionForceGoto
+	ActionBlockStructure
+	ActionPreferComplement
+	ActionStructureTransform
+	ActionFinalStructure
+protorecovery_a
+	ActionDirectWrite
+	ActionDirectWrite
+localrecovery
+	ActionRestrictLocal
+	ActionRestructureVarnode
+	ActionOutputPrototype
+	ActionRestructureHigh
+deadcode
+	ActionDeadCode
+	RuleEarlyRemoval
+	ActionDeadCode
+dynamic
+	ActionDynamicMapping
+	ActionDynamicSymbols
+	ActionDynamicSymbols
+analysis
+	ActionNonzeroMask
+	RuleTermOrder
+	RuleSelectCse
+	RuleCollectTerms
+	RulePullsubMulti
+	RulePullsubIndirect
+	RuleSborrow
+	RuleIntLessEqual
+	RuleTrivialArith
+	RuleTrivialBool
+	RuleTrivialShift
+	RuleSignShift
+	RuleTestSign
+	RuleIdentityEl
+	RuleOrMask
+	RuleAndMask
+	RuleOrConsume
+	RuleOrCollapse
+	RuleAndOrLump
+	RuleShiftBitops
+	RuleRightShiftAnd
+	RuleNotDistribute
+	RuleHighOrderAnd
+	RuleAndDistribute
+	RuleAndCommute
+	RuleAndPiece
+	RuleAndCompare
+	RuleDoubleSub
+	RuleDoubleShift
+	RuleDoubleArithShift
+	RuleConcatShift
+	RuleLeftRight
+	RuleShiftCompare
+	RuleShift2Mult
+	RuleShiftPiece
+	RuleMultiCollapse
+	RuleIndirectCollapse
+	Rule2Comp2Mult
+	RuleSub2Add
+	RuleCarryElim
+	RuleBxor2NotEqual
+	RuleLess2Zero
+	RuleLessEqual2Zero
+	RuleSLess2Zero
+	RuleEqual2Zero
+	RuleEqual2Constant
+	RuleThreeWayCompare
+	RuleXorCollapse
+	RuleAddMultCollapse
+	RuleCollapseConstants
+	RuleTransformCpool
+	RulePropagateCopy
+	RuleZextEliminate
+	RuleSlessToLess
+	RuleZextSless
+	RuleBitUndistribute
+	RuleBoolZext
+	RuleBooleanNegate
+	RuleLogic2Bool
+	RuleSubExtComm
+	RuleSubCommute
+	RuleConcatCommute
+	RuleConcatZext
+	RuleZextCommute
+	RuleZextShiftZext
+	RuleShiftAnd
+	RuleConcatZero
+	RuleConcatLeftShift
+	RuleEmbed
+	RuleSubZext
+	RuleSubCancel
+	RuleShiftSub
+	RuleHumptyDumpty
+	RuleDumptyHump
+	RuleHumptyOr
+	RuleNegateIdentity
+	RuleSubNormal
+	RulePositiveDiv
+	RuleDivTermAdd
+	RuleDivTermAdd2
+	RuleDivOpt
+	RuleSignForm
+	RuleSignDiv2
+	RuleSignNearMult
+	RuleModOpt
+	RuleSwitchSingle
+	RuleCondNegate
+	RuleBoolNegate
+	RuleLessEqual
+	RuleLessNotEqual
+	RuleLessOne
+	RuleRangeMeld
+	RuleFloatRange
+	RulePiece2Zext
+	RulePiece2Sext
+	RulePopcountBoolXor
+	RuleXorSwap
+	RuleNegateNegate
+	RuleFuncPtrEncoding
+	ActionMultiCse
+	ActionShadowVar
+	ActionConditionalConst
+typerecovery
+	ActionInferTypes
+	RulePtraddUndo
+	RulePtrsubUndo
+	ActionConstantPtr
+	RulePushPtr
+	RuleStructOffset0
+	RulePtrArith
+	ActionStartTypes
+nodejoin
+	RulePushMulti
+	ActionNodeJoin
+subvar
+	RuleSubvarAnd
+	RuleSubvarSubpiece
+	RuleSplitFlow
+	RulePtrFlow
+	RuleSubvarCompZero
+	RuleSubvarShift
+	RuleSubvarZext
+	RuleSubvarSext
+conditionalexe
+	RuleConditionalMove
+	RuleOrPredicate
+	ActionConditionalExe
+floatprecision
+	RuleSubfloatConvert
+	RuleFloatCast
+	RuleIgnoreNan
+segment
+	RuleSegment
+doubleload
+	RuleDoubleLoad
+doubleprecis
+	RuleDoubleStore
+	RuleDoubleIn
+deindirect
+	ActionDeindirect
+stackptrflow
+	ActionStackPtrFlow
+deadcontrolflow
+	ActionRedundBranch
+	ActionDoNothing
+stackvars
+	RuleLoadVarnode
+	RuleStoreVarnode
+unreachable
+	ActionDeterminedBranch
+	ActionUnreachable
+switchnorm
+	ActionSwitchNorm
+returnsplit
+	ActionReturnSplit
+cleanup
+	ActionStartCleanUp
+	RuleMultNegOne
+	RuleAddUnsigned
+	Rule2Comp2Sub
+	RuleSubRight
+	RulePtrsubCharConstant
+	RuleExtensionPush
+merge
+	ActionAssignHigh
+	ActionMergeRequired
+	ActionMarkExplicit
+	ActionMarkImplied
+	ActionMergeMultiEntry
+	ActionMergeCopy
+	ActionDominantCopy
+	ActionMarkIndirectOnly
+	ActionMergeAdjacent
+	ActionMergeType
+	ActionHideShadow
+	ActionCopyMarker
+	ActionNameVars
+fixateproto
+	ActionInputPrototype
+fixateglobals
+	ActionMapGlobals
+casts
+	ActionSetCasts

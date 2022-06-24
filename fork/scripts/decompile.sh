@@ -31,11 +31,16 @@ function decompile() {
         -deleteProject
 }
 
-function clean() {
+function cleanrm() {
     rm -rf "$projectDir/*.rep" "$projectDir/*.gpr" "$projectDir/*.lock" "$projectDir/*.lock~"
 }
 
-clean
+function cleankill() {
+    kill $(pidof java)
+    kill $(pidof decompile)
+}
+
+cleanrm
 if [ -z "$GHIDRA_DEBUG" ]; then
     decompile
 else
@@ -43,5 +48,6 @@ else
     decompile &
     sleep 10
     $debugScript
+    cleankill
 fi
-clean
+cleanrm

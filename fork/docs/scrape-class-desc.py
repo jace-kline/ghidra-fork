@@ -49,12 +49,29 @@ def main():
             desc = desc_of(_class)
             if desc is not None:
                 print(f"  {spaces}- {desc}")
+    f.close()
 
-def test():
-    f = open("action-sequence-decompiler.txt")
+def parse_line2(l): # return (whitespace, class name)
+    pat = "^(\s*)(\S+).*$"
+    p = re.compile(pat)
+    m = p.match(l)
+    return m.groups() if m is not None else None
+
+def main2():
+    desc_of = mk_lookup_fn()
+    f = open("grouplist-classes.txt")
     ls = f.readlines()
-    ls = [ trim_newline(l) for l in ls ]
-    print(ls)
+    _ls = [ parse_line2(l) for l in ls ]
+
+    for ws, v in _ls:
+        if len(ws) == 0:
+            print(v)
+        else:
+            print(f"{ws}{v}")
+            desc = desc_of(v)
+            if desc is not None:
+                print(f"{ws}  -{desc}")
+    f.close()
 
 if __name__ == "__main__":
-    main()
+    main2()
