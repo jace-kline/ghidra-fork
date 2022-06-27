@@ -20,6 +20,10 @@ def get_all_DIEs(dwarfinfo):
                 dies.append(die)
     return dies
 
+def get_function_DIEs(dwarfinfo):
+    dies = get_all_DIEs(dwarfinfo)
+    return [ die for die in dies if die.tag == "DW_TAG_subprogram" ]
+
 def main():
     objfilepath = "./progs/p0"
     elffile = mk_ELFFile(objfilepath)
@@ -38,8 +42,8 @@ def main():
         return
 
     # get all DIE objects across all CUs
-    dies = get_all_DIEs(dwarfinfo)
-    for die in dies:
+    fn_dies = get_function_DIEs(dwarfinfo)
+    for die in fn_dies:
         print(die)
 
     

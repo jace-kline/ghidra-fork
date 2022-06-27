@@ -44,11 +44,17 @@ def decompileToRawC(fname): # returns str
     codestr = decomp.getC()
     return codestr
 
-    # # get C code as XML document
-    # tokgrp = res.getCCodeMarkup() # type: ClangTokenGroup
+# decompile, get XML document of results
+def decompileXML(fname):
+    res = decompile(fname) # type: DecompileResults
+    tokgrp = res.getCCodeMarkup() # type: ClangTokenGroup
+    return tokgrp
 
-    # # get high-level syntax tree
-    # hfunc = res.getHighFunction() # type: HighFunction
+# decompile, get high-level syntax tree
+def decompileHighSyntaxTree(fname):
+    res = decompile(fname)
+    hfunc = res.getHighFunction() # type: HighFunction
+    return hfunc
 
 def main():
     args = getScriptArgs()
