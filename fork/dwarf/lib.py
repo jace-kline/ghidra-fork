@@ -1,30 +1,34 @@
 ## Common variable, function, and datatype representations for DWARF/Ghidra
 
 class Variable:
-    def __init__(self, name=None, dtype=None, addrs=None, function=None, param=False):
+    def __init__(self, name=None, dtype=None, addr=None, param=False, gbl=False):
         """
         name: str
             The variable's name
         dtype: DataType
             The data type of the variable
-        addrs: [Address]
-            The locations this variable occupies throughout its lifetime.
+        addr: Address
+            The location this variable occupies throughout its lifetime.
             In unoptimized compilation, this usually will include only one address.
             However, live ranges and register splitting could be used in optimized compilation.
-        function: Function
-            The parent function of the variable (or None if global variable)
         param: bool
             Is this variable a parameter?
+        gbl: bool
+            Is this variable a global variable?
         """
         self.name = name
         self.dtype = dtype
-        self.addrs = addrs
-        self.function = function
+        self.addr = addr
         self.param = param
+        self.gbl = gbl
 
     def is_param(self):
         """ Is this variable a parameter? """
         return self.param
+
+    def is_global(self):
+        """ Is this variable a global variable? """
+        return self.gbl
 
     def same(self, other):
         """
@@ -38,7 +42,7 @@ class Function:
     """
     Represents the debugging/decompilation information for a function.
     """
-    def __init__(self, name=None, startaddr=None, rettype=None, params=None):
+    def __init__(self, name=None, startaddr=None, rettype=None, vars=None):
         """
         name: str
             The name of the function
@@ -46,13 +50,17 @@ class Function:
             The entrypoint address (global) of the function
         rettype: DataType
             The return type of the function
-        params: [Variable]
-            A list of variables corresponding to the parameters of the function
+        vars: [Variable]
+            A list of non-parameter variables declared and used within the body of the function
         """
         self.name = name
         self.startaddr = startaddr
         self.rettype = rettype
-        self.params = params
+        self.vars = vars
+
+    def get_params(self):
+        """ Returns the list of parameter Variable objects in the correct order """
+        return [ v for v in self.vars if v.is_param() ]
 
     def same(self, other):
         return self.startaddr == other.startaddr
@@ -223,15 +231,15 @@ class DataTypeUnion(DataType):
     """
     Datatype representing a C union type.
     """
-    def __init__(self, name=None, opttypes=[], size=None):
+    def __init__(self, name=None, membertypes=[], size=None):
         """
-        opttypes: [DataType]
+        membertypes: [DataType]
             The data types of that could possibly be instantiated in the union.
         """
         self.name = name
-        self.opttypes = opttypes
+        self.membertypes = membertypes
         if size is None: # if explicit size not provided, calculate on our own
-            size = max([ mem.size for mem in opttypes ])
+            size = max([ mem.size for mem in membertypes ])
         super().__init__(
             metatype=MetaType.UNION,
             size=size
