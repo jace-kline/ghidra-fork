@@ -42,20 +42,21 @@ class Function:
     """
     Represents the debugging/decompilation information for a function.
     """
-    def __init__(self, name=None, startaddr=None, rettype=None, vars=None):
+    def __init__(self, name=None, startaddr=None, prototype=None, vars=None):
         """
         name: str
             The name of the function
         startaddr: Address
             The entrypoint address (global) of the function
-        rettype: DataType
-            The return type of the function
+        proto: DataTypeFunctionPrototype
+            The prototype of the function.
+            Return type + parameter types.
         vars: [Variable]
             A list of non-parameter variables declared and used within the body of the function
         """
         self.name = name
         self.startaddr = startaddr
-        self.rettype = rettype
+        self.prototype = prototype
         self.vars = vars
 
     def get_params(self):
@@ -105,7 +106,7 @@ class MetaType:
     UNION: an "either-or" disjunctive type sharing the same memory space
     UNDEFINED: a sized type of unknown classification
     VOID: a 0-sized type
-    BOOL: a boolean (0 or 1)
+    FUNCTION_PROTOTYPE: a type containing a return type + list of parameter types
     """
     INT = 0
     FLOAT = 1
@@ -115,6 +116,7 @@ class MetaType:
     UNION = 5
     UNDEFINED = 6
     VOID = 7
+    FUNCTION_PROTOTYPE = 8
 
 class DataType:
     """
@@ -122,16 +124,38 @@ class DataType:
     Contains a "meta type" and size.
     Subclasses contain more specified information.
     """
-    def __init__(self, metatype=None, size=None):
+    def __init__(self, metatype=None, size=None, resolved=False):
         """
         metatype: field of MetaType class
             The meta type of the datatype.
-            options = INT | FLOAT | POINTER | ARRAY | STRUCT | UNION | UNDEFINED | VOID
+            options = INT | FLOAT | POINTER | ARRAY | STRUCT | UNION | UNDEFINED | VOID | FUNCTION_PROTOTYPE
         size: int
             The total size of the datatype
+        resolved: bool
+            Are all of this datatype's fields filled & subtypes resolved?
         """
         self.metatype = metatype
         self.size = size
+        self.resolved = resolved
+
+    def set_resolved(self, b):
+        self.resolved = b
+
+class DataTypeFunctionPrototype(DataType):
+    """
+    Data type representing a function prototype.
+    Could be pointed to by function pointer.
+    Used as 'proto' argument for creating a Function object.
+    """
+    def __init__(self, rettype=None, paramtypes=None, resolved=False):
+        super().__init__(
+            metatype=MetaType.FUNCTION_PROTOTYPE,
+            size=0,
+            resolved=resolved
+        )
+        self.rettype = rettype
+        self.paramtypes = paramtypes
+
 
 class DataTypeInt(DataType):
     """
@@ -140,12 +164,23 @@ class DataTypeInt(DataType):
     def __init__(self, size=None, signed=True):
         super().__init__(
             metatype=MetaType.INT,
-            size=size
+            size=size,
+            resolved=True
         )
         self.signed = signed
 
     def is_signed(self):
         return self.signed
+
+    @classmethod
+    def from_DataType(cls, dtype):
+        # Create new child obj from DataType base instance
+        obj = cls()
+        # Copy all values of A to B
+        # It does not have any problem since they have common template
+        for key, value in dtype.__dict__.items():
+            obj.__dict__[key] = value
+        return obj
 
 class DataTypeFloat(DataType):
     """
@@ -154,8 +189,19 @@ class DataTypeFloat(DataType):
     def __init__(self, size=None):
         super().__init__(
             metatype=MetaType.FLOAT,
-            size=size
+            size=size,
+            resolved=True
         )
+
+    @classmethod
+    def from_DataType(cls, dtype):
+        # Create new child obj from DataType base instance
+        obj = cls()
+        # Copy all values of A to B
+        # It does not have any problem since they have common template
+        for key, value in dtype.__dict__.items():
+            obj.__dict__[key] = value
+        return obj
 
 class DataTypeUndefined(DataType):
     """
@@ -164,8 +210,19 @@ class DataTypeUndefined(DataType):
     def __init__(self, size=None):
         super().__init__(
             metatype=MetaType.UNDEFINED,
-            size=size
+            size=size,
+            resolved=True
         )
+
+    @classmethod
+    def from_DataType(cls, dtype):
+        # Create new child obj from DataType base instance
+        obj = cls()
+        # Copy all values of A to B
+        # It does not have any problem since they have common template
+        for key, value in dtype.__dict__.items():
+            obj.__dict__[key] = value
+        return obj
 
 class DataTypeVoid(DataType):
     """
@@ -174,26 +231,49 @@ class DataTypeVoid(DataType):
     def __init__(self):
         super().__init__(
             metatype=MetaType.VOID,
-            size=0
+            size=0,
+            resolved=True
         )
+
+    @classmethod
+    def from_DataType(cls, dtype):
+        # Create new child obj from DataType base instance
+        obj = cls()
+        # Copy all values of A to B
+        # It does not have any problem since they have common template
+        for key, value in dtype.__dict__.items():
+            obj.__dict__[key] = value
+        return obj
 
 class DataTypePointer(DataType):
     """
     Datatype representing a pointer of some base type.
     """
-    def __init__(self, basetype=None, size=None):
+    def __init__(self, basetype=None, size=None, resolved=False):
         """
         basetype: DataType
             The type of the object being pointed to
         """
         super().__init__(
             metatype=MetaType.POINTER,
-            size=size
+            size=size,
+            resolved=resolved
         )
         self.basetype = basetype
 
+    @classmethod
+    def from_DataType(cls, dtype):
+        # Create new child obj from DataType base instance
+        obj = cls()
+        # Copy all values of A to B
+        # It does not have any problem since they have common template
+        for key, value in dtype.__dict__.items():
+            obj.__dict__[key] = value
+        return obj
+
+
 class DataTypeArray(DataType):
-    def __init__(self, basetype=None, length=None, size=None):
+    def __init__(self, basetype=None, length=None, size=None, resolved=False):
         """
         basetype: DataType
             The type of the elements in the array
@@ -202,48 +282,84 @@ class DataTypeArray(DataType):
         size: int
             The total number of bytes allocated to the array. -1 if unknown.
         """
+        if size is None and resolved:
+            size = basetype.size * length
         super().__init__(
             metatype=MetaType.ARRAY,
-            size=(size if size is not None else (basetype.size * length))
+            size=size,
+            resolved=resolved
         )
         self.basetype = basetype
         self.length = length
+
+    @classmethod
+    def from_DataType(cls, dtype):
+        # Create new child obj from DataType base instance
+        obj = cls()
+        # Copy all values of A to B
+        # It does not have any problem since they have common template
+        for key, value in dtype.__dict__.items():
+            obj.__dict__[key] = value
+        return obj
 
 class DataTypeStruct(DataType):
     """
     Datatype representing a C struct.
     """
-    def __init__(self, name=None, membertypes=[], size=None):
+    def __init__(self, name=None, membertypes=None, recursive=False, size=None, resolved=False):
         """
         membertypes: [DataType]
             The data types of the members of the struct.
+        cycle: bool
+            Does this struct form a recursive/mutually-recursive cycle?
         """
         self.name = name
         self.membertypes = membertypes
-        if size is None: # if explicit size not provided, calculate on our own
+        if size is None and resolved: # if explicit size not provided, calculate on our own
             size = sum([ mem.size for mem in membertypes ])
         super().__init__(
             metatype=MetaType.STRUCT,
-            size=size
+            size=size,
+            resolved=resolved
         )
+
+    @classmethod
+    def from_DataType(cls, dtype):
+        # Create new child obj from DataType base instance
+        obj = cls()
+        # Copy all values of A to B
+        # It does not have any problem since they have common template
+        for key, value in dtype.__dict__.items():
+            obj.__dict__[key] = value
+        return obj
 
 class DataTypeUnion(DataType):
     """
     Datatype representing a C union type.
     """
-    def __init__(self, name=None, membertypes=[], size=None):
+    def __init__(self, name=None, membertypes=None, size=None, resolved=False):
         """
         membertypes: [DataType]
             The data types of that could possibly be instantiated in the union.
         """
         self.name = name
         self.membertypes = membertypes
-        if size is None: # if explicit size not provided, calculate on our own
+        if size is None and resolved: # if explicit size not provided, calculate on our own
             size = max([ mem.size for mem in membertypes ])
         super().__init__(
             metatype=MetaType.UNION,
             size=size
         )
+
+    @classmethod
+    def from_DataType(cls, dtype):
+        # Create new child obj from DataType base instance
+        obj = cls()
+        # Copy all values of A to B
+        # It does not have any problem since they have common template
+        for key, value in dtype.__dict__.items():
+            obj.__dict__[key] = value
+        return obj
 
 def test():
     pass
