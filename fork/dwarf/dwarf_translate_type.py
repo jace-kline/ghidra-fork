@@ -1,6 +1,6 @@
 from elftools.dwarf.constants import *
 from dwarf_translate_util import *
-from repr import *
+from dwarf.translation import *
 
 REMOVE = -1
 NOREF = -1
@@ -303,8 +303,9 @@ class DWARFDataTypeTranslator:
     # That is, the input DIE is a DIE that points to a type DIE
     # via the 'DW_AT_type' attribute.
     # Update the internal map & resolve cycles as needed.
+    # If no 'DW_AT_type' attribute, return void type
     def get_DIE_datatype(self, die):
         refaddr = self._get_DIE_type_refaddr(die)
-        return self._get_refaddr_datatype(refaddr)
+        return DataTypeVoid() if refaddr is None else self._get_refaddr_datatype(refaddr)
 
 

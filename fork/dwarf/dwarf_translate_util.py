@@ -6,7 +6,7 @@ from elftools.common.py3compat import bytes2str
 # reverse the order and concatenate
 def le_unsigned_decode(bs):
     val = 0
-    for i, b in enumerate(reversed(bs)):
+    for i, b in enumerate(bs):
         val |= (b << (8 * i))
     
     return val
@@ -51,20 +51,26 @@ def get_DIE_name(die):
 
 # get the children variable-like DIEs of a given function (or lexical scope) DIE
 # called recursively on sub-scopes
-def get_DIE_child_var_DIEs(fndie):
+# returns (parameter DIEs, variable DIEs)
+def get_param_var_DIEs(fndie):
 
     if not fndie.has_children:
         return []
     
+    paramdies = []
     vardies = []
     for die in fndie.iter_children():
-        if die.tag == "DW_TAG_variable" or die.tag == "DW_TAG_formal_parameter":
+        if die.tag == "DW_TAG_formal_parameter":
+            paramdies.append(die)
+
+        elif die.tag == "DW_TAG_variable":
             vardies.append(die)
 
         elif die.tag == "DW_TAG_lexical_block": # recurse
-            vardies += get_DIE_child_var_DIEs(die)
+            _, vdies = get_param_var_DIEs(die)
+            vardies += vdies
 
-    return vardies
+    return (paramdies, vardies)
 
 # get all DIE entries across all CUs
 # ignore null DIEs

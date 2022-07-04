@@ -1,7 +1,14 @@
 ## Common variable, function, and datatype representations for DWARF/Ghidra
 
+# hold the results of a translation into this common format
+# from either DWARF info or Ghidra decompilation
+class Translation:
+    def __init__(self, globals=[], functions=[]):
+        self.globals = globals
+        self.functions = functions
+
 class Variable:
-    def __init__(self, name=None, dtype=None, addr=None, param=False, gbl=False):
+    def __init__(self, name=None, dtype=None, addr=None, param=False, function=None):
         """
         name: str
             The variable's name
@@ -13,14 +20,14 @@ class Variable:
             However, live ranges and register splitting could be used in optimized compilation.
         param: bool
             Is this variable a parameter?
-        gbl: bool
-            Is this variable a global variable?
+        function: Function | None
+            The parent function, or None if global.
         """
         self.name = name
         self.dtype = dtype
         self.addr = addr
         self.param = param
-        self.gbl = gbl
+        self.function = function
 
     def is_param(self):
         """ Is this variable a parameter? """
@@ -28,7 +35,7 @@ class Variable:
 
     def is_global(self):
         """ Is this variable a global variable? """
-        return self.gbl
+        return self.function is None
 
     def same(self, other):
         """
@@ -42,7 +49,7 @@ class Function:
     """
     Represents the debugging/decompilation information for a function.
     """
-    def __init__(self, name=None, startaddr=None, prototype=None, vars=None):
+    def __init__(self, name=None, startaddr=None, prototype=None, params=[], vars=[]):
         """
         name: str
             The name of the function
@@ -51,12 +58,15 @@ class Function:
         proto: DataTypeFunctionPrototype
             The prototype of the function.
             Return type + parameter types.
+        params: [Variable]
+            A list of the function's parameters.
         vars: [Variable]
-            A list of non-parameter variables declared and used within the body of the function
+            A list of non-parameter variables declared and used within the body of the function.
         """
         self.name = name
         self.startaddr = startaddr
         self.prototype = prototype
+        self.params = params
         self.vars = vars
 
     def get_params(self):
@@ -71,6 +81,7 @@ class AddressSpace:
     HEAP = 1
     GLOBAL = 2
     REGISTER = 3
+    UNKNOWN = 4
 
 class Address:
     """

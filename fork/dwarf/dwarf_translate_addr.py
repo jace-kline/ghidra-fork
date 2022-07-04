@@ -1,15 +1,24 @@
 from elftools.dwarf.dwarf_expr import DW_OP_name2opcode
 from dwarf_translate_util import *
-from repr import *
+from dwarf.translation import *
 
 class DWARFAddressTranslator:
     def __init__(self, dwarfinfo):
         self.dwarfinfo = dwarfinfo
 
-    # given a variable-like DIE with a 'DW_AT_location' attribute,
-    # return a list of Address objects specifying where this variable resides
+    # given a DIE with a 'DW_AT_location' attribute,
+    # returns an Address object
+    # if attribute non-existent, return None
     def get_DIE_addr(self, vardie):
-        locexpr = vardie.attributes["DW_AT_location"].value
+        try:
+            locexpr = vardie.attributes["DW_AT_location"].value
+        except KeyError:
+            # return an "UNKNOWN" address if no "DW_AT_location" present
+            return Address(
+                addrspace=AddressSpace.UNKNOWN,
+                offset=0
+            )
+
         op = locexpr[0] # the operation specifier
         bs = locexpr[1:] # the bytes representing location/offset
 
