@@ -1,0 +1,116 @@
+{
+    "0": {
+        "objtype": "ProgramInfo",
+        "globalrefs": ["1"],
+        "functionrefs": ["6"]
+    },
+    "1": {
+        "objtype": "Variable",
+        "name": "mygblstruct",
+        "dtyperef": "2",
+        "addrref": "3",
+        "param": false,
+        "functionref": null
+    },
+    "2": {
+        "objtype": "DataTypeStruct",
+        "name": "MyStructType",
+        "membertyperefs": ["4", "5"],
+        "size": 12
+    },
+    "3": {
+        "objtype": "Address",
+        "addrspace": 2,
+        "offset": 10052
+    },
+    "4": {
+        "objtype": "DataTypeInt",
+        "size": 4,
+        "signed": true
+    },
+    "5": {
+        "objtype": "DataTypePointer",
+        "size": 8,
+        "basetyperef": "2"
+    },
+    "6": {
+        "objtype": "Function",
+        "name": "main",
+        "startaddrref": "7",
+        "rettyperef": "4",
+        "paramrefs": ["8", "9"],
+        "varrefs": ["10", "11"]
+    },
+    "7": {
+        "objtype": "Address",
+        "addrspace": 2,
+        "offset": 1024
+    },
+    "8": {
+        "objtype": "Variable",
+        "name": "argc",
+        "dtyperef": "4",
+        "addrref": "15",
+        "param": true,
+        "functionref": "6"
+    },
+    "9": {
+        "objtype": "Variable",
+        "name": "argv",
+        "dtyperef": "12",
+        "addrref": "16",
+        "param": true,
+        "functionref": "6"
+    },
+    "10": {
+        "objtype": "Variable",
+        "name": "myint",
+        "dtyperef": "4",
+        "addrref": "17",
+        "param": false,
+        "functionref": "6"
+    },
+    "11": {
+        "objtype": "Variable",
+        "name": "mylocalstruct",
+        "dtyperef": "2",
+        "addrref": "18",
+        "param": false,
+        "functionref": "6"
+    },
+    "12": {
+        "objtype": "DataTypePointer",
+        "size": 8,
+        "basetyperef": "13"
+    },
+    "13": {
+        "objtype": "DataTypePointer",
+        "size": 8,
+        "basetyperef": "14"
+    },
+    "14": {
+        "objtype": "DataTypeInt",
+        "size": 1,
+        "signed": true
+    },
+    "15": {
+        "objtype": "Address",
+        "addrspace": 0,
+        "offset": -16
+    },
+    "16": {
+        "objtype": "Address",
+        "addrspace": 0,
+        "offset": -20
+    },
+    "17": {
+        "objtype": "Address",
+        "addrspace": 0,
+        "offset": -28
+    },
+    "18": {
+        "objtype": "Address",
+        "addrspace": 0,
+        "offset": -32
+    }
+}

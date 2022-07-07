@@ -1,6 +1,6 @@
 from elftools.dwarf.constants import *
 from dwarf_translate_util import *
-from dwarf.translation import *
+from translation import *
 
 REMOVE = -1
 NOREF = -1
@@ -189,7 +189,8 @@ class DWARFDataTypeTranslator:
             # performs side effects!
             member_refaddrs = [ recurse(die) for die in memberdies ]
             name = get_DIE_name(typedie)
-            size = None
+            size = typedie.attributes.get("DW_AT_byte_size", None)
+
             self._set(refaddr, DataTypeStruct(name=name, membertypes=member_refaddrs, size=size, resolved=False))
 
         # union type
@@ -204,7 +205,8 @@ class DWARFDataTypeTranslator:
             # performs side effects!
             member_refaddrs = [ recurse(die) for die in memberdies ]
             name = get_DIE_name(typedie)
-            size = None
+            size = typedie.attributes.get("DW_AT_byte_size", None)
+
             self._set(refaddr, DataTypeUnion(name=name, membertypes=member_refaddrs, size=size, resolved=False))
 
         # typedef
@@ -228,6 +230,15 @@ class DWARFDataTypeTranslator:
             param_refs = [ recurse(die) for die in paramdies ]
 
             self._set(refaddr, DataTypeFunctionPrototype(rettype=rettype, paramtypes=param_refs, resolved=False))
+
+        # enum
+        elif typedie.tag == "DW_TAG_enumeration_type":
+            _refaddr = recurse(typedie)
+
+            if _refaddr == NOREF:
+                self._set(refaddr, DataTypeVoid())
+            else:
+                self._set(refaddr, DataTypeRemoveStub(_refaddr))
 
         # other cases?
         else:
@@ -255,9 +266,11 @@ class DWARFDataTypeTranslator:
 
         dtype.resolved = True
 
-        # special case = typedef or qualified type node
+        # special case = typedef, enum, or qualified type node
         # replace the entry by the datatype object it points to
-        if dtype.metatype == REMOVE:
+        # but first ensure the pointed-to type is resolved
+        if dtype.metatype in [REMOVE, MetaType.TYPEDEF, MetaType.ENUM]:
+            self._resolve(dtype.refaddr)
             self._set(refaddr, self._lookup(dtype.refaddr))
 
         elif dtype.metatype == MetaType.POINTER:
@@ -271,18 +284,23 @@ class DWARFDataTypeTranslator:
             self._resolve(_refaddr)
 
             # fix the size of the array type
-            dtype.size = dtype.length * dtype.basetype.size
+            # if dtype.size is None:
+            #     dtype.size = dtype.length * dtype.basetype.size
 
-        elif dtype.metatype == MetaType.UNION or dtype.metatype == MetaType.STRUCT:
+        elif dtype.metatype in [MetaType.UNION, MetaType.STRUCT]:
             _refaddrs = dtype.membertypes
             for _refaddr in _refaddrs:
                 self._resolve(_refaddr)
 
         elif dtype.metatype == MetaType.FUNCTION_PROTOTYPE:
             # resolve return type
-            _refaddr_ret = dtype.rettype
-            dtype.rettype = self._lookup(_refaddr_ret)
-            self._resolve(_refaddr_ret)
+            # if void, then the DataType object was already set
+            try:
+                lookvoid = dtype.rettype.metatype
+            except:
+                _refaddr_ret = dtype.rettype
+                dtype.rettype = self._lookup(_refaddr_ret)
+                self._resolve(_refaddr_ret)
 
             # resolve parameter types
             _refaddrs = dtype.paramtypes

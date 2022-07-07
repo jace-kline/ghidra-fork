@@ -13,10 +13,11 @@ def test(objfilepath):
     for fn in trans.functions:
         print("{} @ {:x}".format(fn.name, fn.startaddr.offset))
         for var in (fn.params + fn.vars):
-            print("\t{} @ RBP+({:x})".format(var.name, var.addr.offset))
+            print("\t{} -- {} @ RBP+({:x})".format(var.dtype, var.name, var.addr.offset))
 
 def main():
-    objfilepath = sys.argv[1] if len(sys.argv) >= 2 else "./progs/p0"
+    defaultobj = "../progs/typecases_debug_O0.bin"
+    objfilepath = sys.argv[1] if len(sys.argv) >= 2 else defaultobj
     test(objfilepath)
 
 if __name__ == "__main__":

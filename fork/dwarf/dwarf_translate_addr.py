@@ -1,6 +1,6 @@
 from elftools.dwarf.dwarf_expr import DW_OP_name2opcode
 from dwarf_translate_util import *
-from dwarf.translation import *
+from translation import *
 
 class DWARFAddressTranslator:
     def __init__(self, dwarfinfo):

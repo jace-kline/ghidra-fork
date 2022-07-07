@@ -2,6 +2,7 @@
 CC := gcc
 
 SRCS := $(wildcard *.c)
+BASENAMES := $(basename $(SRCS))
 
 EXES_O0 := $(patsubst %.c,%_O0.bin,$(SRCS))
 EXES_O1 := $(patsubst %.c,%_O1.bin,$(SRCS))
@@ -11,14 +12,20 @@ EXES_DEBUG_O0 := $(patsubst %.c,%_debug_O0.bin,$(SRCS))
 EXES_DEBUG_O1 := $(patsubst %.c,%_debug_O1.bin,$(SRCS))
 EXES_DEBUG_O2 := $(patsubst %.c,%_debug_O2.bin,$(SRCS))
 EXES_DEBUG_O3 := $(patsubst %.c,%_debug_O3.bin,$(SRCS))
-TARGETS := $(EXES_O0) $(EXES_O1) $(EXES_O2) $(EXES_O3) $(EXES_DEBUG_O0) $(EXES_DEBUG_O1) $(EXES_DEBUG_O2) $(EXES_DEBUG_O3)
+EXES := $(EXES_O0) $(EXES_O1) $(EXES_O2) $(EXES_O3) $(EXES_DEBUG_O0) $(EXES_DEBUG_O1) $(EXES_DEBUG_O2) $(EXES_DEBUG_O3)
 
-.PHONY: all clean
+.PHONY: all clean # $(BASENAMES)
 
-all: $(TARGETS)
+all: $(EXES)
 
 clean:
-	@rm -rf $(TARGETS)
+	rm -rf *.bin *.dwarfdump
+
+# %: %.dwarfdump %_debug_O0.bin %_O0.bin %.c
+
+# dump the DWARF debugging info for a C file
+%.dwarfdump: %_debug_O0.bin
+	objdump -g $< > $@
 
 %_debug_O0.bin: %.c
 	$(CC) -g -O0 -o $@ $<

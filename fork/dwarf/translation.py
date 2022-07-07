@@ -2,10 +2,16 @@
 
 # hold the results of a translation into this common format
 # from either DWARF info or Ghidra decompilation
-class Translation:
+class ProgramInfo:
     def __init__(self, globals=[], functions=[]):
         self.globals = globals
         self.functions = functions
+
+    def get_globals(self):
+        return self.globals
+
+    def get_functions(self):
+        return self.functions
 
 class Variable:
     def __init__(self, name=None, dtype=None, addr=None, param=False, function=None):
@@ -49,7 +55,7 @@ class Function:
     """
     Represents the debugging/decompilation information for a function.
     """
-    def __init__(self, name=None, startaddr=None, prototype=None, params=[], vars=[]):
+    def __init__(self, name=None, startaddr=None, rettype=None, params=[], vars=[]):
         """
         name: str
             The name of the function
@@ -65,9 +71,16 @@ class Function:
         """
         self.name = name
         self.startaddr = startaddr
-        self.prototype = prototype
+        self.rettype = rettype
         self.params = params
         self.vars = vars
+
+    # returns DataTypeFunctionPrototype
+    def get_prototype(self):
+        return DataTypeFunctionPrototype(
+            rettype=self.rettype,
+            paramtypes=[ param.dtype for param in self.params ]
+        )
 
     def get_params(self):
         """ Returns the list of parameter Variable objects in the correct order """
@@ -118,6 +131,9 @@ class MetaType:
     UNDEFINED: a sized type of unknown classification
     VOID: a 0-sized type
     FUNCTION_PROTOTYPE: a type containing a return type + list of parameter types
+    TYPEDEF: a type that exists as an alias of another type
+    ENUM: a type consisting of a discrete subset of "tagged" integers
+    QUALIFIER: a "wrapper" type that qualifies another type (const, volatile, etc.)
     """
     INT = 0
     FLOAT = 1
@@ -128,6 +144,9 @@ class MetaType:
     UNDEFINED = 6
     VOID = 7
     FUNCTION_PROTOTYPE = 8
+    TYPEDEF = 9
+    ENUM = 10
+    QUALIFIER = 11
 
 class DataType:
     """
@@ -135,22 +154,19 @@ class DataType:
     Contains a "meta type" and size.
     Subclasses contain more specified information.
     """
-    def __init__(self, metatype=None, size=None, resolved=False):
+    def __init__(self, metatype=None, size=None):
         """
         metatype: field of MetaType class
             The meta type of the datatype.
-            options = INT | FLOAT | POINTER | ARRAY | STRUCT | UNION | UNDEFINED | VOID | FUNCTION_PROTOTYPE
+            options = INT | FLOAT | POINTER | ARRAY | STRUCT | UNION | UNDEFINED | VOID | FUNCTION_PROTOTYPE | TYPEDEF | ENUM | QUALIFIER
         size: int
             The total size of the datatype
-        resolved: bool
-            Are all of this datatype's fields filled & subtypes resolved?
         """
         self.metatype = metatype
         self.size = size
-        self.resolved = resolved
 
-    def set_resolved(self, b):
-        self.resolved = b
+    def __str__(self):
+        pass # implement in children
 
 class DataTypeFunctionPrototype(DataType):
     """
@@ -158,14 +174,22 @@ class DataTypeFunctionPrototype(DataType):
     Could be pointed to by function pointer.
     Used as 'proto' argument for creating a Function object.
     """
-    def __init__(self, rettype=None, paramtypes=None, resolved=False):
+    def __init__(self, rettype=None, paramtypes=None):
         super().__init__(
             metatype=MetaType.FUNCTION_PROTOTYPE,
-            size=0,
-            resolved=resolved
+            size=0
         )
         self.rettype = rettype
         self.paramtypes = paramtypes
+
+    def __str__(self):
+        s = "("
+        for i, paramtype in enumerate(self.paramtypes):
+            s += str(paramtype)
+            if i + 1 < len(self.paramtypes):
+                s += ", "
+        s += ") -> " + str(self.rettype)
+        return s
 
 
 class DataTypeInt(DataType):
@@ -175,13 +199,23 @@ class DataTypeInt(DataType):
     def __init__(self, size=None, signed=True):
         super().__init__(
             metatype=MetaType.INT,
-            size=size,
-            resolved=True
+            size=size
         )
         self.signed = signed
 
     def is_signed(self):
         return self.signed
+
+    def __str__(self):
+        s = ""
+        if not self.signed:
+            s += "unsigned "
+
+        if self.size == 1:
+            s += "char"
+        else:
+            s += "int" + str(self.size)
+        return s
 
     @classmethod
     def from_DataType(cls, dtype):
@@ -200,9 +234,11 @@ class DataTypeFloat(DataType):
     def __init__(self, size=None):
         super().__init__(
             metatype=MetaType.FLOAT,
-            size=size,
-            resolved=True
+            size=size
         )
+
+    def __str__(self):
+        return "float" + str(self.size)
 
     @classmethod
     def from_DataType(cls, dtype):
@@ -221,9 +257,11 @@ class DataTypeUndefined(DataType):
     def __init__(self, size=None):
         super().__init__(
             metatype=MetaType.UNDEFINED,
-            size=size,
-            resolved=True
+            size=size
         )
+
+    def __str__(self):
+        return "undefined" + str(self.size)
 
     @classmethod
     def from_DataType(cls, dtype):
@@ -242,9 +280,11 @@ class DataTypeVoid(DataType):
     def __init__(self):
         super().__init__(
             metatype=MetaType.VOID,
-            size=0,
-            resolved=True
+            size=0
         )
+    
+    def __str__(self):
+        return "void"
 
     @classmethod
     def from_DataType(cls, dtype):
@@ -267,10 +307,12 @@ class DataTypePointer(DataType):
         """
         super().__init__(
             metatype=MetaType.POINTER,
-            size=size,
-            resolved=resolved
+            size=size
         )
         self.basetype = basetype
+
+    def __str__(self):
+        return str(self.basetype) + " *"
 
     @classmethod
     def from_DataType(cls, dtype):
@@ -284,7 +326,7 @@ class DataTypePointer(DataType):
 
 
 class DataTypeArray(DataType):
-    def __init__(self, basetype=None, length=None, size=None, resolved=False):
+    def __init__(self, basetype=None, length=None, size=None):
         """
         basetype: DataType
             The type of the elements in the array
@@ -293,15 +335,20 @@ class DataTypeArray(DataType):
         size: int
             The total number of bytes allocated to the array. -1 if unknown.
         """
-        if size is None and resolved:
-            size = basetype.size * length
+        # if size is None:
+        #     size = basetype.size * length
         super().__init__(
             metatype=MetaType.ARRAY,
-            size=size,
-            resolved=resolved
+            size=size
         )
         self.basetype = basetype
         self.length = length
+
+    def length_unknown(self):
+        return self.length <= 1 or self.length is None or not self.resolved
+
+    def __str__(self):
+        return "<ARRAY (subtype = {}) (length = {})>".format(str(self.basetype), self.size)
 
     @classmethod
     def from_DataType(cls, dtype):
@@ -317,7 +364,7 @@ class DataTypeStruct(DataType):
     """
     Datatype representing a C struct.
     """
-    def __init__(self, name=None, membertypes=None, recursive=False, size=None, resolved=False):
+    def __init__(self, name=None, membertypes=None, size=None):
         """
         membertypes: [DataType]
             The data types of the members of the struct.
@@ -326,13 +373,22 @@ class DataTypeStruct(DataType):
         """
         self.name = name
         self.membertypes = membertypes
-        if size is None and resolved: # if explicit size not provided, calculate on our own
-            size = sum([ mem.size for mem in membertypes ])
+        # if size is None: # if explicit size not provided, calculate on our own
+        #     size = sum([ mem.size for mem in membertypes ])
         super().__init__(
             metatype=MetaType.STRUCT,
-            size=size,
-            resolved=resolved
+            size=size
         )
+
+    def __str__(self):
+        s = "<STRUCT "
+        if self.name is not None:
+            s += self.name
+
+        s += "(members = {}) ".format(len(self.membertypes))
+        s += "(size = {})>".format(self.size)
+
+        return s
 
     @classmethod
     def from_DataType(cls, dtype):
@@ -348,19 +404,29 @@ class DataTypeUnion(DataType):
     """
     Datatype representing a C union type.
     """
-    def __init__(self, name=None, membertypes=None, size=None, resolved=False):
+    def __init__(self, name=None, membertypes=None, size=None):
         """
         membertypes: [DataType]
             The data types of that could possibly be instantiated in the union.
         """
         self.name = name
         self.membertypes = membertypes
-        if size is None and resolved: # if explicit size not provided, calculate on our own
-            size = max([ mem.size for mem in membertypes ])
+        # if size is None: # if explicit size not provided, calculate on our own
+        #     size = max([ mem.size for mem in membertypes ])
         super().__init__(
             metatype=MetaType.UNION,
             size=size
         )
+
+    def __str__(self):
+        s = "<UNION "
+        if self.name is not None:
+            s += self.name
+
+        s += "(members = {}) ".format(len(self.membertypes))
+        s += "(size = {})>".format(self.size)
+
+        return s
 
     @classmethod
     def from_DataType(cls, dtype):

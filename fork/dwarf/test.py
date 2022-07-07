@@ -1,30 +1,61 @@
+from resolve import *
+from resolve_stubs import *
+from parse_dwarf_util import *
 
+def modify(record):
+    record.obj = "Hello World"
 
-class A:
-    def __init__(self, b):
-        self.b = b
+def test():
+    s0 = DataTypeStructStub(
+            name="mystruct",
+            membertyperefs=[1,2],
+            size=None
+        )
 
-class B:
-    def __init__(self):
-        self.a = None
+    s1 = DataTypeIntStub(
+        size=4,
+        signed=False
+    )
 
-    def setA(self, a):
-        self.a = a
+    s2 = DataTypePointerStub(
+        basetyperef=0, # recursive pointer
+        size=8
+    )
 
-def main():
-    b = B()
-    a = A(b)
-    b.setA(a)
-    assert(a == b.a)
-    assert(b == a.b)
-    print(a)
-    print(a.b)
+    db = ResolverDatabase()
+    db.make_record(0, s0)
+    db.make_record(1, s1)
+    db.make_record(2, s2)
 
-    a.x = 5
-    a.b.y = 5
+    dtype = db.resolve(0)
+    for i in range(0, 3):
+        print(db.lookup(i).obj)
+        print(db.lookup(i).tag)
 
-    print(b.y)
-    print(b.a.x)
+    assert(db.lookup(0).obj == db.lookup(2).obj.basetype)
+
+    dtype = db.resolve(0)
+    for i in range(0, 3):
+        print(db.lookup(i).obj)
+        print(db.lookup(i).tag)
+
+    # print(db.lookup(1).obj)
+    # modify(db.lookup(1))
+    # print(db.lookup(1).obj)
+
+def print_die_attrs():
+    _, dwarfinfo = get_elf_dwarf_info("../progs/typecases_debug_O0.bin")
+    dies = get_all_DIEs(dwarfinfo)
+    diemap = dict([ (die.offset, die) for die in get_all_DIEs(dwarfinfo) ])
+    print(len(d))
+
+    globaldies = get_global_var_DIEs(dwarfinfo)
+    globalrefs = [ die.offset for die in globaldies ]
+    functiondies = get_function_DIEs(dwarfinfo)
+    functionrefs = [ die.offset for die in functiondies ]
+    print(globalrefs)
+    print(functionrefs)
+
 
 if __name__ == "__main__":
-    main()
+    print_die_attrs()
