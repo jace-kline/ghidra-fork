@@ -84,6 +84,12 @@ class AddressStub:
         self.addrspace = addrspace
         self.offset = offset
 
+    def from_Address(addr):
+        return AddressStub(
+            addrspace=addr.addrspace,
+            offset=addr.offset
+        )
+
     def resolve(self, record):
         return Address(
             addrspace=self.addrspace,
@@ -285,14 +291,14 @@ class DataTypeTypedefStub(DataTypeQualifierAliasStub):
         record.obj = DataTypeVoid() if self.basetyperef is None else record.db.resolve(self.basetyperef)
         return record.obj
         
-class DataTypeStubEnum(DataTypeQualifierAliasStub):
+class DataTypeEnumStub(DataTypeQualifierAliasStub):
     def __init__(self, basetyperef=None):
         super().__init__(
             metatype=MetaType.ENUM,
             basetyperef=basetyperef
         )
 
-class DataTypeStubQualifier(DataTypeQualifierAliasStub):
+class DataTypeQualifierStub(DataTypeQualifierAliasStub):
     def __init__(self, basetyperef=None):
         super().__init__(
             metatype=MetaType.QUALIFIER,

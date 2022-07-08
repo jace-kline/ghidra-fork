@@ -19,13 +19,17 @@ EXES := $(EXES_O0) $(EXES_O1) $(EXES_O2) $(EXES_O3) $(EXES_DEBUG_O0) $(EXES_DEBU
 all: $(EXES)
 
 clean:
-	rm -rf *.bin *.dwarfdump
+	rm -rf *.bin *.dwarfdump *.objdump
 
 # %: %.dwarfdump %_debug_O0.bin %_O0.bin %.c
 
-# dump the DWARF debugging info for a C file
+# dump the DWARF debugging info for a binary
 %.dwarfdump: %_debug_O0.bin
 	objdump -g $< > $@
+
+# dump the DWARF disassembly for a binary
+%.objdump: %_debug_O0.bin
+	objdump -D $< > $@
 
 %_debug_O0.bin: %.c
 	$(CC) -g -O0 -o $@ $<

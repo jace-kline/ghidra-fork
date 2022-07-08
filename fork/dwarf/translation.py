@@ -13,6 +13,16 @@ class ProgramInfo:
     def get_functions(self):
         return self.functions
 
+    def print_summary(self):
+        print("----------------GLOBALS----------------------")
+        for gbl in self.globals:
+            print(gbl)
+
+
+        print("----------------FUNCTIONS--------------------")
+        for fn in self.functions:
+            fn.print_summary()
+
 class Variable:
     def __init__(self, name=None, dtype=None, addr=None, param=False, function=None):
         """
@@ -50,6 +60,10 @@ class Variable:
         return: bool
         """
         pass
+
+    def __str__(self):
+        lbl = "PARAM" if self.is_param() else "VAR"
+        return "<{} {} @ {} :: {}>".format(lbl, self.name, self.addr, self.dtype)
 
 class Function:
     """
@@ -89,12 +103,34 @@ class Function:
     def same(self, other):
         return self.startaddr == other.startaddr
 
+    def print_summary(self):
+        print("{} @ {}".format(self.name, self.startaddr))
+        for var in (self.params + self.vars):
+            print("\t{}".format(var))
+
 class AddressSpace:
     STACK = 0
     HEAP = 1
     GLOBAL = 2
     REGISTER = 3
     UNKNOWN = 4
+    EXTERNAL = 5
+
+    def to_string(addrspace):
+        if addrspace == AddressSpace.STACK:
+            return "STACK"
+        elif addrspace == AddressSpace.HEAP:
+            return "HEAP"
+        elif addrspace == AddressSpace.REGISTER:
+            return "REGISTER"
+        elif addrspace == AddressSpace.GLOBAL:
+            return "GLOBAL"
+        elif addrspace == AddressSpace.UNKNOWN:
+            return "UNKNOWN"
+        elif addrspace == AddressSpace.EXTERNAL:
+            return "EXTERNAL"
+        else:
+            raise Exception("Invalid AddressSpace specifier {}".format(addrspace))
 
 class Address:
     """
@@ -114,6 +150,9 @@ class Address:
         """
         self.addrspace = addrspace
         self.offset = offset
+
+    def __str__(self):
+        return "<{}: {:#x}>".format(AddressSpace.to_string(self.addrspace), self.offset)
 
     def __eq__(self, other):
         return self.addrspace == other.addrspace and self.offset == other.offset

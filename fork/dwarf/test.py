@@ -1,6 +1,8 @@
+from this import d
 from resolve import *
 from resolve_stubs import *
 from parse_dwarf_util import *
+from parse_dwarf import *
 
 def modify(record):
     record.obj = "Hello World"
@@ -45,9 +47,8 @@ def test():
 
 def print_die_attrs():
     _, dwarfinfo = get_elf_dwarf_info("../progs/typecases_debug_O0.bin")
-    dies = get_all_DIEs(dwarfinfo)
     diemap = dict([ (die.offset, die) for die in get_all_DIEs(dwarfinfo) ])
-    print(len(d))
+    print(len(diemap))
 
     globaldies = get_global_var_DIEs(dwarfinfo)
     globalrefs = [ die.offset for die in globaldies ]
@@ -56,6 +57,26 @@ def print_die_attrs():
     print(globalrefs)
     print(functionrefs)
 
+def test_parse_dwarf():
+    proginfo = parse_from_objfile("../progs/typecases_debug_O0.bin")
+    proginfo.print_summary()
+    # print("----------------GLOBALS----------------------")
+    # for gbl in proginfo.globals:
+    #     print("{} @ {} :: ".format(gbl.name, gbl.addr, gbl.dtype))
+
+
+    # print("----------------FUNCTIONS--------------------")
+    # for fn in proginfo.functions:
+    #     print("{} @ {}".format(fn.name, fn.startaddr))
+    #     for var in (fn.params + fn.vars):
+    #         print("\t{} @ {} --> type = {}".format(var.name, var.addr, var.dtype))
+
+
+def test_addr_parse():
+    _, dwarfinfo = get_elf_dwarf_info("../progs/typecases_debug_O0.bin")
+    fndies = get_function_DIEs(dwarfinfo)
+    for fndie in fndies:
+        pass
 
 if __name__ == "__main__":
-    print_die_attrs()
+    test_parse_dwarf()
