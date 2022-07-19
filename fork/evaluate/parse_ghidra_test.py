@@ -42,6 +42,29 @@ def test():
     for fn in getAllFunctions():
         test_body(fn)
 
+def test_highfns():
+    for highfn in decompileAll():
+        test_highfn(highfn)
+
+def test_highfn(highfn):
+
+    name = highfn.getFunction().getName()
+    rettype = highfn.getFunctionPrototype().getReturnType()
+    entrypoint = highfn.getFunction().getEntryPoint()
+    params = getHighFunctionParams(highfn) # [HighParam]
+    vars = getHighFunctionLocalVars(highfn) # [HighVariable]
+
+    print(name)
+    print(rettype)
+    print(entrypoint)
+    print("PARAMS...")
+    for param in params:
+        print(param)
+    print("VARS...")
+    for var in vars:
+        print(var)
+    print('\n-----------------------------\n')
+
 def test_body(fn):
     # fname = "main"
     # fn = getFunctionByName(fname) # Function
@@ -92,4 +115,4 @@ def test_parse():
     proginfo.print_summary()
 
 if __name__ == "__main__":
-    test()
+    test_parse()

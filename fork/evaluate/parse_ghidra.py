@@ -43,13 +43,18 @@ class ParseGhidra:
     def generate_proginfo_stub(self):
         ref = self.generate_unique_key()
 
-        # collect all functions and perform decompilation on each
+        # collect all Function and perform decompilation on each
+        # get list of HighFunction objects
         # should we iterate this until it reaches fixpoint?
-        fns = [ decompileFunction(fn) for fn in getAllFunctions() ]
-        functionrefs = [ self.register_obj(fn) for fn in fns ]
+        highfns = [ decompileHighFunction(fn) for fn in getAllFunctions() ]
+        functionrefs = [ self.register_obj(highfn) for highfn in highfns ]
 
-        gbls = getAllData()
-        globalrefs = [ self.register_obj(gbl) for gbl in gbls ]
+        # for each HighFunction, extract the global high variables referenced
+        globalvars = flatten([
+            getHighFunctionGlobalVars(highfn)
+            for highfn in highfns 
+        ])
+        globalrefs = [ self.register_obj(var) for var in globalvars ]
 
         stub = ProgramInfoStub(
             globalrefs=globalrefs,
@@ -63,9 +68,10 @@ class ParseGhidra:
             self.generate_function_stub(functionref)
 
         for globalref in globalrefs:
-            self.generate_globaldata_stub(globalref)
+            self.generate_var_stub(globalref, param=False, functionref=None)
 
 
+    # ref to a HighFunction object
     def generate_function_stub(self, ref):
         # if this ref is already in the db, do nothing
         if self.db.exists(ref):
@@ -73,23 +79,25 @@ class ParseGhidra:
 
         # try to lookup in objmap
         # if not found, raise error
-        fn = self.objmap.get(ref, None)
-        if fn is None:
-            raise ParseGhidraException("Function object does not exist in map")
+        highfn = self.objmap.get(ref, None)
+        if highfn is None:
+            raise ParseGhidraException("HighFunction object does not exist in map")
+
+        # extract the Function object from the HighFunction
+        fn = highfn.getFunction()
 
         name = fn.getName() # str
-
         entrypoint = fn.getEntryPoint() # Address
         startaddrref = self.register_obj(entrypoint)
 
-        params = fn.getParameters() # [Parameter]
+        params = getHighFunctionParams(highfn) # [HighParam]
         paramrefs = [ self.register_obj(v) for v in params ]
 
-        vars = fn.getLocalVariables() # [Variable]
+        vars = getHighFunctionLocalVars(highfn) # [HighVariable]
         varrefs = [ self.register_obj(v) for v in vars ]
 
-        rettype = fn.getReturnType() # DataType
-        rettyperef = self.register_obj(rettype)
+        fnproto = highfn.getFunctionPrototype()
+        rettyperef = self.make_stub(DataTypeVoidStub()) if fnproto.hasNoReturn() else self.register_obj(fnproto.getReturnType())
 
         stub = FunctionStub(
             name=name,
@@ -113,6 +121,7 @@ class ParseGhidra:
 
         self.generate_dtype_stubs(rettyperef)
 
+    # ref to an Address object
     def generate_address_stub(self, ref):
         # if this ref is already in the db, do nothing
         if self.db.exists(ref):
@@ -132,39 +141,7 @@ class ParseGhidra:
         )
         self.db.make_record(ref, stub)
 
-    def generate_globaldata_stub(self, ref):
-        # if this ref is already in the db, do nothing
-        if self.db.exists(ref):
-            return
-
-        # try to lookup in objmap
-        # if not found, raise error
-        var = self.objmap.get(ref, None)
-        if var is None:
-            raise ParseGhidraException("Variable/Parameter object does not exist in map")
-
-        name = var.getLabel()
-
-        dtype = var.getDataType()
-        dtyperef = self.register_obj(dtype)
-        
-        addr = var.getMinAddress()
-        addrref = self.register_obj(addr)
-
-        stub = VariableStub(
-            name=name,
-            dtyperef=dtyperef,
-            addrref=addrref,
-            param=False,
-            functionref=None
-        )
-
-        self.db.make_record(ref, stub)
-
-        # recurse on sub components
-        self.generate_dtype_stubs(dtyperef)
-        self.generate_address_stub(addrref)
-
+    # ref to a HighVariable / HighParam object
     def generate_var_stub(self, ref, param=False, functionref=None):
         # if this ref is already in the db, do nothing
         if self.db.exists(ref):
@@ -181,7 +158,9 @@ class ParseGhidra:
         dtype = var.getDataType()
         dtyperef = self.register_obj(dtype)
         
-        addr = var.getMinAddress()
+        varnode_instances = var.getInstances()
+        varnode_representative = var.getRepresentative()
+        addr = varnode_representative.getAddress()
         addrref = self.register_obj(addr)
 
         stub = VariableStub(
@@ -198,8 +177,7 @@ class ParseGhidra:
         self.generate_dtype_stubs(dtyperef)
         self.generate_address_stub(addrref)
 
-    # For a given Ghidra DataType object, generate the correct
-    # associated data type stub(s) and add to the database
+    # ref to a Ghidra DataType object
     def generate_dtype_stubs(self, ref):
         # if this ref is already in the db, do nothing
         if self.db.exists(ref):

@@ -86,9 +86,41 @@ def decompileHighFunction(fn):
     hfunc = res.getHighFunction() # type: HighFunction
     return hfunc
 
-# Function -> Function
-def decompileFunction(fn):
-    return decompileHighFunction(fn).getFunction()
+def decompileAll():
+    return [ decompileHighFunction(fn) for fn in getAllFunctions() ]
+
+# HighFunction -> [HighVariable]
+def getHighFunctionGlobalVars(highfn):
+    return [ 
+        gblsym.getHighVariable() 
+        for gblsym in highfn.getGlobalSymbolMap().getSymbols() 
+        if gblsym.getHighVariable() is not None    
+    ]
+
+def getHighFunctionLocalVars(highfn):
+    return [ 
+        sym.getHighVariable() 
+        for sym in highfn.getLocalSymbolMap().getSymbols() 
+        if sym.getHighVariable() is not None
+    ]
+
+def getHighFunctionParams(highfn):
+    localsymmap = highfn.getLocalSymbolMap()
+    return [ 
+        localsymmap.getParam(i) 
+        for i in range(localsymmap.getNumParams()) 
+        if localsymmap.getParam(i) is not None   
+    ]
+
+def getHighFunctionLocalVars(highfn):
+    return [ 
+        sym.getHighVariable() 
+        for sym in highfn.getLocalSymbolMap().getSymbols() 
+        if (not sym.isParameter()) and (not sym.isGlobal()) and (sym.getHighVariable() is not None)
+    ]
+
+def flatten(xss):
+    return [x for xs in xss for x in xs]
 
 # Convert a Ghidra-represented Address into our Address representation
 def get_address(addr):
