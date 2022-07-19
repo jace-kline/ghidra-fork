@@ -2,7 +2,7 @@
 
 # hold the results of a translation into this common format
 # from either DWARF info or Ghidra decompilation
-class ProgramInfo:
+class ProgramInfo(object):
     def __init__(self, globals=[], functions=[]):
         self.globals = globals
         self.functions = functions
@@ -23,7 +23,7 @@ class ProgramInfo:
         for fn in self.functions:
             fn.print_summary()
 
-class Variable:
+class Variable(object):
     def __init__(self, name=None, dtype=None, addr=None, param=False, function=None):
         """
         name: str
@@ -65,7 +65,7 @@ class Variable:
         lbl = "PARAM" if self.is_param() else "VAR"
         return "<{} {} @ {} :: {}>".format(lbl, self.name, self.addr, self.dtype)
 
-class Function:
+class Function(object):
     """
     Represents the debugging/decompilation information for a function.
     """
@@ -116,6 +116,7 @@ class AddressSpace:
     UNKNOWN = 4
     EXTERNAL = 5
 
+    @staticmethod
     def to_string(addrspace):
         if addrspace == AddressSpace.STACK:
             return "STACK"
@@ -132,7 +133,7 @@ class AddressSpace:
         else:
             raise Exception("Invalid AddressSpace specifier {}".format(addrspace))
 
-class Address:
+class Address(object):
     """
     An Address is defined by the space it lives in (stack, heap, global, register)
     and the offset from the base of that space.
@@ -173,6 +174,7 @@ class MetaType:
     TYPEDEF: a type that exists as an alias of another type
     ENUM: a type consisting of a discrete subset of "tagged" integers
     QUALIFIER: a "wrapper" type that qualifies another type (const, volatile, etc.)
+    STRING: a high-level string, usually represented as a char array
     """
     INT = 0
     FLOAT = 1
@@ -186,8 +188,28 @@ class MetaType:
     TYPEDEF = 9
     ENUM = 10
     QUALIFIER = 11
+    STRING = 12
 
-class DataType:
+    @staticmethod
+    def repr(metatype_code):
+        metatypes = [
+            "INT",
+            "FLOAT",
+            "POINTER",
+            "ARRAY",
+            "STRUCT",
+            "UNION",
+            "UNDEFINED",
+            "VOID",
+            "FUNCTION_PROTOTYPE",
+            "TYPEDEF",
+            "ENUM",
+            "QUALIFIER",
+            "STRING"
+        ]
+        return metatypes[metatype_code]
+
+class DataType(object):
     """
     The base class for representing a data type.
     Contains a "meta type" and size.
@@ -213,13 +235,14 @@ class DataTypeFunctionPrototype(DataType):
     Could be pointed to by function pointer.
     Used as 'proto' argument for creating a Function object.
     """
-    def __init__(self, rettype=None, paramtypes=None):
-        super().__init__(
+    def __init__(self, rettype=None, paramtypes=None, variadic=False):
+        super(DataTypeFunctionPrototype, self).__init__(
             metatype=MetaType.FUNCTION_PROTOTYPE,
             size=0
         )
         self.rettype = rettype
         self.paramtypes = paramtypes
+        self.variadic = variadic
 
     def __str__(self):
         s = "("
@@ -236,7 +259,7 @@ class DataTypeInt(DataType):
     Data type representing int/char, possibly unsigned.
     """
     def __init__(self, size=None, signed=True):
-        super().__init__(
+        super(DataTypeInt, self).__init__(
             metatype=MetaType.INT,
             size=size
         )
@@ -271,7 +294,7 @@ class DataTypeFloat(DataType):
     Datatype representing float/double.
     """
     def __init__(self, size=None):
-        super().__init__(
+        super(DataTypeFloat, self).__init__(
             metatype=MetaType.FLOAT,
             size=size
         )
@@ -294,7 +317,7 @@ class DataTypeUndefined(DataType):
     A sized but undefined datatype.
     """
     def __init__(self, size=None):
-        super().__init__(
+        super(DataTypeUndefined, self).__init__(
             metatype=MetaType.UNDEFINED,
             size=size
         )
@@ -317,7 +340,7 @@ class DataTypeVoid(DataType):
     Void datatype (size = 0).
     """
     def __init__(self):
-        super().__init__(
+        super(DataTypeVoid, self).__init__(
             metatype=MetaType.VOID,
             size=0
         )
@@ -344,7 +367,7 @@ class DataTypePointer(DataType):
         basetype: DataType
             The type of the object being pointed to
         """
-        super().__init__(
+        super(DataTypePointer, self).__init__(
             metatype=MetaType.POINTER,
             size=size
         )
@@ -376,7 +399,7 @@ class DataTypeArray(DataType):
         """
         # if size is None:
         #     size = basetype.size * length
-        super().__init__(
+        super(DataTypeArray, self).__init__(
             metatype=MetaType.ARRAY,
             size=size
         )
@@ -414,7 +437,7 @@ class DataTypeStruct(DataType):
         self.membertypes = membertypes
         # if size is None: # if explicit size not provided, calculate on our own
         #     size = sum([ mem.size for mem in membertypes ])
-        super().__init__(
+        super(DataTypeStruct, self).__init__(
             metatype=MetaType.STRUCT,
             size=size
         )
@@ -452,7 +475,7 @@ class DataTypeUnion(DataType):
         self.membertypes = membertypes
         # if size is None: # if explicit size not provided, calculate on our own
         #     size = max([ mem.size for mem in membertypes ])
-        super().__init__(
+        super(DataTypeUnion, self).__init__(
             metatype=MetaType.UNION,
             size=size
         )

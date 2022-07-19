@@ -9,7 +9,7 @@ from resolve import *
 
 # This is the root node of the translation.
 # It references all global variables and functions for a target program.
-class ProgramInfoStub:
+class ProgramInfoStub(object):
     def __init__(self, globalrefs=[], functionrefs=[]):
         self.globalrefs = globalrefs
         self.functionrefs = functionrefs
@@ -24,7 +24,7 @@ class ProgramInfoStub:
         record.obj.functions = functions
         return record.obj
 
-class FunctionStub:
+class FunctionStub(object):
     def __init__(self, name=None, startaddrref=None, rettyperef=None, paramrefs=[], varrefs=[]):
         self.name = name
         self.startaddrref = startaddrref
@@ -51,7 +51,7 @@ class FunctionStub:
         record.obj.vars = vars
         return record.obj
 
-class VariableStub:
+class VariableStub(object):
     def __init__(self, name=None, dtyperef=None, addrref=None, param=False, functionref=None):
         self.name = name
         self.dtyperef = dtyperef
@@ -79,7 +79,7 @@ class VariableStub:
         record.obj.function = function
         return record.obj
 
-class AddressStub:
+class AddressStub(object):
     def __init__(self, addrspace=None, offset=None):
         self.addrspace = addrspace
         self.offset = offset
@@ -96,19 +96,20 @@ class AddressStub:
             offset=self.offset
         )
 
-class DataTypeStub:
+class DataTypeStub(object):
     def __init__(self, metatype=MetaType.VOID, size=None):
         self.metatype = metatype
         self.size = size
 
 class DataTypeFunctionPrototypeStub(DataTypeStub):
-    def __init__(self, rettyperef=None, paramtyperefs=[]):
-        super().__init__(
+    def __init__(self, rettyperef=None, paramtyperefs=[], variadic=False):
+        super(DataTypeFunctionPrototypeStub, self).__init__(
             metatype=MetaType.FUNCTION_PROTOTYPE,
             size=0
         )
         self.rettyperef = rettyperef
         self.paramtyperefs = paramtyperefs
+        self.variadic = variadic
 
     def resolve(self, record):
 
@@ -120,11 +121,12 @@ class DataTypeFunctionPrototypeStub(DataTypeStub):
 
         record.obj.rettype = rettype
         record.obj.paramtypes = paramtypes
+        record.obj.variadic = self.variadic
         return record.obj
 
 class DataTypeIntStub(DataTypeStub):
     def __init__(self, size=None, signed=True):
-        super().__init__(
+        super(DataTypeIntStub, self).__init__(
             metatype=MetaType.INT,
             size=size
         )
@@ -137,7 +139,7 @@ class DataTypeIntStub(DataTypeStub):
 
 class DataTypeFloatStub(DataTypeStub):
     def __init__(self, size=None):
-        super().__init__(
+        super(DataTypeFloatStub, self).__init__(
             metatype=MetaType.FLOAT,
             size=size
         )
@@ -149,7 +151,7 @@ class DataTypeFloatStub(DataTypeStub):
 
 class DataTypeUndefinedStub(DataTypeStub):
     def __init__(self, size=None):
-        super().__init__(
+        super(DataTypeUndefinedStub, self).__init__(
             metatype=MetaType.UNDEFINED,
             size=size
         )
@@ -161,7 +163,7 @@ class DataTypeUndefinedStub(DataTypeStub):
 
 class DataTypeVoidStub(DataTypeStub):
     def __init__(self):
-        super().__init__(
+        super(DataTypeVoidStub, self).__init__(
             metatype=MetaType.VOID,
             size=0
         )
@@ -171,7 +173,7 @@ class DataTypeVoidStub(DataTypeStub):
 
 class DataTypePointerStub(DataTypeStub):
     def __init__(self, basetyperef=None, size=None):
-        super().__init__(
+        super(DataTypePointerStub, self).__init__(
             metatype=MetaType.POINTER,
             size=size
         )
@@ -193,7 +195,7 @@ class DataTypePointerStub(DataTypeStub):
 
 class DataTypeArrayStub(DataTypeStub):
     def __init__(self, basetyperef=None, length=None):
-        super().__init__(
+        super(DataTypeArrayStub, self).__init__(
             metatype=MetaType.ARRAY,
             size=None
         )
@@ -217,7 +219,7 @@ class DataTypeArrayStub(DataTypeStub):
 
 class DataTypeStructStub(DataTypeStub):
     def __init__(self, name="", membertyperefs=[], size=None):
-        super().__init__(
+        super(DataTypeStructStub, self).__init__(
             metatype=MetaType.STRUCT,
             size=size
         )
@@ -241,7 +243,7 @@ class DataTypeStructStub(DataTypeStub):
 
 class DataTypeUnionStub(DataTypeStub):
     def __init__(self, name="", membertyperefs=[], size=None):
-        super().__init__(
+        super(DataTypeUnionStub, self).__init__(
             metatype=MetaType.UNION,
             size=size
         )
@@ -261,13 +263,40 @@ class DataTypeUnionStub(DataTypeStub):
         record.obj.size = self.size
         return record.obj
 
-# Qualifier (const, volatile, etc.) or alias (typedef, enum)
-# In essence, this is a wrapper/alias of another type (or void)
-class DataTypeQualifierAliasStub(DataTypeStub):
-    def __init__(self, metatype=None, basetyperef=None):
-        super().__init__(
-            metatype=metatype,
-            size=None
+# # Qualifier (const, volatile, etc.) or alias (typedef, enum)
+# # In essence, this is a wrapper/alias of another type (or void)
+# class DataTypeQualifierAliasStub(DataTypeStub):
+#     def __init__(self, metatype=None, basetyperef=None):
+#         super(DataTypeQualifierAliasStub, self).__init__(
+#             metatype=metatype,
+#             size=None
+#         )
+#         self.basetyperef = basetyperef
+
+#     def resolve(self, record):
+#         assert_not_none(self, "basetyperef")
+        
+#         # directly return the aliased type
+#         record.obj = record.db.resolve(self.basetyperef)
+#         return record.obj
+
+class DataTypeTypedefStub(DataTypeStub):
+    def __init__(self, name="", basetyperef=None):
+        super(DataTypeTypedefStub, self).__init__(
+            metatype=MetaType.TYPEDEF
+        )
+        self.basetyperef = basetyperef
+        self.name = name
+
+    def resolve(self, record):
+        # for typedefs, no reference => void alias
+        record.obj = DataTypeVoid() if self.basetyperef is None else record.db.resolve(self.basetyperef)
+        return record.obj
+        
+class DataTypeEnumStub(DataTypeStub):
+    def __init__(self, basetyperef):
+        super(DataTypeEnumStub, self).__init__(
+            metatype=MetaType.ENUM
         )
         self.basetyperef = basetyperef
 
@@ -278,30 +307,18 @@ class DataTypeQualifierAliasStub(DataTypeStub):
         record.obj = record.db.resolve(self.basetyperef)
         return record.obj
 
-class DataTypeTypedefStub(DataTypeQualifierAliasStub):
-    def __init__(self, name="", basetyperef=None):
-        super().__init__(
-            metatype=MetaType.TYPEDEF,
-            basetyperef=basetyperef
+
+class DataTypeQualifierStub(DataTypeStub):
+    def __init__(self, basetyperef=None):
+        super(DataTypeQualifierStub, self).__init__(
+            metatype=MetaType.QUALIFIER
         )
-        self.name = name
+        self.basetyperef = basetyperef
 
     def resolve(self, record):
-        # for typedefs, no reference => void alias
-        record.obj = DataTypeVoid() if self.basetyperef is None else record.db.resolve(self.basetyperef)
-        return record.obj
+        assert_not_none(self, "basetyperef")
         
-class DataTypeEnumStub(DataTypeQualifierAliasStub):
-    def __init__(self, basetyperef=None):
-        super().__init__(
-            metatype=MetaType.ENUM,
-            basetyperef=basetyperef
-        )
-
-class DataTypeQualifierStub(DataTypeQualifierAliasStub):
-    def __init__(self, basetyperef=None):
-        super().__init__(
-            metatype=MetaType.QUALIFIER,
-            basetyperef=basetyperef
-        )
+        # directly return the aliased type
+        record.obj = record.db.resolve(self.basetyperef)
+        return record.obj
 

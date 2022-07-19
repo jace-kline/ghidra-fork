@@ -1,13 +1,6 @@
-# ghidra decompile
-# @category: Research
+from translation import *
 
-# ref: https://ghidra.re/ghidra_docs/api/ghidra/app/decompiler/DecompInterface.html
-
-# flat program API
-# from ghidra.app.flatapi import FlatProgramAPI
-
-# to decompile
-# from dwarf.translation import MetaType
+from __main__ import * # import all the implicit GhidraScript state & methods
 from ghidra.app.decompiler import DecompileOptions
 from ghidra.app.decompiler import DecompInterface
 
@@ -24,6 +17,14 @@ def getAllFunctions(): # returns [Function]
         fn = getFunctionAfter(fn)
     return fns
 
+# global variables?
+def getAllData(): # returns [Data]
+    data = []
+    datum = getFirstData()
+    while datum is not None:
+        data.append(datum)
+        datum = getDataAfter(datum)
+    return data
 
 def getFunctionByName(fname): # returns Function (or None)
     """
@@ -85,75 +86,29 @@ def decompileHighFunction(fn):
     hfunc = res.getHighFunction() # type: HighFunction
     return hfunc
 
-def test1():
-    # args = getScriptArgs()
+# Function -> Function
+def decompileFunction(fn):
+    return decompileHighFunction(fn).getFunction()
 
-    # if len(args) == 0:
-    #     print("Error: Supply function name to decompile as script argument")
-    #     exit(1)
+# Convert a Ghidra-represented Address into our Address representation
+def get_address(addr):
+    addrspace = get_addrspace(addr.getAddressSpace())
+    offset = addr.getOffset()
 
-    fname = "main"
-    # fname = args[0] # 1st arg = the function name to decompile
+    return Address(addrspace=addrspace, offset=offset)
 
-    fn = getFunctionByName(fname) # Function
-    # perform decompilation transformations on the low-level function
-    hfunc = decompileHighFunction(fn) # HighFunction
-    # get the transformed Function object (after decompilation)
-    fn = hfunc.getFunction() # Function
-
-    print(fn.getEntryPoint().toString(True, False))
-    vars = fn.getAllVariables()
-    for var in vars:
-        print("{} [{}] {}".format(
-            var.getName(),
-            var.getStackOffset(),
-            var.getDataType().getName())
-        )
-
-def test():
-    for fn in getAllFunctions():
-        test_body(fn)
-
-def test_body(fn):
-    # fname = "main"
-    # fn = getFunctionByName(fname) # Function
-    # perform decompilation transformations on the low-level function
-    hfunc = decompileHighFunction(fn) # HighFunction
-    # get the transformed Function object (after decompilation)
-    fn = hfunc.getFunction() # Function
-
-    # Function
-    name = fn.getName() # str
-    entrypoint = fn.getEntryPoint() # Address
-    params = fn.getParameters() # [Parameter]
-    vars = fn.getAllVariables() # [Variable]
-    rettype = fn.getReturnType() # DataType
-
-    # DataType
-    dtype = rettype
-    size = 0 if dtype.isZeroLength() else dtype.getLength() # int (number of bytes)
-    # dtypecls = dtype.getValueClass() # the class type of this instance
-    # how to get the subtypes of DataType?
-
-    print(name)
-    print(rettype)
-    print(entrypoint)
-    print("PARAMS...")
-    for param in params:
-        dtype = param.getDataType()
-        _cls = type(dtype)
-        size = dtype.getLength()
-        print("{} | size = {}".format(type(dtype).__name__, size))
-        print(dir(dtype))
-    print("VARS...")
-    for var in vars:
-        dtype = var.getDataType()
-        _cls = type(dtype)
-        size = dtype.getLength()
-        print("{} | size = {}".format(type(dtype).__name__, size))
-        print(dir(dtype))
-    print('\n-----------------------------\n')
-
+# Given a Ghidra AddressSpace object, produce an AddressSpace enum int in our own representation
+def get_addrspace(addrspace):
+    if addrspace.isStackSpace():
+        return AddressSpace.STACK
+    elif addrspace.isMemorySpace():
+        return AddressSpace.GLOBAL
+    elif addrspace.isExternalSpace():
+        return AddressSpace.EXTERNAL
+    elif addrspace.isRegisterSpace():
+        return AddressSpace.REGISTER
+    else:
+        return AddressSpace.UNKNOWN
 
 # for a given DataType (Ghidra) object, extract its class name
 # string and group it into a MetaType category
@@ -172,7 +127,7 @@ def get_metatype(dtype):
             break
     
     if not valid:
-        return
+        raise NotImplementedError("No metatype translation for class '{}'".format(clsname))
 
     if clsname in [
         "AbstractFloatDataType",
@@ -184,7 +139,7 @@ def get_metatype(dtype):
         "FloatDataType",
         "LongDoubleDataType"
     ]:
-        return 0 # MetaType.FLOAT
+        return MetaType.FLOAT
     
     elif clsname in [
         "AbstractIntegerDataType",
@@ -219,12 +174,12 @@ def get_metatype(dtype):
         "UnsignedShortDataType",
         "WordDataType"
     ]:
-        return 0 # MetaType.INT
+        return MetaType.INT
 
     elif clsname in [
         "VoidDataType"
     ]:
-        return 0 # MetaType.VOID
+        return MetaType.VOID
 
     elif clsname in [
         "PointerDataType",
@@ -238,40 +193,43 @@ def get_metatype(dtype):
         "Pointer8DataType",
         "PointerDB"
     ]:
-        return 0 # MetaType.POINTER
+        return MetaType.POINTER
 
     elif clsname in [
         "StructureDataType",
         "StructureDB"
     ]:
-        return 0 # MetaType.STRUCT
+        return MetaType.STRUCT
 
     elif clsname in [
         "UnionDataType",
         "UnionDB"
     ]:
-        return 0 # MetaType.UNION
+        return MetaType.UNION
 
     elif clsname in [
-        "ArrayDataType"
+        "ArrayDataType",
+        "ArrayDB"
     ]:
-        return 0 # MetaType.ARRAY
+        return MetaType.ARRAY
 
     elif clsname in [
-        "FunctionDefinitionDataType"
+        "FunctionDefinitionDataType",
+        "FunctionDefinitionDB"
     ]:
-        return 0 # MetaType.FUNCTION_PROTOTYPE
+        return MetaType.FUNCTION_PROTOTYPE
 
     elif clsname in [
         "TypedefDataType",
         "TypedefDB"
     ]:
-        return 0 # MetaType.TYPEDEF
+        return MetaType.TYPEDEF
 
     elif clsname in [
-        "EnumDataType"
+        "EnumDataType",
+        "EnumDB"
     ]:
-        return 0 # MetaType.ENUM
+        return MetaType.ENUM
 
     elif clsname in [
         "Undefined",
@@ -283,13 +241,18 @@ def get_metatype(dtype):
         "Undefined6DataType",
         "Undefined7DataType",
         "Undefined8DataType",
+        "DefaultDataType",
+        "DwarfEncodingModeDataType",
+        "UnsignedLeb128DataType",
+        "SignedLeb128DataType"
     ]:
-        return 0 # MetaType.UNDEFINED
+        return MetaType.UNDEFINED
+
+    elif clsname in [
+        "AbstractStringDataType",
+        "StringDataType"
+    ]:
+        return MetaType.STRING
 
     else:
         raise NotImplementedError("No MetaType translation for class {}".format(clsname))
-
-
-
-if __name__ == "__main__":
-    test()
