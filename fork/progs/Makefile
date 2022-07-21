@@ -24,11 +24,11 @@ clean:
 # %: %.dwarfdump %_debug_O0.bin %_O0.bin %.c
 
 # dump the DWARF debugging info for a binary
-%.dwarfdump: %_debug_O0.bin
+%.dwarfdump: %.bin
 	objdump -g $< > $@
 
 # dump the DWARF disassembly for a binary
-%.objdump: %_debug_O0.bin
+%.objdump: %.bin
 	objdump -D $< > $@
 
 %_debug_O0.bin: %.c

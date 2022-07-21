@@ -83,12 +83,11 @@ class ParseGhidra:
         if highfn is None:
             raise ParseGhidraException("HighFunction object does not exist in map")
 
-        # extract the Function object from the HighFunction
-        fn = highfn.getFunction()
+        name = highfn.getFunction().getName() # str
 
-        name = fn.getName() # str
-        entrypoint = fn.getEntryPoint() # Address
-        startaddrref = self.register_obj(entrypoint)
+        # get Address objects
+        startaddr = get_address(getHighFunctionStartAddr(highfn))
+        endaddr = get_address(getHighFunctionEndAddr(highfn))
 
         params = getHighFunctionParams(highfn) # [HighParam]
         paramrefs = [ self.register_obj(v) for v in params ]
@@ -101,7 +100,8 @@ class ParseGhidra:
 
         stub = FunctionStub(
             name=name,
-            startaddrref=startaddrref,
+            startaddr=startaddr,
+            endaddr=endaddr,
             rettyperef=rettyperef,
             paramrefs=paramrefs,
             varrefs=varrefs
@@ -111,8 +111,6 @@ class ParseGhidra:
         self.db.make_record(ref, stub)
 
         # recurse on sub components of this function
-        self.generate_address_stub(startaddrref)
-
         for paramref in paramrefs:
             self.generate_var_stub(paramref, param=True, functionref=ref)
 
@@ -120,26 +118,6 @@ class ParseGhidra:
             self.generate_var_stub(varref, param=False, functionref=ref)
 
         self.generate_dtype_stubs(rettyperef)
-
-    # ref to an Address object
-    def generate_address_stub(self, ref):
-        # if this ref is already in the db, do nothing
-        if self.db.exists(ref):
-            return
-
-        # try to lookup in objmap
-        # if not found, raise error
-        addr = self.objmap.get(ref, None)
-        if addr is None:
-            raise ParseGhidraException("Address object does not exist in map")
-
-        # convert Ghidra AddressSpace -> our AddressSpace
-        addr = get_address(addr)
-        stub = AddressStub(
-            addrspace=addr.addrspace,
-            offset=addr.offset
-        )
-        self.db.make_record(ref, stub)
 
     # ref to a HighVariable / HighParam object
     def generate_var_stub(self, ref, param=False, functionref=None):

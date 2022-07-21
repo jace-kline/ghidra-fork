@@ -24,13 +24,13 @@ class ProgramInfo(object):
             fn.print_summary()
 
 class Variable(object):
-    def __init__(self, name=None, dtype=None, addr=None, param=False, function=None):
+    def __init__(self, name=None, dtype=None, liveranges=[], param=False, function=None):
         """
         name: str
             The variable's name
         dtype: DataType
             The data type of the variable
-        addr: Address
+        liveranges: [AddressLiveRange]
             The location this variable occupies throughout its lifetime.
             In unoptimized compilation, this usually will include only one address.
             However, live ranges and register splitting could be used in optimized compilation.
@@ -41,7 +41,7 @@ class Variable(object):
         """
         self.name = name
         self.dtype = dtype
-        self.addr = addr
+        self.liveranges = liveranges
         self.param = param
         self.function = function
 
@@ -63,18 +63,20 @@ class Variable(object):
 
     def __str__(self):
         lbl = "PARAM" if self.is_param() else "VAR"
-        return "<{} {} @ {} :: {}>".format(lbl, self.name, self.addr, self.dtype)
+        return "<{} {} :: {} @ {}>".format(lbl, self.name, self.dtype, self.liveranges)
 
 class Function(object):
     """
     Represents the debugging/decompilation information for a function.
     """
-    def __init__(self, name=None, startaddr=None, rettype=None, params=[], vars=[]):
+    def __init__(self, name=None, startaddr=None, endaddr=None, rettype=None, params=[], vars=[]):
         """
         name: str
             The name of the function
         startaddr: Address
             The entrypoint address (global) of the function
+        endaddr: Address
+            The address of the last instruction in the function.
         proto: DataTypeFunctionPrototype
             The prototype of the function.
             Return type + parameter types.
@@ -85,6 +87,7 @@ class Function(object):
         """
         self.name = name
         self.startaddr = startaddr
+        self.endaddr = endaddr
         self.rettype = rettype
         self.params = params
         self.vars = vars
@@ -104,24 +107,21 @@ class Function(object):
         return self.startaddr == other.startaddr
 
     def print_summary(self):
-        print("{} @ {}".format(self.name, self.startaddr))
+        print("{} @ {} -> {}".format(self.name, self.startaddr, self.endaddr))
         for var in (self.params + self.vars):
             print("\t{}".format(var))
 
 class AddressSpace:
     STACK = 0
-    HEAP = 1
-    GLOBAL = 2
-    REGISTER = 3
-    UNKNOWN = 4
-    EXTERNAL = 5
+    GLOBAL = 1
+    REGISTER = 2
+    UNKNOWN = 3
+    EXTERNAL = 4
 
     @staticmethod
     def to_string(addrspace):
         if addrspace == AddressSpace.STACK:
             return "STACK"
-        elif addrspace == AddressSpace.HEAP:
-            return "HEAP"
         elif addrspace == AddressSpace.REGISTER:
             return "REGISTER"
         elif addrspace == AddressSpace.GLOBAL:
@@ -145,7 +145,6 @@ class Address(object):
         offset: int
             The offset from the base of the address space...
             If the space=STACK, then offset is from RBP or RSP, depending on compiler and optimization level.
-            If the space=HEAP, then the offset is from the malloc'd pointer.
             If the space=GLOBAL, then the offset is the raw address of the variable.
             If the space=REGISTER, then the offset is the register identifier #.
         """
@@ -153,10 +152,63 @@ class Address(object):
         self.offset = offset
 
     def __str__(self):
-        return "<{}: {:#x}>".format(AddressSpace.to_string(self.addrspace), self.offset)
+        return "<{}:{:#x}>".format(AddressSpace.to_string(self.addrspace), self.offset)
 
     def __eq__(self, other):
         return self.addrspace == other.addrspace and self.offset == other.offset
+
+# defines the mapping from x86-64 register names
+# to their associated register numbers
+# ref: https://docs.rs/gimli/0.13.0/gimli/struct.UnwindTableRow.html#method.register
+class RegsX86_64(object):
+    RAX = 0
+    RDX = 1
+    RCX = 2
+    RBX = 3
+    RSI = 4
+    RDI = 5
+    RBP = 6
+    RSP = 7
+    R8 = 8
+    R9 = 9
+    R10 = 10
+    R11 = 11
+    R12 = 12
+    R13 = 13
+    R14 = 14
+    R15 = 15
+    RA = 16
+
+
+class AddressLiveRange(object):
+    """
+    This class represents the association between an Address (stack location, register, etc.)
+    and the PC range that it is considered "alive" for a particular variable.
+    In unoptimized code, the live range of a local variable should span the entire function
+    since it will be placed on the stack.
+
+    addr: Address
+        The address where the variable is stored.
+    startpc: Address
+        The start PC address of the live range.
+    endpc: Address
+        The address of the PC of the last instruction in the live range.
+
+    """
+    def __init__(self, addr=None, startpc=None, endpc=None):
+        self.addr = addr
+        self.startpc = startpc
+        self.endpc = endpc
+
+    # if startpc & endpc are both None, this range is considered global
+    def is_global(self):
+        return self.startpc.offset is None and self.endpc.offset is None
+
+    def __str__(self):
+        return "<AddressLiveRange addr={} startpc={} endpc={}>".format(self.addr, self.startpc, self.endpc)
+
+    def __repr__(self):
+        return self.__str__()
 
 # enum of "meta types"
 class MetaType:

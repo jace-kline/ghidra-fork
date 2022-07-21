@@ -25,43 +25,46 @@ class ProgramInfoStub(object):
         return record.obj
 
 class FunctionStub(object):
-    def __init__(self, name=None, startaddrref=None, rettyperef=None, paramrefs=[], varrefs=[]):
+    def __init__(self, name=None, startaddr=None, endaddr=None, rettyperef=None, paramrefs=[], varrefs=[]):
         self.name = name
-        self.startaddrref = startaddrref
+        self.startaddr = startaddr
+        self.endaddr = endaddr
         self.rettyperef = rettyperef
         self.paramrefs = paramrefs
         self.varrefs = varrefs
 
     def resolve(self, record):
-        assert_not_none(self, "startaddrref")
+        assert_not_none(self, "startaddr")
+        assert_not_none(self, "endaddr")
         assert_not_none(self, "paramrefs")
         assert_not_none(self, "varrefs")
 
         record.obj = Function()
 
-        startaddr = record.db.resolve(self.startaddrref)
+        # startaddr = record.db.resolve(self.startaddrref)
         rettype = DataTypeVoid() if self.rettyperef is None else record.db.resolve(self.rettyperef)
         params = record.db.resolve_many(self.paramrefs)
         vars = record.db.resolve_many(self.varrefs)
 
         record.obj.name = self.name
-        record.obj.startaddr = startaddr
+        record.obj.startaddr = self.startaddr
+        record.obj.endaddr = self.endaddr
         record.obj.rettype = rettype
         record.obj.params = params
         record.obj.vars = vars
         return record.obj
 
 class VariableStub(object):
-    def __init__(self, name=None, dtyperef=None, addrref=None, param=False, functionref=None):
+    def __init__(self, name=None, dtyperef=None, liveranges=[], param=False, functionref=None):
         self.name = name
         self.dtyperef = dtyperef
-        self.addrref = addrref
+        self.liveranges = liveranges
         self.param = param
         self.functionref = functionref
 
     def resolve(self, record):
         assert_not_none(self, "dtyperef")
-        assert_not_none(self, "addrref")
+        assert_not_none(self, "liveranges")
 
         record.obj = Variable()
 
@@ -70,31 +73,13 @@ class VariableStub(object):
             function = record.db.resolve(self.functionref)
 
         dtype = record.db.resolve(self.dtyperef)
-        addr = record.db.resolve(self.addrref)
 
         record.obj.name = self.name
         record.obj.dtype = dtype
-        record.obj.addr = addr
+        record.obj.liveranges = self.liveranges
         record.obj.param = self.param
         record.obj.function = function
         return record.obj
-
-class AddressStub(object):
-    def __init__(self, addrspace=None, offset=None):
-        self.addrspace = addrspace
-        self.offset = offset
-
-    def from_Address(addr):
-        return AddressStub(
-            addrspace=addr.addrspace,
-            offset=addr.offset
-        )
-
-    def resolve(self, record):
-        return Address(
-            addrspace=self.addrspace,
-            offset=self.offset
-        )
 
 class DataTypeStub(object):
     def __init__(self, metatype=MetaType.VOID, size=None):

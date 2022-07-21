@@ -47,11 +47,21 @@ class ParseDWARF:
         # Function-like DIE
         if die.tag == "DW_TAG_subprogram":
             name = get_DIE_name(die)
-            addrexp = get_DIE_attr(die, "DW_AT_low_pc")
-            startaddr = Address(addrspace=AddressSpace.GLOBAL, offset=addrexp) if addrexp is not None else Address(addrspace=AddressSpace.EXTERNAL, offset=0)
-            startaddrref = self.make_stub(AddressStub.from_Address(startaddr))
+
+            startaddrexp = get_DIE_attr_value(die, "DW_AT_low_pc")
+            startaddr = Address(addrspace=AddressSpace.GLOBAL, offset=startaddrexp) if startaddrexp is not None else Address(addrspace=AddressSpace.EXTERNAL, offset=0)
+            # startaddrref = self.make_stub(AddressStub.from_Address(startaddr))
+
+            endaddr = None
+            if startaddrexp is None:
+                endaddr = Address(addrspace=AddressSpace.EXTERNAL, offset=0)
+            else:
+                endaddrexp = get_DIE_attr_value(die, "DW_AT_high_pc")
+                endaddr = Address(addrspace=AddressSpace.GLOBAL, offset=endaddrexp) if endaddrexp is not None else Address(addrspace=AddressSpace.EXTERNAL, offset=0)
+            # endaddrref = self.make_stub(AddressStub.from_Address(endaddr))
+
             # get basetype ref
-            rettyperef = get_DIE_attr(die, "DW_AT_type")
+            rettyperef = get_DIE_attr_value(die, "DW_AT_type")
             # if basetype ref is None, generate a VoidDataTypeStub in the DB to point to
             if rettyperef is None:
                 rettyperef = self.make_stub(DataTypeVoidStub())
@@ -62,7 +72,8 @@ class ParseDWARF:
 
             stub = FunctionStub(
                     name=name,
-                    startaddrref=startaddrref,
+                    startaddr=startaddr,
+                    endaddr=endaddr,
                     rettyperef=rettyperef,
                     paramrefs=paramrefs,
                     varrefs=varrefs
@@ -73,19 +84,26 @@ class ParseDWARF:
         elif die.tag in ["DW_TAG_variable", "DW_TAG_formal_parameter"]:
             name = get_DIE_name(die)
             param = die.tag == "DW_TAG_formal_parameter"
-            dtyperef = get_DIE_attr(die, "DW_AT_type")
-            addrexp = get_DIE_attr(die, "DW_AT_location")
-            if type(addrexp) == int:
-                raise Exception("{} -> type = {}".format(addrexp, type(addrexp)))
-            addr = parse_dwarf_addr(addrexp) if addrexp is not None else Address(addrspace=AddressSpace.EXTERNAL, offset=0)
-            addrref = self.make_stub(AddressStub.from_Address(addr))
+            dtyperef = get_DIE_attr_value(die, "DW_AT_type")
+
+            # get the parent function ref in the database
+            parentdie = die.get_parent()
+            functionref = parentdie.offset if is_functionlike_DIE(parentdie) else None
+            fnstart = fnend = None
+            if functionref is not None:
+                record = self.db.lookup(functionref)
+                assert(record is not None and record.stub is not None)
+                fnstub = record.stub
+                fnstart = fnstub.startaddr
+                fnend = fnstub.endaddr
+            liveranges = get_DIE_liveranges(die, fnstart=fnstart, fnend=fnend)
 
             stub = VariableStub(
                     name=name,
                     dtyperef=dtyperef,
-                    addrref=addrref,
+                    liveranges=liveranges,
                     param=param,
-                    functionref=None
+                    functionref=functionref
                 )
 
             subrefs.append(dtyperef)
@@ -93,8 +111,8 @@ class ParseDWARF:
         # if base type, lookup mapping
         elif die.tag == "DW_TAG_base_type":
             # get type's encoding and size
-            enc = get_DIE_attr(die, "DW_AT_encoding")
-            size = get_DIE_attr(die, "DW_AT_byte_size")
+            enc = get_DIE_attr_value(die, "DW_AT_encoding")
+            size = get_DIE_attr_value(die, "DW_AT_byte_size")
             
             # void
             if enc == DW_ATE_void:
@@ -103,7 +121,7 @@ class ParseDWARF:
             # pointer
             elif enc == DW_ATE_address:
                 # get basetype ref
-                basetyperef = get_DIE_attr(die, "DW_AT_type")
+                basetyperef = get_DIE_attr_value(die, "DW_AT_type")
                 # if basetype ref is None, generate a VoidDataTypeStub in the DB to point to
                 if basetyperef is None:
                     basetyperef = self.make_stub(DataTypeVoidStub())
@@ -132,7 +150,7 @@ class ParseDWARF:
         # qualified types -> treat as their base types
         elif die.tag in ["DW_TAG_atomic_type", "DW_TAG_const_type", "DW_TAG_volatile_type", "DW_TAG_restricted_type"]:
             # get basetype ref
-            basetyperef = get_DIE_attr(die, "DW_AT_type")
+            basetyperef = get_DIE_attr_value(die, "DW_AT_type")
             # if basetype ref is None, generate a VoidDataTypeStub in the DB to point to
             if basetyperef is None:
                 basetyperef = self.make_stub(DataTypeVoidStub())
@@ -141,8 +159,8 @@ class ParseDWARF:
 
         # pointer type
         elif die.tag == "DW_TAG_pointer_type":
-            size = get_DIE_attr(die, "DW_AT_byte_size")
-            basetyperef = get_DIE_attr(die, "DW_AT_type")
+            size = get_DIE_attr_value(die, "DW_AT_byte_size")
+            basetyperef = get_DIE_attr_value(die, "DW_AT_type")
             # if basetype ref is None, generate a VoidDataTypeStub in the DB to point to
             if basetyperef is None:
                 basetyperef = self.make_stub(DataTypeVoidStub())
@@ -162,7 +180,7 @@ class ParseDWARF:
                 upbound = rangedie.attributes.get("DW_AT_upper_bound", 0)
                 length = upbound.value + 1 if upbound != 0 else 0
             
-            basetyperef = get_DIE_attr(die, "DW_AT_type")
+            basetyperef = get_DIE_attr_value(die, "DW_AT_type")
             assert(basetyperef is not None)
 
             stub = DataTypeArrayStub(
@@ -174,9 +192,9 @@ class ParseDWARF:
         # struct type
         elif die.tag == "DW_TAG_structure_type":
 
-            membertyperefs = [ get_DIE_attr(die, "DW_AT_type") for die in die.iter_children() if die.tag == "DW_TAG_member" ]
+            membertyperefs = [ get_DIE_attr_value(die, "DW_AT_type") for die in die.iter_children() if die.tag == "DW_TAG_member" ]
             name = get_DIE_name(die)
-            size = get_DIE_attr(die, "DW_AT_byte_size")
+            size = get_DIE_attr_value(die, "DW_AT_byte_size")
 
             stub = DataTypeStructStub(
                     name=name,
@@ -189,9 +207,9 @@ class ParseDWARF:
         # union type
         elif die.tag == "DW_TAG_union_type":
             
-            membertyperefs = [ get_DIE_attr(die, "DW_AT_type") for die in die.iter_children() if die.tag == "DW_TAG_member" ]
+            membertyperefs = [ get_DIE_attr_value(die, "DW_AT_type") for die in die.iter_children() if die.tag == "DW_TAG_member" ]
             name = get_DIE_name(die)
-            size = get_DIE_attr(die, "DW_AT_byte_size")
+            size = get_DIE_attr_value(die, "DW_AT_byte_size")
 
             stub = DataTypeUnionStub(
                     name=name,
@@ -203,7 +221,7 @@ class ParseDWARF:
 
         # typedef
         elif die.tag == "DW_TAG_typedef":
-            basetyperef = get_DIE_attr(die, "DW_AT_type")
+            basetyperef = get_DIE_attr_value(die, "DW_AT_type")
             if basetyperef is None:
                 basetyperef = self.make_stub(DataTypeVoidStub())
             name = get_DIE_name(die)
@@ -219,11 +237,11 @@ class ParseDWARF:
         elif die.tag == "DW_TAG_subroutine_type":
 
             # if no ref, assume void return type
-            rettyperef = get_DIE_attr(die, "DW_AT_type")
+            rettyperef = get_DIE_attr_value(die, "DW_AT_type")
             if rettyperef is None:
                 rettyperef = self.make_stub(DataTypeVoidStub())
 
-            paramtyperefs = [ get_DIE_attr(die, "DW_AT_type") for die in die.iter_children() if die.tag == "DW_TAG_formal_parameter" ]
+            paramtyperefs = [ get_DIE_attr_value(die, "DW_AT_type") for die in die.iter_children() if die.tag == "DW_TAG_formal_parameter" ]
 
             stub = DataTypeFunctionPrototypeStub(
                     rettyperef=rettyperef,
@@ -235,7 +253,7 @@ class ParseDWARF:
         # enum
         elif die.tag == "DW_TAG_enumeration_type":
             # get basetype ref
-            basetyperef = get_DIE_attr(die, "DW_AT_type")
+            basetyperef = get_DIE_attr_value(die, "DW_AT_type")
             assert(basetyperef is not None)
             # if basetype ref is None, generate a VoidDataTypeStub in the DB to point to
             if basetyperef is None:
@@ -276,10 +294,10 @@ class ParseDWARF:
             self.generate_DIE_stubs(ref)
 
         # make each variable/parameter point back to its parent function key
-        for functionref in functionrefs:
-            functionstub = self.db.lookup(functionref).stub
-            for varref in (functionstub.paramrefs + functionstub.varrefs):
-                self.db.lookup(varref).stub.functionref = functionref
+        # for functionref in functionrefs:
+        #     functionstub = self.db.lookup(functionref).stub
+        #     for varref in (functionstub.paramrefs + functionstub.varrefs):
+        #         self.db.lookup(varref).stub.functionref = functionref
 
         # resolve the functions, variables, & types -> ProgramInfo
         proginfo = self.db.resolve_root()

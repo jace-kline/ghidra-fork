@@ -119,6 +119,24 @@ def getHighFunctionLocalVars(highfn):
         if (not sym.isParameter()) and (not sym.isGlobal()) and (sym.getHighVariable() is not None)
     ]
 
+# get the Ghidra Address for the start of the HighFunction object
+def getHighFunctionStartAddr(highfn):
+    fn = highfn.getFunction()
+    startaddr = fn.getEntrypoint()
+    return startaddr
+
+# get the Ghidra Address for the last native instruction of the HighFunction object
+def getHighFunctionEndAddr(highfn):
+    offset = 0
+    endaddr = None
+    for pcodeop in highfn.getPcodeOps().getBasicIter():
+        _endaddr = pcodeop.getSeqnum().getTarget()
+        _offset = _endaddr.getOffset()
+        if _offset > offset:
+            offset = _offset
+            endaddr = _endaddr
+    return endaddr
+
 def flatten(xss):
     return [x for xs in xss for x in xs]
 

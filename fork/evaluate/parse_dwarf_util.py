@@ -2,14 +2,108 @@ from elftools.elf.elffile import ELFFile
 from elftools.common.py3compat import bytes2str
 from elftools.dwarf.dwarf_expr import DW_OP_name2opcode
 from elftools.dwarf.constants import *
+from elftools.dwarf.locationlists import LocationParser
+from elftools.dwarf.dwarf_expr import DWARFExprParser, DWARFExprOp
 from translation import *
 
 ## Utility functions
 
+# This exception shall be raised if there is no ELF/DWARF info or no debugging info is present
+class ELF_DWARF_Exception(Exception):
+    pass
+
+# parse the ELF and DWARF info from a given object file (specified by its path)
+def get_elf_dwarf_info(objfilepath):
+    # objfilepath = "./progs/varcases_debug_O0.bin" # "./progs/p0"
+
+    # raises Exception if no file or can't be opened
+    f = open(objfilepath, 'rb')
+    elffile = ELFFile(f)
+
+    if elffile is None:
+        raise ELF_DWARF_Exception("Could not parse ELF info from input file")
+
+    if not elffile.has_dwarf_info():
+        raise ELF_DWARF_Exception("File has no DWARF info")
+
+    dwarfinfo = elffile.get_dwarf_info()
+
+    if not dwarfinfo.has_debug_info:
+        raise ELF_DWARF_Exception("DWARF info has no debug info")
+
+    return elffile, dwarfinfo
+
+# get all DIE entries across all CUs
+# ignore null DIEs
+def get_all_DIEs(dwarfinfo):
+    dies = []
+    for cu in dwarfinfo.iter_CUs():
+        for die in cu.iter_DIEs():
+            if not die.is_null():
+                dies.append(die)
+    return dies
+
+# extract the low and high pc values for a function-like DIE
+# DIE -> (int, int)
+def get_DIE_low_high_pc(die):
+    # lowpc = get_DIE_attr_value(die, "DW_AT_low_pc")
+    # highpc_attr = get_DIE_attr(die, "DW_AT_high_pc")
+    # assert(lowpc is not None and highpc_attr is not None)
+
+    # highpc = None
+    # if formclass(highpc_attr) == DWARFFormClass.ADDRESS:
+    #     highpc = highpc_attr.value
+    # elif formclass(highpc_attr) == DWARFFormClass.CONSTANT:
+    #     highpc = lowpc + highpc_attr.value
+    # else:
+    raise NotImplementedError()
+    # return (lowpc, highpc)
+
+def is_functionlike_DIE(die):
+    return die.tag == "DW_TAG_subprogram"
+
+def get_function_DIEs(dwarfinfo):
+    dies = get_all_DIEs(dwarfinfo)
+    return [ die for die in dies if is_functionlike_DIE(die) ]
+
+def get_function_DIE_by_name(dwarfinfo, fname):
+    fndies = [ die for die in get_function_DIEs(dwarfinfo) if get_DIE_name(die) == fname ]
+    return fndies[0] if len(fndies) > 0 else None
+
+# if fname = None, assume global variable
+def get_var_DIE_by_name(dwarfinfo, varname, fname=None):
+    targetdies = []
+    if fname is None:
+        targetdies = get_global_var_DIEs(dwarfinfo)
+    else:
+        fndie = get_function_DIE_by_name(dwarfinfo, fname)
+        if fndie is None:
+            return None
+        else:
+            paramdies, vardies = get_param_var_DIEs(fndie)
+            targetdies = paramdies + vardies
+    targets = [ die for die in targetdies if get_DIE_name(die) == varname ]
+    return targets[0] if len(targets) > 0 else None
+
+# get global variables
+# any 'DW_TAG_variable' DIEs that are direct descendants of the root
+# are assumed to be global variables
+def get_global_var_DIEs(dwarfinfo):
+    globals = []
+    for cu in dwarfinfo.iter_CUs():
+        rootdie = cu.get_top_DIE()
+        globals += [ die for die in rootdie.iter_children() if die.tag == "DW_TAG_variable" ]
+    return globals
+
 # given a DIE and an attribute name, fetch the attr value (or None if doesn't exist)
-def get_DIE_attr(die, attr):
+def get_DIE_attr_value(die, attr):
     res = die.attributes.get(attr, None)
     return None if res is None else res.value
+
+# given a DIE and an attribute name, fetch the attribute (AttributeValue object or None if doesn't exist)
+def get_DIE_attr(die, attr):
+    res = die.attributes.get(attr, None)
+    return None if res is None else res
 
 # return the "DW_AT_name" attribute of the DIE as a string
 def get_DIE_name(die):
@@ -39,55 +133,109 @@ def get_param_var_DIEs(fndie):
 
     return (paramdies, vardies)
 
-# get all DIE entries across all CUs
-# ignore null DIEs
-def get_all_DIEs(dwarfinfo):
-    dies = []
-    for cu in dwarfinfo.iter_CUs():
-        for die in cu.iter_DIEs():
-            if not die.is_null():
-                dies.append(die)
-    return dies
 
-def get_function_DIEs(dwarfinfo):
-    dies = get_all_DIEs(dwarfinfo)
-    return [ die for die in dies if die.tag == "DW_TAG_subprogram" ]
+# Location helper functions
 
-# get global variables
-# any 'DW_TAG_variable' DIEs that are direct descendants of the root
-# are assumed to be global variables
-def get_global_var_DIEs(dwarfinfo):
-    globals = []
-    for cu in dwarfinfo.iter_CUs():
-        rootdie = cu.get_top_DIE()
-        globals += [ die for die in rootdie.iter_children() if die.tag == "DW_TAG_variable" ]
-    return globals
+def get_location_lists(dwarfinfo): # LocationLists
+    return dwarfinfo.location_lists()
 
-# This exception shall be raised if there is no ELF/DWARF info or no debugging info is present
-class ELF_DWARF_Exception(Exception):
-    pass
+def get_location_list_at_offset(dwarfinfo, offset): # [LocationEntry]
+    return dwarfinfo.location_lists().get_location_list_at_offset(offset)
 
-# parse the ELF and DWARF info from a given object file (specified by its path)
-def get_elf_dwarf_info(objfilepath):
-    # objfilepath = "./progs/varcases_debug_O0.bin" # "./progs/p0"
+# given a variable-like DIE,
+# produce either a LocationExpr object (single location)
+# OR a list of LocationEntry, BaseAddressEntry, and LocationViewPair objects (multiple locations)
+def get_DIE_locs(die):
+    # instantiate a LocationParser object
+    loclists = get_location_lists(die.dwarfinfo)
+    dwarfversion = die.cu["version"]
+    locparser = LocationParser(loclists)
 
-    # raises Exception if no file or can't be opened
-    f = open(objfilepath, 'rb')
-    elffile = ELFFile(f)
+    locattr = get_DIE_attr(die, "DW_AT_location")
+    if locattr is None or not locparser.attribute_has_location(locattr, dwarfversion):
+        return None
+    else:
+        return locparser.parse_from_attribute(locattr, dwarfversion, die=die)
 
-    if elffile is None:
-        raise ELF_DWARF_Exception("Could not parse ELF info from input file")
+# given a variable-like DIE and the start and end Address objects for its parent function,
+# produce a list of AddressLiveRange objects
+# DIE -> [AddressLiveRange]
+def get_DIE_liveranges(die, fnstart=None, fnend=None):
+    locs = get_DIE_locs(die)
+    if locs is None:
+        return []
+    elif type(locs) == list:
+        liveranges = []
+        for loc in locs:
+            try:
+                # type(loc) == LocationEntry
+                addr = parse_dwarf_locexpr_addr(die.dwarfinfo, loc.loc_expr)
+                if addr is not None:
+                    startpc = Address(addrspace=AddressSpace.GLOBAL, offset=loc.begin_offset)
+                    endpc = Address(addrspace=AddressSpace.GLOBAL, offset=loc.end_offset)
+                    liveranges.append(AddressLiveRange(
+                        addr=addr,
+                        startpc=startpc,
+                        endpc=endpc
+                    ))
+            except AttributeError:
+                # type(loc) == BaseAddressEntry | LocationViewPair
+                pass
+        return liveranges
+    else: # type(locs) == LocationExpr
+        addr = parse_dwarf_locexpr_addr(die.dwarfinfo, locs.loc_expr)
+        return [AddressLiveRange(
+            addr=addr,
+            startpc=fnstart,
+            endpc=fnend
+        )] if addr is not None else []
 
-    if not elffile.has_dwarf_info():
-        raise ELF_DWARF_Exception("File has no DWARF info")
+# [int] -> Address | None
+def parse_dwarf_locexpr_addr(dwarfinfo, locexpr):
+    expr_ops = parse_dwarf_expr(dwarfinfo, locexpr) # [DWARFExprOp]
+    return parse_dwarf_expr_ops_to_addr(expr_ops) # Address | None
 
-    dwarfinfo = elffile.get_dwarf_info()
+# [int] -> [DWARFExprOp]
+def parse_dwarf_expr(dwarfinfo, expr):
+    exprparser = DWARFExprParser(dwarfinfo.structs)
+    return exprparser.parse_expr(expr)
 
-    if not dwarfinfo.has_debug_info:
-        raise ELF_DWARF_Exception("DWARF info has no debug info")
+# [DWARFExprOp] -> Address | None (if not a location)
+def parse_dwarf_expr_ops_to_addr(expr_ops):
 
-    return elffile, dwarfinfo
-    
+    # if the expression is only a single operation...
+    if len(expr_ops) == 1:
+        expr_op = expr_ops[0]
+        # absolute address?
+        if expr_op.op_name == "DW_OP_addr":
+            offset = expr_op.args[0]
+            return Address(addrspace=AddressSpace.GLOBAL, offset=offset)
+
+        # base register offset address?
+        elif expr_op.op_name == "DW_OP_fbreg":
+            offset = expr_op.args[0]
+            return Address(addrspace=AddressSpace.STACK, offset=offset)
+
+        # stored in register?
+        elif DW_OP_name2opcode["DW_OP_reg0"] <= expr_op.op <= DW_OP_name2opcode["DW_OP_reg31"]:
+            regnum = expr_op.op - DW_OP_name2opcode["DW_OP_reg0"]
+            return Address(addrspace=AddressSpace.REGISTER, offset=regnum)
+
+        else:
+            raise NotImplementedError(expr_ops)
+        
+    elif len(expr_ops) > 1:
+        # if the last operation is 'DW_OP_stack_value', we know that there is no
+        # memory/register location allocated -> return None
+        if expr_ops[-1].op_name == "DW_OP_stack_value":
+            return None
+
+        else:
+            raise NotImplementedError(expr_ops)
+
+    return None
+        
+
 # given a DIE with a 'DW_AT_location' OR 'DW_AT_low_pc' attribute,
 # returns an Address object
 # if attribute non-existent, return None
