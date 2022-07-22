@@ -69,7 +69,7 @@ class Function(object):
     """
     Represents the debugging/decompilation information for a function.
     """
-    def __init__(self, name=None, startaddr=None, endaddr=None, rettype=None, params=[], vars=[]):
+    def __init__(self, name=None, startaddr=None, endaddr=None, rettype=None, params=[], vars=[], variadic=False):
         """
         name: str
             The name of the function
@@ -91,12 +91,19 @@ class Function(object):
         self.rettype = rettype
         self.params = params
         self.vars = vars
+        self.variadic = variadic
+
+    # if start and end addrs are None, this function is inlined
+    # and doesn't occupy its own location in the binary
+    def is_inlined(self):
+        return self.startaddr is None and self.endaddr is None
 
     # returns DataTypeFunctionPrototype
     def get_prototype(self):
         return DataTypeFunctionPrototype(
             rettype=self.rettype,
-            paramtypes=[ param.dtype for param in self.params ]
+            paramtypes=[ param.dtype for param in self.params ],
+            variadic=self.variadic
         )
 
     def get_params(self):

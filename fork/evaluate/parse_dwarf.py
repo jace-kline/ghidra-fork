@@ -48,17 +48,13 @@ class ParseDWARF:
         if die.tag == "DW_TAG_subprogram":
             name = get_DIE_name(die)
 
-            startaddrexp = get_DIE_attr_value(die, "DW_AT_low_pc")
-            startaddr = Address(addrspace=AddressSpace.GLOBAL, offset=startaddrexp) if startaddrexp is not None else Address(addrspace=AddressSpace.EXTERNAL, offset=0)
-            # startaddrref = self.make_stub(AddressStub.from_Address(startaddr))
-
-            endaddr = None
-            if startaddrexp is None:
-                endaddr = Address(addrspace=AddressSpace.EXTERNAL, offset=0)
-            else:
-                endaddrexp = get_DIE_attr_value(die, "DW_AT_high_pc")
-                endaddr = Address(addrspace=AddressSpace.GLOBAL, offset=endaddrexp) if endaddrexp is not None else Address(addrspace=AddressSpace.EXTERNAL, offset=0)
-            # endaddrref = self.make_stub(AddressStub.from_Address(endaddr))
+            pc_range = get_DIE_low_high_pc(die)
+            # if could not extract PC range for function DIE, must be inlined
+            startaddr = endaddr = None
+            if pc_range is not None:
+                lowpc, highpc = pc_range
+                startaddr = Address(addrspace=AddressSpace.GLOBAL, offset=lowpc)
+                endaddr = Address(addrspace=AddressSpace.GLOBAL, offset=highpc)
 
             # get basetype ref
             rettyperef = get_DIE_attr_value(die, "DW_AT_type")
@@ -69,6 +65,7 @@ class ParseDWARF:
             paramdies, vardies = get_param_var_DIEs(die)
             paramrefs = [ die.offset for die in paramdies ]
             varrefs = [ die.offset for die in vardies ]
+            variadic = is_variadic_function_DIE(die)
 
             stub = FunctionStub(
                     name=name,
@@ -76,7 +73,8 @@ class ParseDWARF:
                     endaddr=endaddr,
                     rettyperef=rettyperef,
                     paramrefs=paramrefs,
-                    varrefs=varrefs
+                    varrefs=varrefs,
+                    variadic=variadic
                 )
 
             subrefs += paramrefs + varrefs + [rettyperef]
@@ -241,11 +239,20 @@ class ParseDWARF:
             if rettyperef is None:
                 rettyperef = self.make_stub(DataTypeVoidStub())
 
-            paramtyperefs = [ get_DIE_attr_value(die, "DW_AT_type") for die in die.iter_children() if die.tag == "DW_TAG_formal_parameter" ]
-
+            paramtyperefs = []
+            variadic = False
+            for childdie in die.iter_children():
+                if childdie.tag == "DW_TAG_formal_parameter":
+                    typeref = get_DIE_attr_value(childdie, "DW_AT_type")
+                    paramtyperefs.append(typeref)
+                elif childdie.tag == "DW_TAG_unspecifed_parameters":
+                    variadic = True
+                    break
+            
             stub = DataTypeFunctionPrototypeStub(
                     rettyperef=rettyperef,
-                    paramtyperefs=paramtyperefs
+                    paramtyperefs=paramtyperefs,
+                    variadic=variadic
                 )
             
             subrefs += paramtyperefs + [rettyperef]

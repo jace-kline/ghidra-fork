@@ -1,11 +1,12 @@
 from parse_dwarf_util import *
 from parse_dwarf import *
 
-def test():
-    # objfilepath = "../progs/typecases_debug_O0.bin"
+def setup():
     objfilepath = "../progs/typecases_debug_O3.bin"
+    return get_elf_dwarf_info(objfilepath)
 
-    elffile, dwarfinfo = get_elf_dwarf_info(objfilepath)
+def test():
+    elffile, dwarfinfo = setup()
 
     structs = dwarfinfo.structs
     # print(structs)
@@ -57,6 +58,30 @@ def test():
 
     # for die in dies:
     #     print(die)
+
+def test_high_pc_attr():
+    _, dwarfinfo = setup()
+
+    fndies = get_function_DIEs(dwarfinfo)
+    for fndie in fndies:
+        print(get_DIE_name(fndie))
+        lowpc_attr = get_DIE_attr(fndie, "DW_AT_low_pc")
+        if lowpc_attr is not None:
+            print(lowpc_attr.form)
+        highpc_attr = get_DIE_attr(fndie, "DW_AT_high_pc")
+        if highpc_attr is not None:
+            print(highpc_attr.form)
+        print(""),
+
+def test_low_high_pc_attr():
+    _, dwarfinfo = setup()
+    fndies = get_function_DIEs(dwarfinfo)
+    for fndie in fndies:
+        print(get_DIE_name(fndie))
+        res = get_DIE_low_high_pc(fndie)
+        if res is not None:
+            lowpc, highpc = res
+            print("{:#x}\n{:#x}\n".format(lowpc, highpc)),
 
 def test_parse_dwarf():
     proginfo = parse_from_objfile("../progs/typecases_debug_O0.bin")

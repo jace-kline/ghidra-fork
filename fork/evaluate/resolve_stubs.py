@@ -25,17 +25,16 @@ class ProgramInfoStub(object):
         return record.obj
 
 class FunctionStub(object):
-    def __init__(self, name=None, startaddr=None, endaddr=None, rettyperef=None, paramrefs=[], varrefs=[]):
+    def __init__(self, name=None, startaddr=None, endaddr=None, rettyperef=None, paramrefs=[], varrefs=[], variadic=False):
         self.name = name
         self.startaddr = startaddr
         self.endaddr = endaddr
         self.rettyperef = rettyperef
         self.paramrefs = paramrefs
         self.varrefs = varrefs
+        self.variadic = variadic
 
     def resolve(self, record):
-        assert_not_none(self, "startaddr")
-        assert_not_none(self, "endaddr")
         assert_not_none(self, "paramrefs")
         assert_not_none(self, "varrefs")
 
@@ -52,6 +51,7 @@ class FunctionStub(object):
         record.obj.rettype = rettype
         record.obj.params = params
         record.obj.vars = vars
+        record.obj.variadic = self.variadic
         return record.obj
 
 class VariableStub(object):

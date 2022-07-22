@@ -12,6 +12,47 @@ from translation import *
 class ELF_DWARF_Exception(Exception):
     pass
 
+# Represents the "form" that a given attribute value can take.
+# Used when determining how to interpret attribute value bytes.
+# Pg. 213 in https://dwarfstd.org/doc/DWARF5.pdf
+class DWARFClass(object):
+    ADDRESS = 0
+    ADDRPTR = 1
+    BLOCK = 2
+    CONSTANT = 3
+    EXPRLOC = 4
+    FLAG = 5
+    LINEPTR = 6
+    LOCLIST = 7
+    LOCLISTSPTR = 8
+    MACPTR = 9
+    RNGLIST = 10
+    RNGLISTSPTR = 11
+    REFERENCE = 12
+    STRING = 13
+    STROFFSETSPTR = 14
+
+class2forms = {
+    DWARFClass.ADDRESS: ["DW_FORM_addr", "DW_FORM_addrx", "DW_FORM_addrx1", "DW_FORM_addrx2", "DW_FORM_addrx3", "DW_FORM_addrx4"],
+    DWARFClass.ADDRPTR: ["DW_SEC_OFFSET"],
+    DWARFClass.BLOCK: ["DW_FORM_block1", "DW_FORM_block2", "DW_FORM_block4", "DW_FORM_block"],
+    DWARFClass.CONSTANT: ["DW_FORM_data1", "DW_FORM_data2", "DW_FORM_data4", "DW_FORM_data8", "DW_FORM_data16", "DW_FORM_sdata", "DW_FORM_udata", "DW_FORM_implicit_const"],
+    DWARFClass.EXPRLOC: ["DW_FORM_exprloc"],
+    DWARFClass.FLAG: ["DW_FORM_flag", "DW_FORM_flag_present"],
+    DWARFClass.LINEPTR: ["DW_FORM_sec_offset"],
+    DWARFClass.LOCLIST: ["DW_FORM_loclistx", "DW_FORM_sec_offset"],
+    DWARFClass.LOCLISTSPTR: ["DW_FORM_sec_offset"],
+    DWARFClass.MACPTR: ["DW_FORM_sec_offset"],
+    DWARFClass.RNGLIST: ["DW_FORM_rnglistx","DW_FORM_sec_offset"],
+    DWARFClass.RNGLISTSPTR: ["DW_FORM_sec_offset"],
+    DWARFClass.REFERENCE: ["DW_FORM_ref1", "DW_FORM_ref2", "DW_FORM_ref4", "DW_FORM_ref8", "DW_FORM_ref_udata", "DW_FORM_ref_addr", "DW_FORM_ref_sig8", "DW_FORM_ref_sup4", "DW_FORM_ref_sup8"],
+    DWARFClass.STRING: ["DW_FORM_string", "DW_FORM_strp", "DW_FORM_line_strp", "DW_FORM_strp_sup", "DW_FORM_strx", "DW_FORM_strx1", "DW_FORM_strx2", "DW_FORM_strx3", "DW_FORM_strx4"],
+    DWARFClass.STROFFSETSPTR: ["DW_FORM_sec_offset"]
+}
+
+def form_in_class(form, _class):
+    return form in class2forms[_class]
+
 # parse the ELF and DWARF info from a given object file (specified by its path)
 def get_elf_dwarf_info(objfilepath):
     # objfilepath = "./progs/varcases_debug_O0.bin" # "./progs/p0"
@@ -44,20 +85,29 @@ def get_all_DIEs(dwarfinfo):
     return dies
 
 # extract the low and high pc values for a function-like DIE
-# DIE -> (int, int)
+# DIE -> (int, int) | None
+# returns None if either of the attributes are not present
 def get_DIE_low_high_pc(die):
-    # lowpc = get_DIE_attr_value(die, "DW_AT_low_pc")
-    # highpc_attr = get_DIE_attr(die, "DW_AT_high_pc")
-    # assert(lowpc is not None and highpc_attr is not None)
+    lowpc = get_DIE_attr_value(die, "DW_AT_low_pc")
+    highpc_attr = get_DIE_attr(die, "DW_AT_high_pc")
 
-    # highpc = None
-    # if formclass(highpc_attr) == DWARFFormClass.ADDRESS:
-    #     highpc = highpc_attr.value
-    # elif formclass(highpc_attr) == DWARFFormClass.CONSTANT:
-    #     highpc = lowpc + highpc_attr.value
-    # else:
-    raise NotImplementedError()
-    # return (lowpc, highpc)
+    if lowpc is None or highpc_attr is None:
+        return None
+
+    highpc = None
+    if form_in_class(highpc_attr.form, DWARFClass.ADDRESS):
+        highpc = highpc_attr.value
+    elif form_in_class(highpc_attr.form, DWARFClass.CONSTANT):
+        highpc = lowpc + highpc_attr.value
+    else:
+        raise NotImplementedError(highpc_attr.form)
+    return (lowpc, highpc)
+
+def is_variadic_function_DIE(die):
+    for childdie in die.iter_children():
+        if childdie.tag == "DW_TAG_unspecified_parameters":
+            return True
+    return False
 
 def is_functionlike_DIE(die):
     return die.tag == "DW_TAG_subprogram"
@@ -157,7 +207,8 @@ def get_DIE_locs(die):
     else:
         return locparser.parse_from_attribute(locattr, dwarfversion, die=die)
 
-# given a variable-like DIE and the start and end Address objects for its parent function,
+# given a variable-like DIE and the start and end Address objects for its
+# parent lexical scope (function / lexical scope / inlined function block),
 # produce a list of AddressLiveRange objects
 # DIE -> [AddressLiveRange]
 def get_DIE_liveranges(die, fnstart=None, fnend=None):
