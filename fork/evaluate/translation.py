@@ -114,55 +114,74 @@ class Function(object):
         return self.startaddr == other.startaddr
 
     def print_summary(self):
-        print("{} @ {} -> {}".format(self.name, self.startaddr, self.endaddr))
+        print("{} :: {} @ PC range=({}, {})".format(self.name, self.get_prototype(), self.startaddr, self.endaddr))
         for var in (self.params + self.vars):
             print("\t{}".format(var))
 
-class AddressSpace:
-    STACK = 0
-    GLOBAL = 1
-    REGISTER = 2
-    UNKNOWN = 3
-    EXTERNAL = 4
+class AddressType:
+    ABSOLUTE = 0
+    REGISTER = 1
+    REGISTER_OFFSET = 2
+    EXTERNAL = 3
+    UNKNOWN = 4
 
     @staticmethod
-    def to_string(addrspace):
-        if addrspace == AddressSpace.STACK:
-            return "STACK"
-        elif addrspace == AddressSpace.REGISTER:
+    def to_string(addrtype):
+        if addrtype == AddressType.ABSOLUTE:
+            return "ABSOLUTE"
+        elif addrtype == AddressType.REGISTER:
             return "REGISTER"
-        elif addrspace == AddressSpace.GLOBAL:
-            return "GLOBAL"
-        elif addrspace == AddressSpace.UNKNOWN:
+        elif addrtype == AddressType.REGISTER_OFFSET:
+            return "REGISTER_OFFSET"
+        elif addrtype == AddressType.UNKNOWN:
             return "UNKNOWN"
-        elif addrspace == AddressSpace.EXTERNAL:
+        elif addrtype == AddressType.EXTERNAL:
             return "EXTERNAL"
         else:
-            raise Exception("Invalid AddressSpace specifier {}".format(addrspace))
+            raise Exception("Invalid AddressType specifier {}".format(addrtype))
 
 class Address(object):
-    """
-    An Address is defined by the space it lives in (stack, heap, global, register)
-    and the offset from the base of that space.
-    """
-    def __init__(self, addrspace=None, offset=None):
-        """
-        addrspace: field of AddressSpace
-            The address space the address lives in (STACK | HEAP | GLOBAL | REGISTER)
-        offset: int
-            The offset from the base of the address space...
-            If the space=STACK, then offset is from RBP or RSP, depending on compiler and optimization level.
-            If the space=GLOBAL, then the offset is the raw address of the variable.
-            If the space=REGISTER, then the offset is the register identifier #.
-        """
-        self.addrspace = addrspace
+    def __init__(self, addrtype):
+        self.addrtype = addrtype
+
+    def __str__(self):
+        return "<{}>".format(AddressType.to_string(self.addrtype))
+
+class AbsoluteAddress(Address):
+    def __init__(self, addr):
+        super(AbsoluteAddress, self).__init__(addrtype=AddressType.ABSOLUTE)
+        self.addr = addr
+
+    def __str__(self):
+        return "<{}:{:#x}>".format(AddressType.to_string(self.addrtype), self.addr)
+
+class RegisterAddress(Address):
+    def __init__(self, register):
+        super(RegisterAddress, self).__init__(addrtype=AddressType.REGISTER)
+        self.register = register
+
+    def __str__(self):
+        return "<{}:{}>".format(AddressType.to_string(self.addrtype), self.register)
+
+class RegisterOffsetAddress(Address):
+    def __init__(self, register, offset):
+        super(RegisterOffsetAddress, self).__init__(addrtype=AddressType.REGISTER_OFFSET)
+        self.register = register
         self.offset = offset
 
     def __str__(self):
-        return "<{}:{:#x}>".format(AddressSpace.to_string(self.addrspace), self.offset)
+        negative = self.offset < 0
+        opstr = "-" if negative else "+"
+        offsetstr = -1 * self.offset if negative else self.offset
+        return "<{}:reg({}){}{:#x}>".format(AddressType.to_string(self.addrtype), self.register, opstr, offsetstr)
 
-    def __eq__(self, other):
-        return self.addrspace == other.addrspace and self.offset == other.offset
+class ExternalAddress(Address):
+    def __init__(self):
+        super(ExternalAddress, self).__init__(addrtype=AddressType.EXTERNAL)
+
+class UnknownAddress(Address):
+    def __init__(self):
+        super(ExternalAddress, self).__init__(addrtype=AddressType.UNKNOWN)
 
 # defines the mapping from x86-64 register names
 # to their associated register numbers

@@ -11,75 +11,79 @@ def assert_not_none(obj, attr):
     if vars(obj).get(attr, None) is None:
         none_attr_exception(obj, attr)
 
-class ResolverTag:
-    STUB = 0
-    RESOLVED = 1
-
-# class ResolverResult:
-#     def __init__(self, key=None, )
-
-# either DataTypeStub or DataType, depending on tag
-class ResolverRecord:
-    def __init__(self, db, key, stub):
-        # the parent database
-        self.db = db
-        # this record's key in the ResolverDatabase
-        self.key = key
-        # indicates whether this record is resolved
-        self.tag = ResolverTag.STUB
-        # the "flattened" object information
-        self.stub = stub
-        # the "resolved"/nested object, initially unset
-        self.obj = None
-
-        # Mark whether recursive resolution is currently occuring
-        # to sub-types of this object.
-        # In this state, the 'obj' field is a DataType, but the
-        # fields are in an unstable/unresolved form.
-        # Used to prevent cycles.
-        self.resolving = False
-
-    def is_resolving(self):
-        return self.resolving
-
-    def set_resolving(self):
-        if not self.resolving:
-            self.resolving = True
-        else:
-            raise ResolverException("Tried to set an already 'resolving' record")
-
-    def unset_resolving(self):
-        if self.resolving:
-            self.resolving = False
-        else:
-            raise ResolverException("Tried to unset a non-'resolving' record")
-
-    def resolve(self, db):
-        # If this record is resolved, just return the self.obj.
-        # If this record is already resolving, we are in a recursive cycle.
-        # Otherwise, we are calling for first time.
-        if (not self.is_resolving()) and self.tag == ResolverTag.STUB:
-            
-        # if this record is still a stub, we must resolve the stub
-            if self.tag == ResolverTag.STUB:
-                self.set_resolving()
-                self.obj = self.stub.resolve(self)
-
-
-            # not recursive
-            if self.is_resolving():
-                self.unset_resolving()
-                self.tag = ResolverTag.RESOLVED
-        
-        return self.obj
-
 
 # Holds ResolverRecord objects in a map.
 # Used to create nested/recursive structures from an initial
 # flattened table.
 # The key type can be any type suitable for the domain, but generally
 # it is an int.
-class ResolverDatabase:
+class ResolverDatabase(object):
+
+    # An abstract class representing a flattened "stub" object stored in
+    # a ResolverRecord. Each child class must implement the "resolve()" method.
+    class ResolverStub(object):
+        def resolve(self, record):
+            raise NotImplementedError("Must implement resolve() method in subclass")
+
+    class ResolverTag(object):
+        STUB = 0
+        RESOLVED = 1
+
+    # holds a stub and/or resolved object, depending on the tag
+    class ResolverRecord(object):
+        def __init__(self, db, key, stub):
+            # the parent database
+            self.db = db
+            # this record's key in the ResolverDatabase
+            self.key = key
+            # indicates whether this record is resolved
+            self.tag = ResolverDatabase.ResolverTag.STUB
+            # the "flattened" object information
+            self.stub = stub
+            # the "resolved"/nested object, initially unset
+            self.obj = None
+
+            # Mark whether recursive resolution is currently occuring
+            # to sub-types of this object.
+            # In this state, the 'obj' field is a DataType, but the
+            # fields are in an unstable/unresolved form.
+            # Used to prevent cycles.
+            self.resolving = False
+
+        def is_resolving(self):
+            return self.resolving
+
+        def set_resolving(self):
+            if not self.resolving:
+                self.resolving = True
+            else:
+                raise ResolverException("Tried to set an already 'resolving' record")
+
+        def unset_resolving(self):
+            if self.resolving:
+                self.resolving = False
+            else:
+                raise ResolverException("Tried to unset a non-'resolving' record")
+
+        def resolve(self, db):
+            # If this record is resolved, just return the self.obj.
+            # If this record is already resolving, we are in a recursive cycle.
+            # Otherwise, we are calling for first time.
+            if (not self.is_resolving()) and self.tag == ResolverDatabase.ResolverTag.STUB:
+                
+            # if this record is still a stub, we must resolve the stub
+                if self.tag == ResolverDatabase.ResolverTag.STUB:
+                    self.set_resolving()
+                    self.obj = self.stub.resolve(self)
+
+
+                # not recursive
+                if self.is_resolving():
+                    self.unset_resolving()
+                    self.tag = ResolverDatabase.ResolverTag.RESOLVED
+            
+            return self.obj
+
     def __init__(self, db={}, rootkey=None):
         self.db = db
         # the key that marks the "root" node of the flattened structure
@@ -103,7 +107,7 @@ class ResolverDatabase:
 
         return self.add(
             key,
-            ResolverRecord(self, key, stub)
+            ResolverDatabase.ResolverRecord(self, key, stub)
         )
 
     def add(self, key, record):

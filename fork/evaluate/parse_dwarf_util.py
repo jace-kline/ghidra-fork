@@ -3,6 +3,7 @@ from elftools.common.py3compat import bytes2str
 from elftools.dwarf.dwarf_expr import DW_OP_name2opcode
 from elftools.dwarf.constants import *
 from elftools.dwarf.locationlists import LocationParser
+from elftools.dwarf.ranges import RangeEntry, BaseAddressEntry
 from elftools.dwarf.dwarf_expr import DWARFExprParser, DWARFExprOp
 from translation import *
 
@@ -103,14 +104,68 @@ def get_DIE_low_high_pc(die):
         raise NotImplementedError(highpc_attr.form)
     return (lowpc, highpc)
 
+# DIE -> [(int, int)] | None
+def get_DIE_ranges(die):
+    rnglist = get_DIE_rangelist(die)
+    if rnglist is None:
+        return None
+    
+    base = 0
+    ranges = []
+    for rng in rnglist:
+        if type(rng) == RangeEntry:
+            ranges.append((base + rng.begin_offset, base + rng.end_offset))
+        elif type(rng) == BaseAddressEntry:
+            base = rng.base_address
+    return ranges
+
+# Extract the ranges of PC addrs specified by the 'DW_AT_ranges' attribute
+# for a given DIE.
+def get_DIE_rangelist(die):
+    rngattr = get_DIE_attr(die, "DW_AT_ranges")
+    if rngattr is None:
+        return None
+    offset = rngattr.value # possible forms = ["DW_FORM_rnglistx", "DW_FORM_sec_offset"]
+    return get_range_list_at_offset(die.dwarfinfo, offset, cu=die.cu)
+    
+def get_range_list_at_offset(dwarfinfo, offset, cu=None):
+    rnglists = dwarfinfo.range_lists()
+    if rnglists is None:
+        return None
+    return rnglists.get_range_list_at_offset(offset, cu=cu)
+
+# Attempts to parse the low PC & high PC via the 'DW_AT_low_pc' and 'DW_AT_high_pc' attributes.
+# If not successful, attempts to get a list of ranges from the 'DW_AT_ranges' attribute.
+# Returns a list of ranges for the scope-like DIE or None (if no range info present).
+# DIE -> [(int, int)] | None
+def get_scope_DIE_pc_ranges(die):
+    res = get_DIE_low_high_pc(die)
+    if res is not None:
+        return [res]
+    
+    return get_DIE_ranges(die)
+
 def is_variadic_function_DIE(die):
     for childdie in die.iter_children():
         if childdie.tag == "DW_TAG_unspecified_parameters":
             return True
     return False
 
+def is_scopelike_DIE(die):
+    return die.tag in [
+        "DW_TAG_subprogram",
+        "DW_TAG_lexical_scope",
+        "DW_TAG_inlined_subroutine"
+    ]
+
 def is_functionlike_DIE(die):
     return die.tag == "DW_TAG_subprogram"
+
+def is_variablelike_DIE(die):
+    return die.tag in [
+        "DW_TAG_variable",
+        "DW_TAG_formal_parameter"
+    ]
 
 def get_function_DIEs(dwarfinfo):
     dies = get_all_DIEs(dwarfinfo)
@@ -119,6 +174,36 @@ def get_function_DIEs(dwarfinfo):
 def get_function_DIE_by_name(dwarfinfo, fname):
     fndies = [ die for die in get_function_DIEs(dwarfinfo) if get_DIE_name(die) == fname ]
     return fndies[0] if len(fndies) > 0 else None
+
+def get_DIE_parent_function_DIE(die):
+    parent = die.get_parent()
+    while parent is not None:
+        if is_functionlike_DIE(parent):
+            return parent
+        parent = parent.get_parent()
+
+# Are this function's instance(s) inlined by the compiler?
+# DIE -> bool
+def function_DIE_is_inlined(die):
+    inline = get_DIE_attr_value(die, "DW_AT_inline")
+    return inline is not None and (inline in [DW_INL_inlined, DW_INL_declared_inlined])
+
+# Does the given variable-like DIE have any location information?
+# If not, then assume it is optimized away
+def var_DIE_has_location(die):
+    return len(get_DIE_liveranges(die)) > 0
+
+# for a given variable/parameter DIE, get the PC ranges of the most immediate parent DIE that
+# is considered a "scope". Must have 'DW_AT_low_pc', 'DW_AT_high_pc' OR 'DW_AT_ranges'.
+# DIE -> [(int, int)] | None
+def get_DIE_parent_scope_pc_ranges(die):
+    parent = die.get_parent()
+    while parent is not None:
+        if is_scopelike_DIE(parent):
+            ranges = get_scope_DIE_pc_ranges(parent)
+            if ranges is not None:
+                return ranges
+        parent = parent.get_parent()
 
 # if fname = None, assume global variable
 def get_var_DIE_by_name(dwarfinfo, varname, fname=None):
@@ -155,6 +240,17 @@ def get_DIE_attr(die, attr):
     res = die.attributes.get(attr, None)
     return None if res is None else res
 
+def get_DIE_attr_follow_abstract_origin(die, attr):
+    res = get_DIE_attr(die, attr)
+    if res is not None:
+        return res
+    else:
+        origindie = die.get_DIE_from_attribute("DW_AT_abstract_origin")
+        return get_DIE_attr(origindie, attr)
+
+def DIE_has_attr(die, attr):
+    return get_DIE_attr(die, attr) is not None
+
 # return the "DW_AT_name" attribute of the DIE as a string
 def get_DIE_name(die):
     attr = die.attributes.get("DW_AT_name", None)
@@ -163,26 +259,25 @@ def get_DIE_name(die):
 # get the children variable-like DIEs of a given function (or lexical scope) DIE
 # called recursively on sub-scopes
 # returns (parameter DIEs, variable DIEs)
-def get_param_var_DIEs(fndie):
+def get_param_var_DIEs(scopedie, varsonly=False):
 
-    if not fndie.has_children:
-        return []
+    if not scopedie.has_children:
+        return ([], [])
     
     paramdies = []
     vardies = []
-    for die in fndie.iter_children():
+    for die in scopedie.iter_children():
         if die.tag == "DW_TAG_formal_parameter":
-            paramdies.append(die)
+            (paramdies if not varsonly else vardies).append(die)
 
         elif die.tag == "DW_TAG_variable":
             vardies.append(die)
 
-        elif die.tag == "DW_TAG_lexical_block": # recurse
-            _, vdies = get_param_var_DIEs(die)
+        elif die.tag in ["DW_TAG_lexical_block", "DW_TAG_inlined_subroutine"]: # recurse
+            _, vdies = get_param_var_DIEs(die, varsonly=True)
             vardies += vdies
 
     return (paramdies, vardies)
-
 
 # Location helper functions
 
@@ -207,11 +302,23 @@ def get_DIE_locs(die):
     else:
         return locparser.parse_from_attribute(locattr, dwarfversion, die=die)
 
+# [(int, int)] -> (int, int)
+def merge_ranges(ranges):
+    if len(ranges) == 0:
+        raise Exception("ranges list must be non-empty")
+    low, high = ranges[0]
+    for l, h in ranges[1:]:
+        if l < low:
+            low = l
+        if h > high:
+            high = h
+    return (low, high)
+
 # given a variable-like DIE and the start and end Address objects for its
 # parent lexical scope (function / lexical scope / inlined function block),
 # produce a list of AddressLiveRange objects
 # DIE -> [AddressLiveRange]
-def get_DIE_liveranges(die, fnstart=None, fnend=None):
+def get_DIE_liveranges(die, scopestartpc=None, scopeendpc=None):
     locs = get_DIE_locs(die)
     if locs is None:
         return []
@@ -222,8 +329,8 @@ def get_DIE_liveranges(die, fnstart=None, fnend=None):
                 # type(loc) == LocationEntry
                 addr = parse_dwarf_locexpr_addr(die.dwarfinfo, loc.loc_expr)
                 if addr is not None:
-                    startpc = Address(addrspace=AddressSpace.GLOBAL, offset=loc.begin_offset)
-                    endpc = Address(addrspace=AddressSpace.GLOBAL, offset=loc.end_offset)
+                    startpc = AbsoluteAddress(loc.begin_offset)
+                    endpc = AbsoluteAddress(loc.end_offset)
                     liveranges.append(AddressLiveRange(
                         addr=addr,
                         startpc=startpc,
@@ -237,8 +344,8 @@ def get_DIE_liveranges(die, fnstart=None, fnend=None):
         addr = parse_dwarf_locexpr_addr(die.dwarfinfo, locs.loc_expr)
         return [AddressLiveRange(
             addr=addr,
-            startpc=fnstart,
-            endpc=fnend
+            startpc=scopestartpc,
+            endpc=scopeendpc
         )] if addr is not None else []
 
 # [int] -> Address | None
@@ -259,18 +366,30 @@ def parse_dwarf_expr_ops_to_addr(expr_ops):
         expr_op = expr_ops[0]
         # absolute address?
         if expr_op.op_name == "DW_OP_addr":
-            offset = expr_op.args[0]
-            return Address(addrspace=AddressSpace.GLOBAL, offset=offset)
+            addr = expr_op.args[0]
+            return AbsoluteAddress(addr)
 
         # base register offset address?
         elif expr_op.op_name == "DW_OP_fbreg":
             offset = expr_op.args[0]
-            return Address(addrspace=AddressSpace.STACK, offset=offset)
+            # TODO: Avoid implicit assumption of x86-64 & RBP here
+            return RegisterOffsetAddress(RegsX86_64.RBP, offset)
 
         # stored in register?
         elif DW_OP_name2opcode["DW_OP_reg0"] <= expr_op.op <= DW_OP_name2opcode["DW_OP_reg31"]:
             regnum = expr_op.op - DW_OP_name2opcode["DW_OP_reg0"]
-            return Address(addrspace=AddressSpace.REGISTER, offset=regnum)
+            return RegisterAddress(regnum)
+
+        # offset from a register?
+        elif DW_OP_name2opcode["DW_OP_breg0"] <= expr_op.op <= DW_OP_name2opcode["DW_OP_breg31"]:
+            regnum = expr_op.op - DW_OP_name2opcode["DW_OP_reg0"]
+            offset = expr_op.args[0]
+            return RegisterOffsetAddress(regnum, offset)
+
+        elif expr_op.op_name == "DW_OP_bregx":
+            regnum = expr_op.args[0]
+            offset = expr_op.args[1]
+            return RegisterOffsetAddress(regnum, offset)
 
         else:
             raise NotImplementedError(expr_ops)
@@ -287,72 +406,72 @@ def parse_dwarf_expr_ops_to_addr(expr_ops):
     return None
         
 
-# given a DIE with a 'DW_AT_location' OR 'DW_AT_low_pc' attribute,
-# returns an Address object
-# if attribute non-existent, return None
-def parse_dwarf_addr(locexpr):
+# # given a DIE with a 'DW_AT_location' OR 'DW_AT_low_pc' attribute,
+# # returns an Address object
+# # if attribute non-existent, return None
+# def parse_dwarf_addr(locexpr):
 
-    op = locexpr[0] # the operation specifier
-    bs = locexpr[1:] # the bytes representing location/offset
+#     op = locexpr[0] # the operation specifier
+#     bs = locexpr[1:] # the bytes representing location/offset
 
-    # absolute address
-    if op == DW_OP_name2opcode["DW_OP_addr"]:
-        addr = le_unsigned_decode(bs)
-        return Address(
-            addrspace=AddressSpace.GLOBAL,
-            offset=addr
-        )
+#     # absolute address
+#     if op == DW_OP_name2opcode["DW_OP_addr"]:
+#         addr = le_unsigned_decode(bs)
+#         return Address(
+#             addrspace=AddressSpace.GLOBAL,
+#             offset=addr
+#         )
 
-    # offset from stack frame register's base pointer (DW_AT_frame_base)
-    elif op == DW_OP_name2opcode["DW_OP_fbreg"]:
-        offset = sleb128_decode(bs)
-        return Address(
-            addrspace=AddressSpace.STACK,
-            offset=offset
-        )
+#     # offset from stack frame register's base pointer (DW_AT_frame_base)
+#     elif op == DW_OP_name2opcode["DW_OP_fbreg"]:
+#         offset = sleb128_decode(bs)
+#         return Address(
+#             addrspace=AddressSpace.STACK,
+#             offset=offset
+#         )
 
-    # other
-    else:
-        raise NotImplementedError(op)
+#     # other
+#     else:
+#         raise NotImplementedError(op)
 
-# bs = sequence of integer bytes in little endian order
-# reverse the order and concatenate
-def le_unsigned_decode(bs):
-    val = 0
-    for i, b in enumerate(bs):
-        val |= (b << (8 * i))
+# # bs = sequence of integer bytes in little endian order
+# # reverse the order and concatenate
+# def le_unsigned_decode(bs):
+#     val = 0
+#     for i, b in enumerate(bs):
+#         val |= (b << (8 * i))
     
-    return val
+#     return val
 
-# bs = sequence of integer bytes
-# little-endian 128 bit variable encoding
-def sleb128_decode(bs):
-    # strip the leftmost (8th) bit in each byte
-    _bs = [ b & 0x7f for b in bs ]
+# # bs = sequence of integer bytes
+# # little-endian 128 bit variable encoding
+# def sleb128_decode(bs):
+#     # strip the leftmost (8th) bit in each byte
+#     _bs = [ b & 0x7f for b in bs ]
 
-    # loop over each 7-bit chunk
-    # for each chunk, shift its 7 bits left by the byte index * 7
-    # concatenate the shifted chunks together with OR operator
-    # this also reverses the bytes to big endian
-    val = 0
-    for i, b in enumerate(_bs):
-        val |= (b << (7 * i))
+#     # loop over each 7-bit chunk
+#     # for each chunk, shift its 7 bits left by the byte index * 7
+#     # concatenate the shifted chunks together with OR operator
+#     # this also reverses the bytes to big endian
+#     val = 0
+#     for i, b in enumerate(_bs):
+#         val |= (b << (7 * i))
 
-    # sign-extend to fill full bytes
-    nbits = 7 * len(_bs) # number of bits in val
-    sign = val >> (nbits - 1) # leftmost bit = sign bit
-    fillbits = 8 - (nbits % 8) # number of bits to fill to reach full bytes
-    nbytes = (nbits + fillbits) // 8 # number of total bytes of the output
+#     # sign-extend to fill full bytes
+#     nbits = 7 * len(_bs) # number of bits in val
+#     sign = val >> (nbits - 1) # leftmost bit = sign bit
+#     fillbits = 8 - (nbits % 8) # number of bits to fill to reach full bytes
+#     nbytes = (nbits + fillbits) // 8 # number of total bytes of the output
 
-    # build the fill bit sequence
-    fill = 0
-    for i, b in enumerate([ sign for _ in range(0, fillbits) ]):
-        fill |= (b << i)
+#     # build the fill bit sequence
+#     fill = 0
+#     for i, b in enumerate([ sign for _ in range(0, fillbits) ]):
+#         fill |= (b << i)
 
-    # prepend the fill bits to the original val
-    val |= (fill << nbits)
+#     # prepend the fill bits to the original val
+#     val |= (fill << nbits)
 
-    # force Python to represent this as a (possibly) signed integer (2's complement)
-    val = int.from_bytes(val.to_bytes(nbytes, 'big'), 'big', signed=(sign == 1))
+#     # force Python to represent this as a (possibly) signed integer (2's complement)
+#     val = int.from_bytes(val.to_bytes(nbytes, 'big'), 'big', signed=(sign == 1))
 
-    return val
+#     return val

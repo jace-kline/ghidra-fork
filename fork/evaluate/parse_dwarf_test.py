@@ -83,8 +83,44 @@ def test_low_high_pc_attr():
             lowpc, highpc = res
             print("{:#x}\n{:#x}\n".format(lowpc, highpc)),
 
+def test_get_parent_pc_ranges():
+    _, dwarfinfo = setup()
+    
+    fndie = get_function_DIE_by_name(dwarfinfo, "main")
+    vardies = [ die for die in fndie.iter_children() if is_variablelike_DIE(die) ]
+    print(vardies)
+
+    for vardie in vardies:
+        print(get_DIE_name(vardie))
+        ranges = get_DIE_parent_scope_pc_ranges(vardie)
+        if ranges is not None:
+            for lowpc, highpc in ranges:
+                print("\t{:#x}\n\t{:#x}\n".format(lowpc, highpc))
+        else:
+            print("\tNone")
+        print(""),
+
+def test_rangelists():
+    _, dwarfinfo = setup()
+    cu = next(dwarfinfo.iter_CUs())
+    rootdie = cu.get_top_DIE()
+    rnglists = dwarfinfo.range_lists()
+    # rngattr = get_DIE_attr(rootdie, "DW_AT_ranges")
+    # rnglist = rnglists.get_range_list_at_offset(rngattr.value, cu=cu)
+    rngs = get_DIE_ranges(rootdie)
+    print(rngs)
+    for rng in rngs:
+        print(rng)
+    # print(cu)
+    # print(dwarfinfo.range_lists())
+
+def test_function_is_inlined():
+    _, dwarfinfo = setup()
+    for fndie in get_function_DIEs(dwarfinfo):
+        print("{}\n\tDW_AT_inline: {}".format(get_DIE_name(fndie), get_DIE_attr_value(fndie, 'DW_AT_inline')))
+
 def test_parse_dwarf():
-    proginfo = parse_from_objfile("../progs/typecases_debug_O0.bin")
+    proginfo = parse_from_objfile("../progs/typecases_debug_O3.bin")
     proginfo.print_summary()
 
 def test_addr_parse():
@@ -92,6 +128,10 @@ def test_addr_parse():
     fndies = get_function_DIEs(dwarfinfo)
     for fndie in fndies:
         pass
+
+def test_merge_ranges():
+    ranges = [(0, 100), (100, 200), (300, 400)]
+    print(merge_ranges(ranges))
 
 if __name__ == "__main__":
     test_parse_dwarf()

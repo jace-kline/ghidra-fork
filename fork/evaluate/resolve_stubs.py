@@ -9,7 +9,7 @@ from resolve import *
 
 # This is the root node of the translation.
 # It references all global variables and functions for a target program.
-class ProgramInfoStub(object):
+class ProgramInfoStub(ResolverDatabase.ResolverStub):
     def __init__(self, globalrefs=[], functionrefs=[]):
         self.globalrefs = globalrefs
         self.functionrefs = functionrefs
@@ -24,7 +24,7 @@ class ProgramInfoStub(object):
         record.obj.functions = functions
         return record.obj
 
-class FunctionStub(object):
+class FunctionStub(ResolverDatabase.ResolverStub):
     def __init__(self, name=None, startaddr=None, endaddr=None, rettyperef=None, paramrefs=[], varrefs=[], variadic=False):
         self.name = name
         self.startaddr = startaddr
@@ -54,7 +54,7 @@ class FunctionStub(object):
         record.obj.variadic = self.variadic
         return record.obj
 
-class VariableStub(object):
+class VariableStub(ResolverDatabase.ResolverStub):
     def __init__(self, name=None, dtyperef=None, liveranges=[], param=False, functionref=None):
         self.name = name
         self.dtyperef = dtyperef
@@ -81,7 +81,7 @@ class VariableStub(object):
         record.obj.function = function
         return record.obj
 
-class DataTypeStub(object):
+class DataTypeStub(ResolverDatabase.ResolverStub):
     def __init__(self, metatype=MetaType.VOID, size=None):
         self.metatype = metatype
         self.size = size
