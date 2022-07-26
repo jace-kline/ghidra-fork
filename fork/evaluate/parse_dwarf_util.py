@@ -85,6 +85,25 @@ def get_all_DIEs(dwarfinfo):
                 dies.append(die)
     return dies
 
+def get_DIE_by_cu_offset(dwarfinfo, cu_offset, offset):
+    return dwarfinfo.get_DIE_from_refaddr(offset, cu=dwarfinfo.get_CU_at(cu_offset))
+
+def get_DIE_attr_ref_DIE(die, attr):
+    try:
+        return die.get_DIE_from_attribute(attr)
+    except:
+        return None
+
+def get_DIE_attr_ref_DIE_follow_abstract_origin(die, attr):
+    try:
+        return die.get_DIE_from_attribute(attr)
+    except:
+        abstractdie = get_DIE_attr_ref_DIE(die, "DW_AT_abstract_origin")
+        if abstractdie is not None:
+            return get_DIE_attr_ref_DIE(abstractdie, attr)
+        else:
+            return None
+
 # extract the low and high pc values for a function-like DIE
 # DIE -> (int, int) | None
 # returns None if either of the attributes are not present
@@ -185,8 +204,16 @@ def get_DIE_parent_function_DIE(die):
 # Are this function's instance(s) inlined by the compiler?
 # DIE -> bool
 def function_DIE_is_inlined(die):
-    inline = get_DIE_attr_value(die, "DW_AT_inline")
-    return inline is not None and (inline in [DW_INL_inlined, DW_INL_declared_inlined])
+    inline_attr = get_DIE_attr_follow_abstract_origin(die, "DW_AT_inline")
+    return False if inline_attr is None else (inline_attr.value in [DW_INL_inlined, DW_INL_declared_inlined])
+
+def function_DIE_has_location(die):
+    return get_DIE_attr(die, "DW_AT_low_pc") is not None
+
+# A function is only translatable if it is not inlined
+# AND it has instructions in the binary.
+def function_DIE_is_translatable(die):
+    return not function_DIE_is_inlined(die) and function_DIE_has_location(die)
 
 # Does the given variable-like DIE have any location information?
 # If not, then assume it is optimized away
@@ -245,8 +272,12 @@ def get_DIE_attr_follow_abstract_origin(die, attr):
     if res is not None:
         return res
     else:
-        origindie = die.get_DIE_from_attribute("DW_AT_abstract_origin")
-        return get_DIE_attr(origindie, attr)
+        origindie = get_DIE_attr_ref_DIE(die, "DW_AT_abstract_origin")
+        return get_DIE_attr(origindie, attr) if origindie is not None else None
+
+def get_DIE_name_follow_abstract_origin(die):
+    res = get_DIE_attr_follow_abstract_origin(die, "DW_AT_name")
+    return bytes2str(res.value) if res is not None else None
 
 def DIE_has_attr(die, attr):
     return get_DIE_attr(die, attr) is not None

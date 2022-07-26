@@ -1,6 +1,7 @@
 **/pyelftools
 *.bin
 *.out
+*.o
 *.dwarfdump
 *.objdump
 *$py.class

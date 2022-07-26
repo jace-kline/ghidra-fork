@@ -7,18 +7,30 @@ class ParseDWARFException(Exception):
     pass
 
 class ParseDWARF:
+    # DB keys are of the form (CU offset, DIE offset).
+    # CU offset = -1 implies a custom added element.
+
     def __init__(self, dwarfinfo):
         self.dwarfinfo = dwarfinfo
-        # holds {ref: DIE} mappings
+        # holds {(CU offset, DIE offset) -> DIE} mappings
         self.diemap = {}
-        # holds {ref: stub} mappings
+        # holds {(CU offset, DIE offset) -> record} mappings
         self.db = ResolverDatabase()
+        self.nextkey = 0
+
+    def get_DIE_key(self, die):
+        if die is None:
+            return None
+        return (die.cu.cu_offset, die.offset)
+
+    def _fill_diemap(self):
+        self.diemap = dict([(self.get_DIE_key(die), die) for die in get_all_DIEs(self.dwarfinfo)])
 
     def generate_unique_key(self):
-        MAXKEY = 999999
-        for k in range(0, MAXKEY):
-            if (not self.db.exists(k)) and (k not in self.diemap):
-                return k
+        key = (-1, self.nextkey) # -1 CU indicates we added it
+        assert(key not in self.diemap and not self.db.exists(key))
+        self.nextkey += 1 # increment key
+        return key
 
     # Generate a key for the stub, then insert into the DB as a record.
     # Return the new key created.
@@ -30,6 +42,7 @@ class ParseDWARF:
     # For a given ref in the diemap, recursively generate the associated stub(s)
     # and add to the resolver database.
     # Returns nothing, only updates the internal DB.
+    # ref = (CU offset, DIE offset)
     def generate_DIE_stubs(self, ref):
         if self.db.exists(ref):
             return
@@ -46,7 +59,7 @@ class ParseDWARF:
 
         # Function-like DIE
         if die.tag == "DW_TAG_subprogram":
-            name = get_DIE_name(die)
+            name = get_DIE_name_follow_abstract_origin(die)
 
             pc_range = get_DIE_low_high_pc(die)
             # if could not extract PC range for function DIE, must be inlined
@@ -57,7 +70,7 @@ class ParseDWARF:
                 endaddr = AbsoluteAddress(highpc)
 
             # get basetype ref
-            rettyperef = get_DIE_attr_value(die, "DW_AT_type")
+            rettyperef = self.get_DIE_key(get_DIE_attr_ref_DIE(die, "DW_AT_type"))
             # if basetype ref is None, generate a VoidDataTypeStub in the DB to point to
             if rettyperef is None:
                 rettyperef = self.make_stub(DataTypeVoidStub())
@@ -65,8 +78,8 @@ class ParseDWARF:
             # get the parameter and variable children DIEs
             # only keep if the variable is associated with location(s) in the binary
             paramdies, vardies = get_param_var_DIEs(die)
-            paramrefs = [ die.offset for die in paramdies if var_DIE_has_location(die) ]
-            varrefs = [ die.offset for die in vardies if var_DIE_has_location(die) ]
+            paramrefs = [ self.get_DIE_key(die) for die in paramdies if var_DIE_has_location(die) ]
+            varrefs = [ self.get_DIE_key(die) for die in vardies if var_DIE_has_location(die) ]
 
             # does the function have a variable number of parameters?
             variadic = is_variadic_function_DIE(die)
@@ -86,19 +99,17 @@ class ParseDWARF:
         elif die.tag in ["DW_TAG_variable", "DW_TAG_formal_parameter"]:
 
             # try to extract the high-level variable name
-            name_attr = get_DIE_attr_follow_abstract_origin(die, "DW_AT_name")
-            name = None if name_attr is None else bytes2str(name_attr.value)
+            name = get_DIE_name_follow_abstract_origin(die)
 
             param = die.tag == "DW_TAG_formal_parameter" and not DIE_has_attr(die, "DW_AT_abstract_origin")
 
             # get the data type reference
-            dtyperef_attr = get_DIE_attr_follow_abstract_origin(die, "DW_AT_type")
-            assert(dtyperef_attr is not None)
-            dtyperef = dtyperef_attr.value
+            dtyperef = self.get_DIE_key(get_DIE_attr_ref_DIE_follow_abstract_origin(die, "DW_AT_type"))
+            assert(dtyperef is not None)
 
             # get the parent function ref in the database
             parentdie = get_DIE_parent_function_DIE(die)
-            functionref = parentdie.offset if parentdie is not None else None
+            functionref = self.get_DIE_key(parentdie) if parentdie is not None else None
 
             # get the PC ranges for the most immediate parent scope of this variable
             pc_ranges = get_DIE_parent_scope_pc_ranges(die)
@@ -141,7 +152,7 @@ class ParseDWARF:
             # pointer
             elif enc == DW_ATE_address:
                 # get basetype ref
-                basetyperef = get_DIE_attr_value(die, "DW_AT_type")
+                basetyperef = self.get_DIE_key(get_DIE_attr_ref_DIE(die, "DW_AT_type"))
                 # if basetype ref is None, generate a VoidDataTypeStub in the DB to point to
                 if basetyperef is None:
                     basetyperef = self.make_stub(DataTypeVoidStub())
@@ -170,7 +181,7 @@ class ParseDWARF:
         # qualified types -> treat as their base types
         elif die.tag in ["DW_TAG_atomic_type", "DW_TAG_const_type", "DW_TAG_volatile_type", "DW_TAG_restrict_type"]:
             # get basetype ref
-            basetyperef = get_DIE_attr_value(die, "DW_AT_type")
+            basetyperef = self.get_DIE_key(get_DIE_attr_ref_DIE(die, "DW_AT_type"))
             # if basetype ref is None, generate a VoidDataTypeStub in the DB to point to
             if basetyperef is None:
                 basetyperef = self.make_stub(DataTypeVoidStub())
@@ -180,7 +191,7 @@ class ParseDWARF:
         # pointer type
         elif die.tag == "DW_TAG_pointer_type":
             size = get_DIE_attr_value(die, "DW_AT_byte_size")
-            basetyperef = get_DIE_attr_value(die, "DW_AT_type")
+            basetyperef = self.get_DIE_key(get_DIE_attr_ref_DIE(die, "DW_AT_type"))
             # if basetype ref is None, generate a VoidDataTypeStub in the DB to point to
             if basetyperef is None:
                 basetyperef = self.make_stub(DataTypeVoidStub())
@@ -200,7 +211,7 @@ class ParseDWARF:
                 upbound = rangedie.attributes.get("DW_AT_upper_bound", 0)
                 length = upbound.value + 1 if upbound != 0 else 0
             
-            basetyperef = get_DIE_attr_value(die, "DW_AT_type")
+            basetyperef = self.get_DIE_key(get_DIE_attr_ref_DIE(die, "DW_AT_type"))
             assert(basetyperef is not None)
 
             stub = DataTypeArrayStub(
@@ -212,7 +223,7 @@ class ParseDWARF:
         # struct type
         elif die.tag == "DW_TAG_structure_type":
 
-            membertyperefs = [ get_DIE_attr_value(die, "DW_AT_type") for die in die.iter_children() if die.tag == "DW_TAG_member" ]
+            membertyperefs = [ self.get_DIE_key(get_DIE_attr_ref_DIE(die, "DW_AT_type")) for die in die.iter_children() if die.tag == "DW_TAG_member" ]
             name = get_DIE_name(die)
             size = get_DIE_attr_value(die, "DW_AT_byte_size")
 
@@ -227,7 +238,7 @@ class ParseDWARF:
         # union type
         elif die.tag == "DW_TAG_union_type":
             
-            membertyperefs = [ get_DIE_attr_value(die, "DW_AT_type") for die in die.iter_children() if die.tag == "DW_TAG_member" ]
+            membertyperefs = [ self.get_DIE_key(get_DIE_attr_ref_DIE(die, "DW_AT_type")) for die in die.iter_children() if die.tag == "DW_TAG_member" ]
             name = get_DIE_name(die)
             size = get_DIE_attr_value(die, "DW_AT_byte_size")
 
@@ -241,7 +252,7 @@ class ParseDWARF:
 
         # typedef
         elif die.tag == "DW_TAG_typedef":
-            basetyperef = get_DIE_attr_value(die, "DW_AT_type")
+            basetyperef = self.get_DIE_key(get_DIE_attr_ref_DIE(die, "DW_AT_type"))
             if basetyperef is None:
                 basetyperef = self.make_stub(DataTypeVoidStub())
             name = get_DIE_name(die)
@@ -257,7 +268,7 @@ class ParseDWARF:
         elif die.tag == "DW_TAG_subroutine_type":
 
             # if no ref, assume void return type
-            rettyperef = get_DIE_attr_value(die, "DW_AT_type")
+            rettyperef = self.get_DIE_key(get_DIE_attr_ref_DIE(die, "DW_AT_type"))
             if rettyperef is None:
                 rettyperef = self.make_stub(DataTypeVoidStub())
 
@@ -265,7 +276,7 @@ class ParseDWARF:
             variadic = False
             for childdie in die.iter_children():
                 if childdie.tag == "DW_TAG_formal_parameter":
-                    typeref = get_DIE_attr_value(childdie, "DW_AT_type")
+                    typeref = self.get_DIE_key(get_DIE_attr_ref_DIE(childdie, "DW_AT_type"))
                     paramtyperefs.append(typeref)
                 elif childdie.tag == "DW_TAG_unspecifed_parameters":
                     variadic = True
@@ -282,7 +293,7 @@ class ParseDWARF:
         # enum
         elif die.tag == "DW_TAG_enumeration_type":
             # get basetype ref
-            basetyperef = get_DIE_attr_value(die, "DW_AT_type")
+            basetyperef = self.get_DIE_key(get_DIE_attr_ref_DIE(die, "DW_AT_type"))
             assert(basetyperef is not None)
             # if basetype ref is None, generate a VoidDataTypeStub in the DB to point to
             if basetyperef is None:
@@ -304,14 +315,14 @@ class ParseDWARF:
 
 
     def parse(self):
-        # map each DIE to its (ref, DIE)
-        self.diemap = dict([ (die.offset, die) for die in get_all_DIEs(self.dwarfinfo) ])
+        # collect DIEs and their keys
+        self._fill_diemap()
 
         # create a "root" ProgramInfoStub object
         # only collect global variables with an actual location
-        globalrefs = [ die.offset for die in get_global_var_DIEs(self.dwarfinfo) if var_DIE_has_location(die) ]
+        globalrefs = [ self.get_DIE_key(die) for die in get_global_var_DIEs(self.dwarfinfo) if var_DIE_has_location(die) ]
         # only collect functions that are not inlined
-        functionrefs = [ die.offset for die in get_function_DIEs(self.dwarfinfo) if not function_DIE_is_inlined(die) ]
+        functionrefs = [ self.get_DIE_key(die) for die in get_function_DIEs(self.dwarfinfo) if function_DIE_is_translatable(die) ]
         rootkey = self.make_stub(
             ProgramInfoStub(
                 globalrefs=globalrefs,

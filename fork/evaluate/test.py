@@ -66,5 +66,13 @@ def test_addr_parse():
     for fndie in fndies:
         pass
 
+def test_key_type():
+    mydict = {
+        (1, 2): "hello",
+        (2, 3): "world"
+    }
+
+    print(mydict[(1, 2)])
+
 if __name__ == "__main__":
-    test_parse_dwarf()
+    test_key_type()

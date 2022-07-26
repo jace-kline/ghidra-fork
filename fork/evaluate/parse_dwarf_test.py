@@ -2,6 +2,7 @@ from parse_dwarf_util import *
 from parse_dwarf import *
 
 def setup():
+    # objfilepath = "../progs/typecases_splitobjs/main_debug_O0.bin"
     objfilepath = "../progs/typecases_debug_O3.bin"
     return get_elf_dwarf_info(objfilepath)
 
@@ -119,8 +120,43 @@ def test_function_is_inlined():
     for fndie in get_function_DIEs(dwarfinfo):
         print("{}\n\tDW_AT_inline: {}".format(get_DIE_name(fndie), get_DIE_attr_value(fndie, 'DW_AT_inline')))
 
+def test_get_DIEs_multiple_objfiles():
+    _, dwarfinfo = setup()
+    # diemap = dict([ (die.offset, die) for die in get_all_DIEs(dwarfinfo) ])
+    # print(diemap.keys())
+    print(dwarfinfo.get_DIE_from_refaddr(0x3ee))
+
+def test_gathered_functions():
+    _, dwarfinfo = setup()
+    fndies = get_function_DIEs(dwarfinfo)
+    for fndie in fndies:
+        print("{} @ {}\n\tDW_AT_inline: {}\n\tinlined?: {}\n\thas location? {}".format(
+            get_DIE_name_follow_abstract_origin(fndie),
+            get_DIE_attr_value(fndie, "DW_AT_low_pc"),
+            get_DIE_attr_value(fndie, "DW_AT_inline"),
+            function_DIE_is_inlined(fndie),
+            function_DIE_has_location(fndie)
+        )),
+
+def test_gathered_funcs_gblvars():
+    _, dwarfinfo = setup()
+    # only collect global variables with an actual location
+    globalrefs_nofilter = [ get_DIE_name_follow_abstract_origin(die) for die in get_global_var_DIEs(dwarfinfo) ]
+    globalrefs = [ get_DIE_name_follow_abstract_origin(die) for die in get_global_var_DIEs(dwarfinfo) if var_DIE_has_location(die) ]
+    # only collect functions that are not inlined
+    functionrefs_nofilter = [ get_DIE_name_follow_abstract_origin(die) for die in get_function_DIEs(dwarfinfo) ]
+    functionrefs = [ get_DIE_name_follow_abstract_origin(die) for die in get_function_DIEs(dwarfinfo) if not function_DIE_is_inlined(die) and function_DIE_has_location(die) ]
+
+    print(globalrefs_nofilter)
+    print(globalrefs),
+
+    print(functionrefs_nofilter)
+    print(functionrefs),
+        
+
 def test_parse_dwarf():
     proginfo = parse_from_objfile("../progs/typecases_debug_O3.bin")
+    # proginfo = parse_from_objfile("../progs/typecases_splitobjs/main_debug_O0.bin")
     proginfo.print_summary()
 
 def test_addr_parse():
