@@ -19,7 +19,7 @@ EXES := $(EXES_O0) $(EXES_O1) $(EXES_O2) $(EXES_O3) $(EXES_DEBUG_O0) $(EXES_DEBU
 all: $(EXES)
 
 clean:
-	rm -rf *.bin *.dwarfdump *.objdump
+	rm -rf *.bin *.dwarfdump *.objdump *_dbg *_dbg.c
 
 # %: %.dwarfdump %_debug_O0.bin %_O0.bin %.c
 

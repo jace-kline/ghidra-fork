@@ -122,8 +122,9 @@ class AddressType:
     ABSOLUTE = 0
     REGISTER = 1
     REGISTER_OFFSET = 2
-    EXTERNAL = 3
-    UNKNOWN = 4
+    STACK = 3
+    EXTERNAL = 4
+    UNKNOWN = 5
 
     @staticmethod
     def to_string(addrtype):
@@ -133,6 +134,8 @@ class AddressType:
             return "REGISTER"
         elif addrtype == AddressType.REGISTER_OFFSET:
             return "REGISTER_OFFSET"
+        elif addrtype == AddressType.STACK:
+            return "STACK"
         elif addrtype == AddressType.UNKNOWN:
             return "UNKNOWN"
         elif addrtype == AddressType.EXTERNAL:
@@ -174,6 +177,15 @@ class RegisterOffsetAddress(Address):
         opstr = "-" if negative else "+"
         offsetstr = -1 * self.offset if negative else self.offset
         return "<{}:reg({}){}{:#x}>".format(AddressType.to_string(self.addrtype), self.register, opstr, offsetstr)
+
+# offset from a stack frame's base pointer
+class StackAddress(Address):
+    def __init__(self, offset):
+        super(StackAddress, self).__init__(addrtype=AddressType.STACK)
+        self.offset = offset
+
+    def __str__(self):
+        return "<{}:{:#x}>".format(AddressType.to_string(self.addrtype), self.offset)
 
 class ExternalAddress(Address):
     def __init__(self):
@@ -237,7 +249,7 @@ class AddressLiveRange(object):
         return self.__str__()
 
 # enum of "meta types"
-class MetaType:
+class MetaType(object):
     """
     Enumeration of "meta types".
 
@@ -252,7 +264,7 @@ class MetaType:
     TYPEDEF: a type that exists as an alias of another type
     ENUM: a type consisting of a discrete subset of "tagged" integers
     QUALIFIER: a "wrapper" type that qualifies another type (const, volatile, etc.)
-    STRING: a high-level string, usually represented as a char array
+    STRING: a high-level string, usually represented as a null-terminated char array
     """
     INT = 0
     FLOAT = 1
@@ -297,7 +309,7 @@ class DataType(object):
         """
         metatype: field of MetaType class
             The meta type of the datatype.
-            options = INT | FLOAT | POINTER | ARRAY | STRUCT | UNION | UNDEFINED | VOID | FUNCTION_PROTOTYPE | TYPEDEF | ENUM | QUALIFIER
+            options = INT | FLOAT | POINTER | ARRAY | STRUCT | UNION | UNDEFINED | VOID | FUNCTION_PROTOTYPE | TYPEDEF | ENUM | QUALIFIER | STRING
         size: int
             The total size of the datatype
         """
@@ -328,6 +340,8 @@ class DataTypeFunctionPrototype(DataType):
             s += str(paramtype)
             if i + 1 < len(self.paramtypes):
                 s += ", "
+        if self.variadic:
+            s += "[...]"
         s += ") -> " + str(self.rettype)
         return s
 
@@ -523,7 +537,7 @@ class DataTypeStruct(DataType):
     def __str__(self):
         s = "<STRUCT "
         if self.name is not None:
-            s += self.name
+            s += self.name + " "
 
         s += "(members = {}) ".format(len(self.membertypes))
         s += "(size = {})>".format(self.size)
@@ -561,7 +575,7 @@ class DataTypeUnion(DataType):
     def __str__(self):
         s = "<UNION "
         if self.name is not None:
-            s += self.name
+            s += self.name + " "
 
         s += "(members = {}) ".format(len(self.membertypes))
         s += "(size = {})>".format(self.size)

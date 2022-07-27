@@ -3,11 +3,69 @@ from translation import *
 from __main__ import * # import all the implicit GhidraScript state & methods
 from ghidra.app.decompiler import DecompileOptions
 from ghidra.app.decompiler import DecompInterface
+from ghidra.app.util.opinion import ElfLoader
+from ghidra.program.model.data import Pointer, Structure, DefaultDataType, BuiltInDataType, BooleanDataType, CharDataType, AbstractIntegerDataType, AbstractFloatDataType, AbstractComplexDataType, ArrayDataType, Array, Enum
+from ghidra.app.util.bin.format.dwarf4.next import DWARFRegisterMappingsManager
 
 # globals
+curr = getCurrentProgram()
 IFC = DecompInterface()
 IFC.setOptions(DecompileOptions())
 IFC.openProgram(currentProgram)
+
+image_base = curr.imageBase.offset
+orig_base = ElfLoader.getElfOriginalImageBase(curr)
+
+def generate_register_mappings():
+    d2g_mapping = DWARFRegisterMappingsManager.getMappingForLang(curr.language)
+    g2d_mapping = {}
+    for i in range(DW_FRAME_LAST_REG_NUM):
+        reg = d2g_mapping.getGhidraReg(i)
+        if reg:
+            g2d_mapping[reg.offset] = i
+    stack_reg_num = d2g_mapping.DWARFStackPointerRegNum
+    stack_reg_dwarf = globals()["DW_OP_breg%d" % stack_reg_num]
+    return g2d_mapping, stack_reg_dwarf
+
+# () -> DecompInterface
+def generate_decomp_interface():
+    decompiler = DecompInterface()
+    opts = DecompileOptions()
+    opts.grabFromProgram(curr)
+    decompiler.setOptions(opts)
+    decompiler.toggleCCode(True)
+    decompiler.toggleSyntaxTree(True)
+
+    # - decompile -- The main decompiler action
+    # - normalize -- Decompilation tuned for normalization
+    # - jumptable -- Simplify just enough to recover a jump-table
+    # - paramid   -- Simplify enough to recover function parameters
+    # - register  -- Perform one analysis pass on registers, without stack variables
+    # - firstpass -- Construct the initial raw syntax tree, with no simplification
+    decompiler.setSimplificationStyle("decompile")
+    decompiler.openProgram(curr)
+    return decompiler
+
+# (DecompInterface, Function) -> DecompileResults
+def get_decompiled_function(decompiler, func):
+    return decompiler.decompileFunction(func, 0, monitor)
+
+# HighFunction -> ???
+def get_decompiled_variables(decomp):
+    hf = decomp.highFunction
+    symbolMap = hf.localSymbolMap
+    params = [symbolMap.getParam(i).symbol for i in range(symbolMap.numParams) if symbolMap.getParam(i)]
+    for s in symbolMap.symbols:
+        yield s.name, s.dataType, s.PCAddress, s.storage, s in params
+
+def get_functions():
+    fm = curr.functionManager
+    funcs = fm.getFunctions(True)
+    return funcs
+
+
+def get_function_range(func):
+    return (resolve_absolute_address(func.entryPoint.offset), resolve_absolute_address(func.body.maxAddress.offset))
 
 def getAllFunctions(): # returns [Function]
     fns = []
@@ -26,23 +84,13 @@ def getAllData(): # returns [Data]
         datum = getDataAfter(datum)
     return data
 
-def getFunctionByName(fname): # returns Function (or None)
-    """
-    fname: String
-        the desired function's name
-    
-    returns: Function | None
-    """
+# str -> Function | None
+def getFunctionByName(fname):
     fns = getGlobalFunctions(fname)
     return fns[0] if len(fns) > 0 else None
 
-def getFunctionByStartAddr(addr): # returns Function (or None)
-    """
-    addr: Address
-        the start address of the desired function
-
-    returns: Function | None
-    """
+# Address (Ghidra) -> Function (Ghidra) | None
+def getFunctionByStartAddr(addr):
     return getFunctionAt(addr)
 
 # decompile, returning DecompileResults
@@ -140,25 +188,36 @@ def getHighFunctionEndAddr(highfn):
 def flatten(xss):
     return [x for xs in xss for x in xs]
 
+# int -> int
+def resolve_absolute_address(absaddr):
+    return absaddr - image_base + orig_base
+
 # Convert a Ghidra-represented Address into our Address representation
 def get_address(addr):
-    addrspace = get_addrspace(addr.getAddressSpace())
+    addrspace = get_addrtype(addr.getAddressSpace())
     offset = addr.getOffset()
 
-    return Address(addrspace=addrspace, offset=offset)
+    if addrspace == AddressType.STACK:
+        return StackAddress(offset)
+    elif addrspace == AddressType.ABSOLUTE:
+        return AbsoluteAddress(resolve_absolute_address(offset))
+    elif addrspace == AddressType.EXTERNAL:
+        return ExternalAddress()
+    elif addrspace == AddressType.REGISTER:
+        return RegisterAddress(offset)
 
 # Given a Ghidra AddressSpace object, produce an AddressSpace enum int in our own representation
-def get_addrspace(addrspace):
+def get_addrtype(addrspace):
     if addrspace.isStackSpace():
-        return AddressSpace.STACK
+        return AddressType.STACK
     elif addrspace.isMemorySpace():
-        return AddressSpace.GLOBAL
+        return AddressType.ABSOLUTE
     elif addrspace.isExternalSpace():
-        return AddressSpace.EXTERNAL
+        return AddressType.EXTERNAL
     elif addrspace.isRegisterSpace():
-        return AddressSpace.REGISTER
+        return AddressType.REGISTER
     else:
-        return AddressSpace.UNKNOWN
+        return AddressType.UNKNOWN
 
 # for a given DataType (Ghidra) object, extract its class name
 # string and group it into a MetaType category

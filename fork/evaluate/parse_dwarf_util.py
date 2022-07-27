@@ -404,11 +404,15 @@ def parse_dwarf_expr_ops_to_addr(expr_ops):
         elif expr_op.op_name == "DW_OP_fbreg":
             offset = expr_op.args[0]
             # TODO: Avoid implicit assumption of x86-64 & RBP here
-            return RegisterOffsetAddress(RegsX86_64.RBP, offset)
+            return StackAddress(offset)
 
         # stored in register?
         elif DW_OP_name2opcode["DW_OP_reg0"] <= expr_op.op <= DW_OP_name2opcode["DW_OP_reg31"]:
             regnum = expr_op.op - DW_OP_name2opcode["DW_OP_reg0"]
+            return RegisterAddress(regnum)
+
+        elif expr_op.op_name == "DW_OP_regx":
+            regnum = expr_op.args[0]
             return RegisterAddress(regnum)
 
         # offset from a register?

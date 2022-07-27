@@ -155,8 +155,8 @@ def test_gathered_funcs_gblvars():
         
 
 def test_parse_dwarf():
-    proginfo = parse_from_objfile("../progs/typecases_debug_O3.bin")
-    # proginfo = parse_from_objfile("../progs/typecases_splitobjs/main_debug_O0.bin")
+    objfile = "../progs/typecases_O0.bin_dbg"
+    proginfo = parse_from_objfile(objfile)
     proginfo.print_summary()
 
 def test_addr_parse():

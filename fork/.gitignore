@@ -5,3 +5,5 @@
 *.dwarfdump
 *.objdump
 *$py.class
+*_dbg
+*_dbg.c
