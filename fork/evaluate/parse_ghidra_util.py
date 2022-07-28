@@ -1,367 +1,164 @@
 from translation import *
 
-from __main__ import * # import all the implicit GhidraScript state & methods
-from ghidra.app.decompiler import DecompileOptions
-from ghidra.app.decompiler import DecompInterface
+from __main__ import * # import all the implicit GhidraScript state & methods from the main script
+from ghidra.app.decompiler import DecompInterface, DecompileOptions
 from ghidra.app.util.opinion import ElfLoader
-from ghidra.program.model.data import Pointer, Structure, DefaultDataType, BuiltInDataType, BooleanDataType, CharDataType, AbstractIntegerDataType, AbstractFloatDataType, AbstractComplexDataType, ArrayDataType, Array, Enum
 from ghidra.app.util.bin.format.dwarf4.next import DWARFRegisterMappingsManager
+from ghidra.program.model.symbol import SymbolType
 
-# globals
-curr = getCurrentProgram()
-IFC = DecompInterface()
-IFC.setOptions(DecompileOptions())
-IFC.openProgram(currentProgram)
+# This class tries to encapsulate the inherently stateful properties of
+# the Ghidra scripting enviornment to avoid a bunch of global variables
+# while also avoiding duplicate computation and unnecessary parameters.
+class GhidraUtil(object):
+    # perform setup
+    def __init__(self, curr, monitor):
+        # current Program to act on
+        self.curr = curr # getCurrentProgram()
+        # the program monitor
+        self.monitor = monitor # getMonitor()
 
-image_base = curr.imageBase.offset
-orig_base = ElfLoader.getElfOriginalImageBase(curr)
+        # self.decompiler :: DecompInterface
+        self.decompiler = self._generate_decomp_interface()
 
-def generate_register_mappings():
-    d2g_mapping = DWARFRegisterMappingsManager.getMappingForLang(curr.language)
-    g2d_mapping = {}
-    for i in range(DW_FRAME_LAST_REG_NUM):
-        reg = d2g_mapping.getGhidraReg(i)
-        if reg:
-            g2d_mapping[reg.offset] = i
-    stack_reg_num = d2g_mapping.DWARFStackPointerRegNum
-    stack_reg_dwarf = globals()["DW_OP_breg%d" % stack_reg_num]
-    return g2d_mapping, stack_reg_dwarf
+        # self.reg_d2g_map :: dict[int->int]
+        # self.reg_g2d_map :: dict[int->int]
+        # self.dwarf_stack_regnum :: int
+        self.reg_d2g_map, self.reg_g2d_map, self.dwarf_stack_regnum = self._generate_register_mappings()
 
-# () -> DecompInterface
-def generate_decomp_interface():
-    decompiler = DecompInterface()
-    opts = DecompileOptions()
-    opts.grabFromProgram(curr)
-    decompiler.setOptions(opts)
-    decompiler.toggleCCode(True)
-    decompiler.toggleSyntaxTree(True)
+        self.image_base = self.curr.getImageBase().getOffset()
+        self.orig_base = ElfLoader.getElfOriginalImageBase(self.curr)
 
-    # - decompile -- The main decompiler action
-    # - normalize -- Decompilation tuned for normalization
-    # - jumptable -- Simplify just enough to recover a jump-table
-    # - paramid   -- Simplify enough to recover function parameters
-    # - register  -- Perform one analysis pass on registers, without stack variables
-    # - firstpass -- Construct the initial raw syntax tree, with no simplification
-    decompiler.setSimplificationStyle("decompile")
-    decompiler.openProgram(curr)
-    return decompiler
+    def _generate_register_mappings(self):
+        MAX_REGS = 64
+        lang = self.curr.getLanguage()
+        d2g_mapping = DWARFRegisterMappingsManager.getMappingForLang(lang)
+        reg_d2g_map = {} # map DWARF regnum -> Ghidra regnum (Register.getOffset())
+        reg_g2d_map = {} # map Ghidra regnum -> DWARF regnum
+        for dwarf_regnum in range(MAX_REGS):
+            reg = d2g_mapping.getGhidraReg(dwarf_regnum)
+            if reg:
+                ghidra_regnum = reg.getOffset()
+                reg_d2g_map[dwarf_regnum] = ghidra_regnum
+                reg_g2d_map[ghidra_regnum] = dwarf_regnum
+        dwarf_stack_regnum = d2g_mapping.getDWARFStackPointerRegNum()
+        return reg_d2g_map, reg_g2d_map, dwarf_stack_regnum
 
-# (DecompInterface, Function) -> DecompileResults
-def get_decompiled_function(decompiler, func):
-    return decompiler.decompileFunction(func, 0, monitor)
+    # int -> int
+    def dwarf2ghidra_register(self, regnum):
+        return self.reg_d2g_map[regnum]
 
-# HighFunction -> ???
-def get_decompiled_variables(decomp):
-    hf = decomp.highFunction
-    symbolMap = hf.localSymbolMap
-    params = [symbolMap.getParam(i).symbol for i in range(symbolMap.numParams) if symbolMap.getParam(i)]
-    for s in symbolMap.symbols:
-        yield s.name, s.dataType, s.PCAddress, s.storage, s in params
+    # int -> int
+    def ghidra2dwarf_register(self, reg_offset):
+        return self.reg_g2d_map[reg_offset]
 
-def get_functions():
-    fm = curr.functionManager
-    funcs = fm.getFunctions(True)
-    return funcs
+    # () -> DecompInterface
+    def _generate_decomp_interface(self):
+        decompiler = DecompInterface()
+        opts = DecompileOptions()
+        opts.grabFromProgram(self.curr)
+        decompiler.setOptions(opts)
+        decompiler.toggleCCode(True)
+        decompiler.toggleSyntaxTree(True)
+        decompiler.setSimplificationStyle("decompile")
+        decompiler.openProgram(self.curr)
+        return decompiler
 
+    # int -> int
+    def resolve_absolute_address(self, absaddr):
+        return absaddr - self.image_base + self.orig_base
 
-def get_function_range(func):
-    return (resolve_absolute_address(func.entryPoint.offset), resolve_absolute_address(func.body.maxAddress.offset))
+    # Function -> DecompileResults
+    def decompile_function(self, func):
+        return self.decompiler.decompileFunction(func, 0, self.monitor)
 
-def getAllFunctions(): # returns [Function]
-    fns = []
-    fn = getFirstFunction()
-    while fn is not None:
-        fns.append(fn)
-        fn = getFunctionAfter(fn)
-    return fns
+    # get HighFunction from DecompileResults by calling .getHighFunction()
+    # HighFunction -> Iter<HighSymbol>
+    def get_highfn_params(highfn):
+        symmap = highfn.getLocalSymbolMap()
+        return (symmap.getParam(i).getSymbol() for i in range(symmap.getNumParams()) if symmap.getParam(i))
 
-# global variables?
-def getAllData(): # returns [Data]
-    data = []
-    datum = getFirstData()
-    while datum is not None:
-        data.append(datum)
-        datum = getDataAfter(datum)
-    return data
+        # HighSymbol info...
+        # .getName(), .getDataType(), .getPCAddress(), .getStorage(), .isParameter()
 
-# str -> Function | None
-def getFunctionByName(fname):
-    fns = getGlobalFunctions(fname)
-    return fns[0] if len(fns) > 0 else None
+    # get the non-parameter local variables of a HighFunction object
+    # HighFunction -> Iter<HighSymbol>
+    def get_highfn_local_vars(highfn):
+        # Is the given HighSymbol a local (non-parameter) variable
+        # HighSymbol -> bool
+        def is_local_var(sym):
+            return not sym.isParameter() and sym.getSymbol().getSymbolType() == SymbolType.LOCAL_VAR
 
-# Address (Ghidra) -> Function (Ghidra) | None
-def getFunctionByStartAddr(addr):
-    return getFunctionAt(addr)
+        symmap = highfn.getLocalSymbolMap()
+        return (sym for sym in symmap.getSymbols() if is_local_var(sym))
 
-# decompile, returning DecompileResults
-def decompile(fn): # returns DecompileResults
-    """
-    fn: Function
-        the function object to decompile
+    # Get the global variable HighSymbol objects referenced in this function
+    # HighFunction -> Iter<HighSymbol>
+    def get_highfn_global_vars(highfn):
+
+        # HighSymbol -> bool
+        def is_global_var(sym):
+            return sym.getSymbol().getSymbolType() in [SymbolType.GLOBAL, SymbolType.GLOBAL_VAR]
+        
+        symmap = highfn.getGlobalSymbolMap()
+        return (sym for sym in symmap.getSymbols() if is_global_var(sym))
+
+    # Iterator global variable HighSymbol objects from the target binary that are referenced
+    # from at least one of the decompiled functions.
+    # () -> Iter<HighSymbol>
+    def get_referenced_global_vars(self):
+        refs = [] # holds unique ids for each seen global
+        for highfn in self.iter_decompiled_functions():
+            for gblsym in self.get_highfn_global_vars(highfn):
+                if id(gblsym) not in refs:
+                    refs += id(gblsym)
+                    yield gblsym
     
-    returns: DecompileResults
-    """
-    res = IFC.decompileFunction(fn, 0, monitor) # type: DecompileResults
+    # () -> Iter<Function>
+    def get_functions(self):
+        fm = self.curr.getFunctionManager()
+        funcs = fm.getFunctions(True)
+        return funcs
 
-    # if failed to decompile, print error
-    if not res.decompileCompleted():
-        print("Error decompiling function")
-        print(res.getErrorMessage())
-        exit(1)
+    # Get the absolute addresses where a Function starts and ends.
+    # Function -> (int, int)
+    def get_function_range(self, func):
+        return (
+            self.resolve_absolute_address(func.getEntryPoint().getOffset()),
+            self.resolve_absolute_address(func.getBody().getMaxAddress().getOffset())
+        )
 
-    return res
+    # Does the function range fall within executable sections of the binary?
+    # Function -> bool
+    def is_function_executable(self, func):
+        f_start, f_end = self.get_function_range(func)
+        # Check for functions inside executable segments
+        for s in self.curr.getMemory().getExecuteSet().getAddressRanges(True):
+            if f_start >= self.resolve_absolute_address(s.getMinAddress().getOffset()) and f_end <= self.resolve_absolute_address(s.getMaxAddress().getOffset()):
+                return True
+        return False
 
-# decompile, get C code as raw string
-def decompileToRawC(fn): # returns str
-    res = decompile(fn) # type: DecompileResults
+    # str -> Function | None
+    def get_function_by_name(self, fname):
+        fns = self.curr.getListing().getGlobalFunctions(fname)
+        return fns[0] if len(fns) > 0 else None
 
-    # get decompiled code
-    decomp = res.getDecompiledFunction() # type: DecompiledFunction
+    # Address (Ghidra) -> Function (Ghidra) | None
+    def get_function_by_start_addr(self, addr):
+        return self.curr.getListing().getFunctionAt(addr)
 
-    # from this, get C code as a string
-    codestr = decomp.getC()
-    return codestr
+    # For each function, decompile and yield the DecompileResults.
+    # Consumer should check whether the decompilation succeeded.
+    # () -> Iter<DecompileResults>
+    def iter_decompile_results(self):
+        return (self.decompile_function(fn) for fn in self.get_functions())
 
-# decompile, get XML document of results
-def decompileXML(fn): # returns ClangTokenGroup
-    res = decompile(fn) # type: DecompileResults
-    tokgrp = res.getCCodeMarkup() # type: ClangTokenGroup
-    return tokgrp
+    # Iterates over DecompileResults for each Function and maps them to their HighFunction.
+    # Discards any where decompilation failed/timed out.
+    # () -> Iter<HighFunction>
+    def iter_decompiled_functions(self):
 
-# decompile, get high-level syntax tree
-def decompileHighFunction(fn):
-    res = decompile(fn)
-    hfunc = res.getHighFunction() # type: HighFunction
-    return hfunc
+        # DecompileResults -> bool
+        def is_decompile_success(res):
+            return res.decompileCompleted()
 
-def decompileAll():
-    return [ decompileHighFunction(fn) for fn in getAllFunctions() ]
-
-# HighFunction -> [HighVariable]
-def getHighFunctionGlobalVars(highfn):
-    return [ 
-        gblsym.getHighVariable() 
-        for gblsym in highfn.getGlobalSymbolMap().getSymbols() 
-        if gblsym.getHighVariable() is not None    
-    ]
-
-def getHighFunctionLocalVars(highfn):
-    return [ 
-        sym.getHighVariable() 
-        for sym in highfn.getLocalSymbolMap().getSymbols() 
-        if sym.getHighVariable() is not None
-    ]
-
-def getHighFunctionParams(highfn):
-    localsymmap = highfn.getLocalSymbolMap()
-    return [ 
-        localsymmap.getParam(i) 
-        for i in range(localsymmap.getNumParams()) 
-        if localsymmap.getParam(i) is not None   
-    ]
-
-def getHighFunctionLocalVars(highfn):
-    return [ 
-        sym.getHighVariable() 
-        for sym in highfn.getLocalSymbolMap().getSymbols() 
-        if (not sym.isParameter()) and (not sym.isGlobal()) and (sym.getHighVariable() is not None)
-    ]
-
-# get the Ghidra Address for the start of the HighFunction object
-def getHighFunctionStartAddr(highfn):
-    fn = highfn.getFunction()
-    startaddr = fn.getEntrypoint()
-    return startaddr
-
-# get the Ghidra Address for the last native instruction of the HighFunction object
-def getHighFunctionEndAddr(highfn):
-    offset = 0
-    endaddr = None
-    for pcodeop in highfn.getPcodeOps().getBasicIter():
-        _endaddr = pcodeop.getSeqnum().getTarget()
-        _offset = _endaddr.getOffset()
-        if _offset > offset:
-            offset = _offset
-            endaddr = _endaddr
-    return endaddr
-
-def flatten(xss):
-    return [x for xs in xss for x in xs]
-
-# int -> int
-def resolve_absolute_address(absaddr):
-    return absaddr - image_base + orig_base
-
-# Convert a Ghidra-represented Address into our Address representation
-def get_address(addr):
-    addrspace = get_addrtype(addr.getAddressSpace())
-    offset = addr.getOffset()
-
-    if addrspace == AddressType.STACK:
-        return StackAddress(offset)
-    elif addrspace == AddressType.ABSOLUTE:
-        return AbsoluteAddress(resolve_absolute_address(offset))
-    elif addrspace == AddressType.EXTERNAL:
-        return ExternalAddress()
-    elif addrspace == AddressType.REGISTER:
-        return RegisterAddress(offset)
-
-# Given a Ghidra AddressSpace object, produce an AddressSpace enum int in our own representation
-def get_addrtype(addrspace):
-    if addrspace.isStackSpace():
-        return AddressType.STACK
-    elif addrspace.isMemorySpace():
-        return AddressType.ABSOLUTE
-    elif addrspace.isExternalSpace():
-        return AddressType.EXTERNAL
-    elif addrspace.isRegisterSpace():
-        return AddressType.REGISTER
-    else:
-        return AddressType.UNKNOWN
-
-# for a given DataType (Ghidra) object, extract its class name
-# string and group it into a MetaType category
-# Ghidra class hierarchy: https://ghidra.re/ghidra_docs/api/overview-tree.html
-# -> types are classes within ghidra.program.model.data & ghidra.program.database.data
-def get_metatype(dtype):
-    clsname = type(dtype).__name__
-    
-    # strip the package prefix from the class name for easier comparison
-    prefixes = [ "ghidra.program.model.data.", "ghidra.program.database.data." ]
-    valid = True
-    for prefix in prefixes:
-        if clsname.startswith(prefix):
-            clsname = clsname[len(prefix):]
-            valid = True
-            break
-    
-    if not valid:
-        raise NotImplementedError("No metatype translation for class '{}'".format(clsname))
-
-    if clsname in [
-        "AbstractFloatDataType",
-        "DoubleDataType",
-        "Float10DataType",
-        "Float16DataType",
-        "Float2DataType",
-        "Float4DataType",
-        "FloatDataType",
-        "LongDoubleDataType"
-    ]:
-        return MetaType.FLOAT
-    
-    elif clsname in [
-        "AbstractIntegerDataType",
-        "BooleanDataType",
-        "ByteDataType",
-        "CharDataType",
-        "SignedCharDataType",
-        "UnsignedCharDataType",
-        "DWordDataType",
-        "Integer16DataType",
-        "Integer3DataType",
-        "Integer5DataType",
-        "Integer6DataType",
-        "Integer7DataType",
-        "IntegerDataType",
-        "LongDataType",
-        "LongLongDataType",
-        "QWordDataType",
-        "ShortDataType",
-        "SignedByteDataType",
-        "SignedDWordDataType",
-        "SignedQWordDataType",
-        "SignedWordDataType",
-        "UnsignedInteger16DataType",
-        "UnsignedInteger3DataType",
-        "UnsignedInteger5DataType",
-        "UnsignedInteger6DataType",
-        "UnsignedInteger7DataType",
-        "UnsignedIntegerDataType",
-        "UnsignedLongDataType",
-        "UnsignedLongLongDataType",
-        "UnsignedShortDataType",
-        "WordDataType"
-    ]:
-        return MetaType.INT
-
-    elif clsname in [
-        "VoidDataType"
-    ]:
-        return MetaType.VOID
-
-    elif clsname in [
-        "PointerDataType",
-        "Pointer16DataType",
-        "Pointer24DataType",
-        "Pointer32DataType",
-        "Pointer40DataType",
-        "Pointer48DataType",
-        "Pointer56DataType",
-        "Pointer64DataType",
-        "Pointer8DataType",
-        "PointerDB"
-    ]:
-        return MetaType.POINTER
-
-    elif clsname in [
-        "StructureDataType",
-        "StructureDB"
-    ]:
-        return MetaType.STRUCT
-
-    elif clsname in [
-        "UnionDataType",
-        "UnionDB"
-    ]:
-        return MetaType.UNION
-
-    elif clsname in [
-        "ArrayDataType",
-        "ArrayDB"
-    ]:
-        return MetaType.ARRAY
-
-    elif clsname in [
-        "FunctionDefinitionDataType",
-        "FunctionDefinitionDB"
-    ]:
-        return MetaType.FUNCTION_PROTOTYPE
-
-    elif clsname in [
-        "TypedefDataType",
-        "TypedefDB"
-    ]:
-        return MetaType.TYPEDEF
-
-    elif clsname in [
-        "EnumDataType",
-        "EnumDB"
-    ]:
-        return MetaType.ENUM
-
-    elif clsname in [
-        "Undefined",
-        "Undefined1DataType",
-        "Undefined2DataType",
-        "Undefined3DataType",
-        "Undefined4DataType",
-        "Undefined5DataType",
-        "Undefined6DataType",
-        "Undefined7DataType",
-        "Undefined8DataType",
-        "DefaultDataType",
-        "DwarfEncodingModeDataType",
-        "UnsignedLeb128DataType",
-        "SignedLeb128DataType"
-    ]:
-        return MetaType.UNDEFINED
-
-    elif clsname in [
-        "AbstractStringDataType",
-        "StringDataType"
-    ]:
-        return MetaType.STRING
-
-    else:
-        raise NotImplementedError("No MetaType translation for class {}".format(clsname))
+        return (res.getHighFunction() for res in self.iter_decompile_results() if is_decompile_success(res))

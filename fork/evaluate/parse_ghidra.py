@@ -1,39 +1,63 @@
+from numpy import isin
 from parse_ghidra_util import *
 from resolve import *
 from resolve_stubs import *
 from translation import *
+from ghidra.program.model.data import Array, Structure, Enum, Pointer, TypeDef, FunctionDefinition, DefaultDataType, BuiltInDataType, BooleanDataType, CharDataType, AbstractIntegerDataType, AbstractFloatDataType, AbstractComplexDataType, AbstractStringDataType, Undefined, VoidDataType as _VoidDataType
 
 class ParseGhidraException(Exception):
     pass
 
 class ParseGhidra:
     def __init__(self):
+        self.curr = getCurrentProgram()
+        self.monitor = getMonitor()
+
+        # utility class instantiation
+        self.util = GhidraUtil(self.curr, self.monitor)
+
         # holds {ref: obj} mappings
         # obj is a Ghidra type (DataType, Variable, Address, etc)
         self.objmap = {}
         # holds {ref: stub} mappings
         self.db = ResolverDatabase()
 
+    # This maps an object to a unique identifier for it.
+    # We are using the address of the object, obtained via the id() function.
+    def to_key(obj):
+        return id(obj)
+
     # place a ghidra object in the objmap
     # referenced by its Python object address
     def register_obj(self, obj):
-        k = id(obj)
+        k = self.to_key(obj)
         if (not self.db.exists(k)) and (k not in self.objmap):
             self.objmap[k] = obj
         return k
 
-    def generate_unique_key(self):
-        MAXKEY = 999999
-        for k in range(0, MAXKEY):
-            if (not self.db.exists(k)) and (k not in self.objmap):
-                return k
+    # def generate_unique_key(self):
+    #     MAXKEY = 999999
+    #     for k in range(0, MAXKEY):
+    #         if (not self.db.exists(k)) and (k not in self.objmap):
+    #             return k
 
-    # Generate a key for the stub, then insert into the DB as a record.
-    # Return the new key created.
+    # Wrap a stub in a ResolverDatabase.ResolverRecord and insert into the DB.
+    # Return the new key, which is the address of the stub.
     def make_stub(self, stub):
-        key = self.generate_unique_key()
+        key = self.to_key(stub)
         self.db.make_record(key, stub)
         return key
+
+    # A utility for the parsing methods to ensure that the passed in ref (key)
+    # exists in the internal object map.
+    # Returns the object associated with the ref if valid.
+    def follow_objmap_ref(self, ref):
+        # try to lookup in objmap
+        # if not found, raise error
+        obj = self.objmap.get(ref, None)
+        if obj is None:
+            raise ParseGhidraException("Referenced object does not exist in map")
+        return obj
 
     def parse(self):
         self.generate_proginfo_stub()
@@ -41,62 +65,55 @@ class ParseGhidra:
         return proginfo
 
     def generate_proginfo_stub(self):
-        ref = self.generate_unique_key()
+        # Register decompiled HighFunction objects
+        functionrefs = [ self.register_obj(highfn) for highfn in self.util.iter_decompiled_functions() ]
 
-        # collect all Function and perform decompilation on each
-        # get list of HighFunction objects
-        # should we iterate this until it reaches fixpoint?
-        highfns = [ decompileHighFunction(fn) for fn in getAllFunctions() ]
-        functionrefs = [ self.register_obj(highfn) for highfn in highfns ]
-
-        # for each HighFunction, extract the global high variables referenced
-        globalvars = flatten([
-            getHighFunctionGlobalVars(highfn)
-            for highfn in highfns 
-        ])
-        globalrefs = [ self.register_obj(var) for var in globalvars ]
+        # for each HighFunction, register the global HighSymbol objects referenced
+        globalsyms = self.util.get_referenced_global_vars()
+        globalrefs = [ self.register_obj(sym) for sym in globalsyms ]
 
         stub = ProgramInfoStub(
             globalrefs=globalrefs,
             functionrefs=functionrefs
         )
 
-        self.db.make_record(ref, stub)
+        ref = self.make_stub(stub)
         self.db.set_root_key(ref)
 
         for functionref in functionrefs:
-            self.generate_function_stub(functionref)
+            self.parse_highfunction(functionref)
 
         for globalref in globalrefs:
-            self.generate_var_stub(globalref, param=False, functionref=None)
+            self.parse_var_highsymbol(globalref, param=False, functionref=None)
 
 
-    # ref to a HighFunction object
-    def generate_function_stub(self, ref):
-        # if this ref is already in the db, do nothing
+    # ref :: key to HighFunction object
+    # create and store FunctionStub
+    def parse_high_function(self, ref):
+
         if self.db.exists(ref):
             return
 
-        # try to lookup in objmap
-        # if not found, raise error
-        highfn = self.objmap.get(ref, None)
-        if highfn is None:
-            raise ParseGhidraException("HighFunction object does not exist in map")
+        highfn = self.follow_objmap_ref(ref) # HighFunction
+        fn = highfn.getFunction() # Function
 
-        name = highfn.getFunction().getName() # str
+        name = fn.getName() # str
 
-        # get Address objects
-        startaddr = get_address(getHighFunctionStartAddr(highfn))
-        endaddr = get_address(getHighFunctionEndAddr(highfn))
+        # get absolute addresses (as ints) of low and high PCs for function
+        startpc, endpc = self.util.get_function_range(fn) # (int, int)
+        # translate the raw PC ints to Address objects
+        startaddr = AbsoluteAddress(startpc)
+        endaddr = AbsoluteAddress(endpc)
 
-        params = getHighFunctionParams(highfn) # [HighParam]
+        params = self.util.get_highfn_params(highfn) # Iter<HighSymbol>
         paramrefs = [ self.register_obj(v) for v in params ]
 
-        vars = getHighFunctionLocalVars(highfn) # [HighVariable]
+        vars = self.util.get_highfn_local_vars(highfn) # Iter<HighSymbol>
         varrefs = [ self.register_obj(v) for v in vars ]
 
         fnproto = highfn.getFunctionPrototype()
         rettyperef = self.make_stub(DataTypeVoidStub()) if fnproto.hasNoReturn() else self.register_obj(fnproto.getReturnType())
+        variadic = fnproto.hasVarArgs()
 
         stub = FunctionStub(
             name=name,
@@ -104,47 +121,45 @@ class ParseGhidra:
             endaddr=endaddr,
             rettyperef=rettyperef,
             paramrefs=paramrefs,
-            varrefs=varrefs
+            varrefs=varrefs,
+            variadic=variadic
         )
 
         # insert this record
         self.db.make_record(ref, stub)
 
-        # recurse on sub components of this function
+        # recurse on child components of this function
         for paramref in paramrefs:
-            self.generate_var_stub(paramref, param=True, functionref=ref)
+            self.parse_var_highsymbol(paramref, param=True, functionref=ref)
 
         for varref in varrefs:
-            self.generate_var_stub(varref, param=False, functionref=ref)
+            self.parse_var_highsymbol(varref, param=False, functionref=ref)
 
-        self.generate_dtype_stubs(rettyperef)
+        self.parse_datatype(rettyperef)
 
-    # ref to a HighVariable / HighParam object
-    def generate_var_stub(self, ref, param=False, functionref=None):
-        # if this ref is already in the db, do nothing
+    # ref to a HighSymbol object that refers to a variable/parameter
+    def parse_var_highsymbol(self, ref, param=False, functionref=None):
         if self.db.exists(ref):
             return
 
-        # try to lookup in objmap
-        # if not found, raise error
-        var = self.objmap.get(ref, None)
-        if var is None:
-            raise ParseGhidraException("Variable/Parameter object does not exist in map")
+        highsym = self.follow_objmap_ref(ref)
 
-        name = var.getName()
+        name = highsym.getName()
 
-        dtype = var.getDataType()
+        dtype = highsym.getDataType()
         dtyperef = self.register_obj(dtype)
-        
-        varnode_instances = var.getInstances()
-        varnode_representative = var.getRepresentative()
-        addr = varnode_representative.getAddress()
-        addrref = self.register_obj(addr)
+
+        # get the liveranges for the variable
+
+        # varnode_instances = var.getInstances()
+        # varnode_representative = var.getRepresentative()
+        # addr = varnode_representative.getAddress()
+        liveranges = self.get_var_liveranges(highsym)
 
         stub = VariableStub(
             name=name,
             dtyperef=dtyperef,
-            addrref=addrref,
+            liveranges=liveranges,
             param=param,
             functionref=functionref
         )
@@ -152,23 +167,18 @@ class ParseGhidra:
         self.db.make_record(ref, stub)
 
         # recurse on sub components
-        self.generate_dtype_stubs(dtyperef)
-        self.generate_address_stub(addrref)
+        self.parse_datatype(dtyperef)
 
     # ref to a Ghidra DataType object
-    def generate_dtype_stubs(self, ref):
+    def parse_datatype(self, ref):
         # if this ref is already in the db, do nothing
         if self.db.exists(ref):
             return
 
-        # try to lookup in objmap
-        # if not found, raise error
-        dtype = self.objmap.get(ref, None)
-        if dtype is None:
-            raise ParseGhidraException("DataType object does not exist in map")
+        dtype = self.follow_objmap_ref(ref)
 
         # extract the metatype & size from the dtype
-        metatype = get_metatype(dtype)
+        metatype = ParseGhidra.datatype2metatype(dtype)
         size = 0 if dtype.isZeroLength() else dtype.getLength()
 
         # we want to create a stub & recursively capture sub-types to resolve
@@ -213,7 +223,7 @@ class ParseGhidra:
 
         elif metatype == MetaType.STRUCT:
             name = dtype.getName()
-            membertypes = [ mem.getDataType() for mem in dtype.getComponents() ]
+            membertypes = ( mem.getDataType() for mem in dtype.getComponents() )
             membertyperefs = [ self.register_obj(memtype) for memtype in membertypes ]
 
             stub = DataTypeStructStub(
@@ -225,7 +235,7 @@ class ParseGhidra:
 
         elif metatype == MetaType.UNION:
             name = dtype.getName()
-            membertypes = [ mem.getDataType() for mem in dtype.getComponents() ]
+            membertypes = ( mem.getDataType() for mem in dtype.getComponents() )
             membertyperefs = [ self.register_obj(memtype) for memtype in membertypes ]
 
             stub = DataTypeUnionStub(
@@ -293,4 +303,103 @@ class ParseGhidra:
 
         # Recurse on sub-refs
         for subtyperef in subtyperefs:
-            self.generate_dtype_stubs(subtyperef)
+            self.parse_datatype(subtyperef)
+
+    # Convert a Ghidra-represented Address into our Address representation
+    # Address (Ghidra) -> Address (our language)
+    def get_address(self, addr):
+        addrspace = ParseGhidra.addr2addrtype(addr)
+        offset = addr.getOffset()
+
+        if addrspace == AddressType.STACK:
+            return StackAddress(offset)
+        elif addrspace == AddressType.ABSOLUTE:
+            return AbsoluteAddress(self.util.resolve_absolute_address(offset))
+        elif addrspace == AddressType.EXTERNAL:
+            return ExternalAddress()
+        elif addrspace == AddressType.REGISTER:
+            return RegisterAddress(offset)
+
+    # Given a HighSymbol, extract the VariableStorage object and translate into LiveRangeAddress objects.
+    # HighSymbol -> [AddressLiveRange]
+    def get_var_highsymbol_liveranges(self, highsym):
+        storage = highsym.getStorage()
+        varnodes = storage.getVarnodes()
+        highfn = highsym.getHighFunction()
+        return [
+            self.get_varnode_liverange(varnode, highfn=highfn)
+            for varnode
+            in varnodes
+        ]
+
+    # (Varnode, HighFunction) -> AddressLiveRange
+    def get_varnode_liverange(self, varnode, highfn=None):
+        addr = self.get_address(varnode.getAddress()) # Address
+
+        fnstart, fnend = (None, None)
+        if highfn:
+            fnstart, fnend = self.util.get_function_range(highfn.getFunction())
+
+        # If this doesn't have a getPCAddress(), then assume its a parameter.
+        # If parameter, take the start address to be that of the start of the parent function.
+        start = varnode.getPCAddress()
+        # TODO: where is NO_ADDRESS defined in Ghidra API? -> need to import
+        # TODO: what if fnstart=None AND start == NO_ADDRESS? -> No location info
+        startpc = self.util.resolve_absolute_address(fnstart) if start == NO_ADDRESS else self.get_address(start)
+
+        # TODO: how to find endpc properly?
+        # Look at Varnode.getDescendants() method... could convert PCode Ops back to native addresses
+        endpc = None if fnend is None else self.util.resolve_absolute_address(fnend)
+
+        return AddressLiveRange(
+            addr=addr,
+            startpc=startpc,
+            endpc=endpc
+        )
+
+    # Given a Ghidra DataType object, map it to the metatype code in our translation language.
+    @staticmethod
+    def datatype2metatype(dtype):
+        # interface / complex types
+        if isinstance(dtype, Array):
+            return MetaType.ARRAY
+        elif isinstance(dtype, Structure):
+            return MetaType.STRUCT
+        elif isinstance(dtype, Enum):
+            return MetaType.ENUM
+        elif isinstance(dtype, Pointer):
+            return MetaType.POINTER
+        elif isinstance(dtype, TypeDef):
+            return MetaType.TYPEDEF
+        elif isinstance(dtype, FunctionDefinition):
+            return MetaType.FUNCTION_PROTOTYPE
+
+        # base types
+        elif isinstance(dtype, AbstractComplexDataType):
+            raise NotImplementedError()
+        elif isinstance(dtype, AbstractFloatDataType):
+            return MetaType.FLOAT
+        elif isinstance(dtype, AbstractIntegerDataType):
+            return MetaType.INT
+        elif isinstance(dtype, AbstractStringDataType):
+            return MetaType.STRING
+        elif isinstance(dtype, _VoidDataType):
+            return MetaType.VOID
+        else:
+            return MetaType.UNDEFINED
+
+    # Given a Ghidra Address object, produce an AddressSpace enum int in our own representation
+    @staticmethod
+    def addr2addrtype(addr):
+        addrspace = addr.getAddressSpace()
+        if addrspace.isStackSpace():
+            return AddressType.STACK
+        elif addrspace.isMemorySpace():
+            return AddressType.ABSOLUTE
+        elif addrspace.isExternalSpace():
+            return AddressType.EXTERNAL
+        elif addrspace.isRegisterSpace():
+            return AddressType.REGISTER
+        else:
+            return AddressType.UNKNOWN
+

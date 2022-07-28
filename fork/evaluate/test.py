@@ -74,5 +74,12 @@ def test_key_type():
 
     print(mydict[(1, 2)])
 
+def test_genexp():
+    def mygenexpfn():
+        return (x ** 2 for x in range(10))
+
+    for x in mygenexpfn():
+        print(x)
+
 if __name__ == "__main__":
-    test_key_type()
+    test_genexp()
