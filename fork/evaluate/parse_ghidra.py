@@ -1,8 +1,9 @@
-from numpy import isin
-from parse_ghidra_util import *
+from __main__ import * # import all the implicit GhidraScript state & methods from the main script
+
 from resolve import *
 from resolve_stubs import *
 from translation import *
+from parse_ghidra_util import *
 from ghidra.program.model.data import Array, Structure, Enum, Pointer, TypeDef, FunctionDefinition, DefaultDataType, BuiltInDataType, BooleanDataType, CharDataType, AbstractIntegerDataType, AbstractFloatDataType, AbstractComplexDataType, AbstractStringDataType, Undefined, VoidDataType as _VoidDataType
 
 class ParseGhidraException(Exception):
@@ -24,7 +25,7 @@ class ParseGhidra:
 
     # This maps an object to a unique identifier for it.
     # We are using the address of the object, obtained via the id() function.
-    def to_key(obj):
+    def to_key(self, obj):
         return id(obj)
 
     # place a ghidra object in the objmap
@@ -66,7 +67,7 @@ class ParseGhidra:
 
     def generate_proginfo_stub(self):
         # Register decompiled HighFunction objects
-        functionrefs = [ self.register_obj(highfn) for highfn in self.util.iter_decompiled_functions() ]
+        functionrefs = [ self.register_obj(highfn) for highfn in self.util.get_decompiled_functions() ]
 
         # for each HighFunction, register the global HighSymbol objects referenced
         globalsyms = self.util.get_referenced_global_vars()
@@ -89,7 +90,7 @@ class ParseGhidra:
 
     # ref :: key to HighFunction object
     # create and store FunctionStub
-    def parse_high_function(self, ref):
+    def parse_highfunction(self, ref):
 
         if self.db.exists(ref):
             return
@@ -100,7 +101,7 @@ class ParseGhidra:
         name = fn.getName() # str
 
         # get absolute addresses (as ints) of low and high PCs for function
-        startpc, endpc = self.util.get_function_range(fn) # (int, int)
+        startpc, endpc = self.util.get_function_pc_range(fn) # (int, int)
         # translate the raw PC ints to Address objects
         startaddr = AbsoluteAddress(startpc)
         endaddr = AbsoluteAddress(endpc)
@@ -113,7 +114,7 @@ class ParseGhidra:
 
         fnproto = highfn.getFunctionPrototype()
         rettyperef = self.make_stub(DataTypeVoidStub()) if fnproto.hasNoReturn() else self.register_obj(fnproto.getReturnType())
-        variadic = fnproto.hasVarArgs()
+        variadic = fnproto.isVarArg()
 
         stub = FunctionStub(
             name=name,
@@ -150,11 +151,7 @@ class ParseGhidra:
         dtyperef = self.register_obj(dtype)
 
         # get the liveranges for the variable
-
-        # varnode_instances = var.getInstances()
-        # varnode_representative = var.getRepresentative()
-        # addr = varnode_representative.getAddress()
-        liveranges = self.get_var_liveranges(highsym)
+        liveranges = self.get_var_highsymbol_liveranges(highsym, local=(functionref is not None))
 
         stub = VariableStub(
             name=name,
@@ -255,7 +252,7 @@ class ParseGhidra:
             rettype = dtype.getReturnType()
             rettyperef = self.register_obj(rettype)
 
-            variadic = dtype.hasVarArgs()
+            variadic = dtype.isVarArg()
             paramdefs = dtype.getArguments() # [ParameterDefinition]
             paramtypes = [ paramdef.getDataType() for paramdef in paramdefs ]
             paramtyperefs = [ self.register_obj(paramtype) for paramtype in paramtypes ]
@@ -308,53 +305,76 @@ class ParseGhidra:
     # Convert a Ghidra-represented Address into our Address representation
     # Address (Ghidra) -> Address (our language)
     def get_address(self, addr):
-        addrspace = ParseGhidra.addr2addrtype(addr)
+        # ensure valid Ghidra Address object
+        if not self.util.is_valid_address(addr):
+            return None
+
+        addrtype = ParseGhidra.addr2addrtype(addr)
         offset = addr.getOffset()
 
-        if addrspace == AddressType.STACK:
+        if addrtype == AddressType.STACK:
             return StackAddress(offset)
-        elif addrspace == AddressType.ABSOLUTE:
+        elif addrtype == AddressType.ABSOLUTE:
             return AbsoluteAddress(self.util.resolve_absolute_address(offset))
-        elif addrspace == AddressType.EXTERNAL:
+        elif addrtype == AddressType.EXTERNAL:
             return ExternalAddress()
-        elif addrspace == AddressType.REGISTER:
-            return RegisterAddress(offset)
+        elif addrtype == AddressType.REGISTER:
+            regnum = self.util.ghidra2dwarf_register(offset)
+            # TODO: what if regnum is None?
+            return RegisterAddress(regnum)
+        elif addrtype == AddressType.UNKNOWN:
+            return UnknownAddress()
+        else:
+            raise ParseGhidraException("No address translation found")
 
     # Given a HighSymbol, extract the VariableStorage object and translate into LiveRangeAddress objects.
-    # HighSymbol -> [AddressLiveRange]
-    def get_var_highsymbol_liveranges(self, highsym):
+    # local indicates whether or not this given HighSymbol should be considered a "local variable" for the purposes of extracting its parent function.
+    # (HighSymbol, bool?) -> [AddressLiveRange]
+    def get_var_highsymbol_liveranges(self, highsym, local=True):
+        # Should we keep the given range in the liveranges list?
+        # Valid range should be non-null, have a non-null & known address
+        # (AddressLiveRange | None) -> bool
+        def valid_range(rng):
+            return rng is not None and rng.addr is not None and rng.addr.addrtype != AddressType.UNKNOWN
+
         storage = highsym.getStorage()
         varnodes = storage.getVarnodes()
-        highfn = highsym.getHighFunction()
-        return [
+        highfn = highsym.getHighFunction() if local else None
+        liveranges = (
             self.get_varnode_liverange(varnode, highfn=highfn)
-            for varnode
-            in varnodes
-        ]
+            for varnode in varnodes
+        )
+        return [ rng for rng in liveranges if valid_range(rng) ]
 
-    # (Varnode, HighFunction) -> AddressLiveRange
+    # Returns an AddressLiveRange object for a given Varnode (SSA variable), or returns None if no location info available.
+    # (Varnode, HighFunction?) -> AddressLiveRange | None
     def get_varnode_liverange(self, varnode, highfn=None):
+        local = highfn is not None
         addr = self.get_address(varnode.getAddress()) # Address
 
-        fnstart, fnend = (None, None)
+        fnstart = fnend = None
         if highfn:
-            fnstart, fnend = self.util.get_function_range(highfn.getFunction())
+            fnstart, fnend = self.util.get_function_pc_range(highfn.getFunction())
+
+        startpc = endpc = None
+        rng = self.util.get_varnode_pc_range(varnode)
+        if rng:
+            startpc, endpc = rng
 
         # If this doesn't have a getPCAddress(), then assume its a parameter.
         # If parameter, take the start address to be that of the start of the parent function.
-        start = varnode.getPCAddress()
-        # TODO: where is NO_ADDRESS defined in Ghidra API? -> need to import
-        # TODO: what if fnstart=None AND start == NO_ADDRESS? -> No location info
-        startpc = self.util.resolve_absolute_address(fnstart) if start == NO_ADDRESS else self.get_address(start)
+        startpc = startpc if startpc else fnstart
+        endpc = endpc if endpc else fnend
 
-        # TODO: how to find endpc properly?
-        # Look at Varnode.getDescendants() method... could convert PCode Ops back to native addresses
-        endpc = None if fnend is None else self.util.resolve_absolute_address(fnend)
+        # fail if there is...
+        # no address OR it is a local variable and there are missing PC bounds
+        if not addr or (local and (not startpc or not endpc)):
+            return None
 
         return AddressLiveRange(
             addr=addr,
-            startpc=startpc,
-            endpc=endpc
+            startpc=AbsoluteAddress(startpc) if startpc else None,
+            endpc=AbsoluteAddress(endpc) if endpc else None
         )
 
     # Given a Ghidra DataType object, map it to the metatype code in our translation language.

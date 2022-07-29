@@ -78,8 +78,8 @@ class ParseDWARF:
             # get the parameter and variable children DIEs
             # only keep if the variable is associated with location(s) in the binary
             paramdies, vardies = get_param_var_DIEs(die)
-            paramrefs = [ self.get_DIE_key(die) for die in paramdies if var_DIE_has_location(die) ]
-            varrefs = [ self.get_DIE_key(die) for die in vardies if var_DIE_has_location(die) ]
+            paramrefs = [ self.get_DIE_key(die) for die in paramdies ]
+            varrefs = [ self.get_DIE_key(die) for die in vardies ]
 
             # does the function have a variable number of parameters?
             variadic = is_variadic_function_DIE(die)
@@ -127,7 +127,7 @@ class ParseDWARF:
                 scopeendpc=scopeendpc
             )
 
-            assert(len(liveranges) > 0) # if the high-level variable DIE has no location info, then it is not actualized in the assembly code
+            # assert(len(liveranges) > 0) # if the high-level variable DIE has no location info, then it is not actualized in the assembly code
 
             stub = VariableStub(
                     name=name,

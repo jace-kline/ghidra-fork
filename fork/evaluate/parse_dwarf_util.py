@@ -114,13 +114,19 @@ def get_DIE_low_high_pc(die):
     if lowpc is None or highpc_attr is None:
         return None
 
+    # TODO: should we be adding 1 to get to the address of the following instruction?
     highpc = None
     if form_in_class(highpc_attr.form, DWARFClass.ADDRESS):
-        highpc = highpc_attr.value
+        highpc = highpc_attr.value + 1
     elif form_in_class(highpc_attr.form, DWARFClass.CONSTANT):
-        highpc = lowpc + highpc_attr.value
+        highpc = lowpc + highpc_attr.value + 1
     else:
         raise NotImplementedError(highpc_attr.form)
+
+    # TODO: find out why this sometimes happens?? -> because we weren't adding 1 to highpc before
+    if highpc < lowpc:
+        highpc = lowpc
+    
     return (lowpc, highpc)
 
 # DIE -> [(int, int)] | None

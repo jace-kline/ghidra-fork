@@ -193,7 +193,7 @@ class ExternalAddress(Address):
 
 class UnknownAddress(Address):
     def __init__(self):
-        super(ExternalAddress, self).__init__(addrtype=AddressType.UNKNOWN)
+        super(UnknownAddress, self).__init__(addrtype=AddressType.UNKNOWN)
 
 # defines the mapping from x86-64 register names
 # to their associated register numbers

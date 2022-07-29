@@ -1,10 +1,8 @@
-from translation import *
-
-from __main__ import * # import all the implicit GhidraScript state & methods from the main script
 from ghidra.app.decompiler import DecompInterface, DecompileOptions
 from ghidra.app.util.opinion import ElfLoader
 from ghidra.app.util.bin.format.dwarf4.next import DWARFRegisterMappingsManager
 from ghidra.program.model.symbol import SymbolType
+from ghidra.program.model.address import Address
 
 # This class tries to encapsulate the inherently stateful properties of
 # the Ghidra scripting enviornment to avoid a bunch of global variables
@@ -29,7 +27,7 @@ class GhidraUtil(object):
         self.orig_base = ElfLoader.getElfOriginalImageBase(self.curr)
 
     def _generate_register_mappings(self):
-        MAX_REGS = 64
+        MAX_REGS = 128
         lang = self.curr.getLanguage()
         d2g_mapping = DWARFRegisterMappingsManager.getMappingForLang(lang)
         reg_d2g_map = {} # map DWARF regnum -> Ghidra regnum (Register.getOffset())
@@ -43,13 +41,13 @@ class GhidraUtil(object):
         dwarf_stack_regnum = d2g_mapping.getDWARFStackPointerRegNum()
         return reg_d2g_map, reg_g2d_map, dwarf_stack_regnum
 
-    # int -> int
+    # int -> int | None
     def dwarf2ghidra_register(self, regnum):
-        return self.reg_d2g_map[regnum]
+        return self.reg_d2g_map.get(regnum, None)
 
-    # int -> int
+    # int -> int | None
     def ghidra2dwarf_register(self, reg_offset):
-        return self.reg_g2d_map[reg_offset]
+        return self.reg_g2d_map.get(reg_offset, None)
 
     # () -> DecompInterface
     def _generate_decomp_interface(self):
@@ -73,7 +71,7 @@ class GhidraUtil(object):
 
     # get HighFunction from DecompileResults by calling .getHighFunction()
     # HighFunction -> Iter<HighSymbol>
-    def get_highfn_params(highfn):
+    def get_highfn_params(self, highfn):
         symmap = highfn.getLocalSymbolMap()
         return (symmap.getParam(i).getSymbol() for i in range(symmap.getNumParams()) if symmap.getParam(i))
 
@@ -82,22 +80,22 @@ class GhidraUtil(object):
 
     # get the non-parameter local variables of a HighFunction object
     # HighFunction -> Iter<HighSymbol>
-    def get_highfn_local_vars(highfn):
+    def get_highfn_local_vars(self, highfn):
         # Is the given HighSymbol a local (non-parameter) variable
         # HighSymbol -> bool
         def is_local_var(sym):
-            return not sym.isParameter() and sym.getSymbol().getSymbolType() == SymbolType.LOCAL_VAR
+            return not sym.isParameter()
 
         symmap = highfn.getLocalSymbolMap()
         return (sym for sym in symmap.getSymbols() if is_local_var(sym))
 
     # Get the global variable HighSymbol objects referenced in this function
     # HighFunction -> Iter<HighSymbol>
-    def get_highfn_global_vars(highfn):
+    def get_highfn_global_vars(self, highfn):
 
         # HighSymbol -> bool
         def is_global_var(sym):
-            return sym.getSymbol().getSymbolType() in [SymbolType.GLOBAL, SymbolType.GLOBAL_VAR]
+            return sym.isGlobal()
         
         symmap = highfn.getGlobalSymbolMap()
         return (sym for sym in symmap.getSymbols() if is_global_var(sym))
@@ -107,10 +105,10 @@ class GhidraUtil(object):
     # () -> Iter<HighSymbol>
     def get_referenced_global_vars(self):
         refs = [] # holds unique ids for each seen global
-        for highfn in self.iter_decompiled_functions():
+        for highfn in self.get_decompiled_functions():
             for gblsym in self.get_highfn_global_vars(highfn):
                 if id(gblsym) not in refs:
-                    refs += id(gblsym)
+                    refs.append(id(gblsym))
                     yield gblsym
     
     # () -> Iter<Function>
@@ -121,7 +119,7 @@ class GhidraUtil(object):
 
     # Get the absolute addresses where a Function starts and ends.
     # Function -> (int, int)
-    def get_function_range(self, func):
+    def get_function_pc_range(self, func):
         return (
             self.resolve_absolute_address(func.getEntryPoint().getOffset()),
             self.resolve_absolute_address(func.getBody().getMaxAddress().getOffset())
@@ -130,7 +128,7 @@ class GhidraUtil(object):
     # Does the function range fall within executable sections of the binary?
     # Function -> bool
     def is_function_executable(self, func):
-        f_start, f_end = self.get_function_range(func)
+        f_start, f_end = self.get_function_pc_range(func)
         # Check for functions inside executable segments
         for s in self.curr.getMemory().getExecuteSet().getAddressRanges(True):
             if f_start >= self.resolve_absolute_address(s.getMinAddress().getOffset()) and f_end <= self.resolve_absolute_address(s.getMaxAddress().getOffset()):
@@ -149,16 +147,57 @@ class GhidraUtil(object):
     # For each function, decompile and yield the DecompileResults.
     # Consumer should check whether the decompilation succeeded.
     # () -> Iter<DecompileResults>
-    def iter_decompile_results(self):
+    def get_decompile_results(self):
         return (self.decompile_function(fn) for fn in self.get_functions())
 
     # Iterates over DecompileResults for each Function and maps them to their HighFunction.
     # Discards any where decompilation failed/timed out.
     # () -> Iter<HighFunction>
-    def iter_decompiled_functions(self):
+    def get_decompiled_functions(self):
 
         # DecompileResults -> bool
         def is_decompile_success(res):
             return res.decompileCompleted()
 
-        return (res.getHighFunction() for res in self.iter_decompile_results() if is_decompile_success(res))
+        return (res.getHighFunction() for res in self.get_decompile_results() if is_decompile_success(res))
+
+    # For a given Varnode (P-Code SSA Variable), return the absolute address range it spans during its lifetime.
+    # Varnode -> (int, int|None) | None
+    def get_varnode_pc_range(self, varnode):
+        # get all Pcode instructions that use this Varnode
+        pcode_ops = varnode.getDescendants() # Iter<PcodeOp>
+        # get native instruction addresses (PCs) for each PcodeOp's sequence number
+        op_instr_addrs = ( op.getSeqnum().getTarget() for op in pcode_ops ) if pcode_ops else None
+        # we assume that each Address is absolute (if valid) -> grab offset only
+        pc_addrs = [ self.resolve_absolute_address(addr.getOffset()) for addr in op_instr_addrs if GhidraUtil.is_valid_address(addr) ] if op_instr_addrs else None
+
+        # select min and max PC addresses, if non-empty list
+        startpc = min(pc_addrs) if pc_addrs else None
+        endpc = max(pc_addrs) if pc_addrs else None
+
+        # cross check start address via Varnode.getPCAddress()
+        # could cause NullPointerException??
+        try:
+            startaddr = varnode.getPCAddress()
+        except:
+            startaddr = None
+        _startpc = self.resolve_absolute_address(startaddr.getOffset()) if startaddr and self.is_valid_address(startaddr) else None
+        startpc = \
+            min(startpc, _startpc) if (startpc and _startpc) \
+            else \
+                (startpc if startpc \
+                    else \
+                        (_startpc if _startpc else None))
+
+        # if we don't know the start PC, then all is lost -> return None
+        if not startpc:
+            return None
+
+        # the endpc could be None
+        return (startpc, endpc)
+
+    # returns whether a Ghidra Address is considered valid by Ghidra
+    # Address (Ghidra) -> bool
+    def is_valid_address(self, addr):
+        return addr != Address.NO_ADDRESS
+
