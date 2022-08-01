@@ -7,3 +7,6 @@
 *$py.class
 *_dbg
 *_dbg.c
+*.pickle
+**/*.rep
+*.gpr

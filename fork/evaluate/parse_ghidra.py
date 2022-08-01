@@ -6,10 +6,14 @@ from translation import *
 from parse_ghidra_util import *
 from ghidra.program.model.data import Array, Structure, Enum, Pointer, TypeDef, FunctionDefinition, DefaultDataType, BuiltInDataType, BooleanDataType, CharDataType, AbstractIntegerDataType, AbstractFloatDataType, AbstractComplexDataType, AbstractStringDataType, Undefined, VoidDataType as _VoidDataType
 
+def parse():
+    parser = ParseGhidra()
+    return parser.parse()
+
 class ParseGhidraException(Exception):
     pass
 
-class ParseGhidra:
+class ParseGhidra(object):
     def __init__(self):
         self.curr = getCurrentProgram()
         self.monitor = getMonitor()
