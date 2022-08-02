@@ -2,6 +2,9 @@
 
 # hold the results of a translation into this common format
 # from either DWARF info or Ghidra decompilation
+from os import stat
+
+
 class ProgramInfo(object):
     def __init__(self, globals=[], functions=[]):
         self.globals = globals
@@ -143,9 +146,38 @@ class AddressType:
         else:
             raise Exception("Invalid AddressType specifier {}".format(addrtype))
 
+    # Can an address range be constructed from this address type?
+    # returns bool
+    @staticmethod
+    def rangeable(addrtype):
+        return addrtype in [ AddressType.ABSOLUTE, AddressType.REGISTER_OFFSET, AddressType.STACK ]
+
 class Address(object):
     def __init__(self, addrtype):
         self.addrtype = addrtype
+
+    def add_const(self, n):
+        raise Exception("Cannot add const to Address type '{}'".format(AddressType.to_string(self.addrtype)))
+
+    def add_addr(self, addr):
+        raise Exception("Cannot add Addresses of type '{}'".format(AddressType.to_string(self.addrtype)))
+
+    # Computes the distance from self to addr in a given address space.
+    # Negative result if addr comes before self.
+    def distance(self, addr):
+        raise Exception("Cannot compute distance between addresses of types '{}' and '{}'.".format(AddressType.to_string(self.addrtype), AddressType.to_string(addr.addrtype)))
+
+    def __lt__(self, addr):
+        raise Exception("Cannot use comparison operation between addresses of types '{}' and '{}'.".format(AddressType.to_string(self.addrtype), AddressType.to_string(addr.addrtype)))
+
+    def __le__(self, addr):
+        raise Exception("Cannot use comparison operation between addresses of types '{}' and '{}'.".format(AddressType.to_string(self.addrtype), AddressType.to_string(addr.addrtype)))
+
+    def __gt__(self, addr):
+        raise Exception("Cannot use comparison operation between addresses of types '{}' and '{}'.".format(AddressType.to_string(self.addrtype), AddressType.to_string(addr.addrtype)))
+
+    def __ge__(self, addr):
+        raise Exception("Cannot use comparison operation between addresses of types '{}' and '{}'.".format(AddressType.to_string(self.addrtype), AddressType.to_string(addr.addrtype)))
 
     def __str__(self):
         return "<{}>".format(AddressType.to_string(self.addrtype))
@@ -154,6 +186,27 @@ class AbsoluteAddress(Address):
     def __init__(self, addr):
         super(AbsoluteAddress, self).__init__(addrtype=AddressType.ABSOLUTE)
         self.addr = addr
+
+    def add_const(self, n):
+        return AbsoluteAddress(self.addr + n)
+
+    def add_addr(self, other):
+        return AbsoluteAddress(self.addr + other.addr)
+
+    def distance(self, addr):
+        return addr.addr - self.addr
+
+    def __lt__(self, addr):
+        return self.addr < addr.addr
+
+    def __le__(self, addr):
+        return self.addr <= addr.addr
+
+    def __gt__(self, addr):
+        return self.addr > addr.addr
+
+    def __ge__(self, addr):
+        return self.addr >= addr.addr
 
     def __str__(self):
         return "<{}:{:#x}>".format(AddressType.to_string(self.addrtype), self.addr)
@@ -172,6 +225,24 @@ class RegisterOffsetAddress(Address):
         self.register = register
         self.offset = offset
 
+    def add_const(self, n):
+        return RegisterOffsetAddress(self.register, self.offset + n)
+
+    def distance(self, addr):
+        return addr.offset - self.offset
+
+    def __lt__(self, addr):
+        return self.offset < addr.offset
+
+    def __le__(self, addr):
+        return self.offset <= addr.offset
+
+    def __gt__(self, addr):
+        return self.offset > addr.offset
+
+    def __ge__(self, addr):
+        return self.offset >= addr.offset
+
     def __str__(self):
         negative = self.offset < 0
         opstr = "-" if negative else "+"
@@ -183,6 +254,24 @@ class StackAddress(Address):
     def __init__(self, offset):
         super(StackAddress, self).__init__(addrtype=AddressType.STACK)
         self.offset = offset
+
+    def add_const(self, n):
+        return StackAddress(self.offset + n)
+
+    def distance(self, addr):
+        return addr.offset - self.offset
+
+    def __lt__(self, addr):
+        return self.offset < addr.offset
+
+    def __le__(self, addr):
+        return self.offset <= addr.offset
+
+    def __gt__(self, addr):
+        return self.offset > addr.offset
+
+    def __ge__(self, addr):
+        return self.offset >= addr.offset
 
     def __str__(self):
         return "<{}:{:#x}>".format(AddressType.to_string(self.addrtype), self.offset)

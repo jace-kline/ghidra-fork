@@ -44,10 +44,10 @@ EXES := $(EXE_O0) $(EXE_O1) $(EXE_O2) $(EXE_O3) $(EXE_O0_DEBUG) $(EXE_O1_DEBUG) 
 clean:
 	rm -rf *.bin *.o *.dwarfdump *.objdump *.pickle *.gpr *.rep
 
-%.dwarf.pickle: %.bin
+%.dwarf.pickle: %.bin $(PYTHON_LIB)/parse_dwarf_exec.py
 	python3 $(PYTHON_LIB)/parse_dwarf_exec.py $< pickle $@
 
-%.ghidra.pickle: %.bin
+%.ghidra.pickle: %.bin $(PYTHON_LIB)/parse_ghidra_exec.py
 	$(GHIDRA_BUILD)/support/analyzeHeadless \
 		$(THISDIR) \
 		tempproject \
