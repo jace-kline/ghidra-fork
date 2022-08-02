@@ -1,0 +1,62 @@
+
+CC := gcc
+
+SRCS := $(wildcard *.c)
+BASENAMES := $(basename $(SRCS))
+
+EXES_O0 := $(patsubst %.c,%_O0.bin,$(SRCS))
+EXES_O1 := $(patsubst %.c,%_O1.bin,$(SRCS))
+EXES_O2 := $(patsubst %.c,%_O2.bin,$(SRCS))
+EXES_O3 := $(patsubst %.c,%_O3.bin,$(SRCS))
+EXES_DEBUG_O0 := $(patsubst %.c,%_debug_O0.bin,$(SRCS))
+EXES_DEBUG_O1 := $(patsubst %.c,%_debug_O1.bin,$(SRCS))
+EXES_DEBUG_O2 := $(patsubst %.c,%_debug_O2.bin,$(SRCS))
+EXES_DEBUG_O3 := $(patsubst %.c,%_debug_O3.bin,$(SRCS))
+EXES := $(EXES_O0) $(EXES_O1) $(EXES_O2) $(EXES_O3) $(EXES_DEBUG_O0) $(EXES_DEBUG_O1) $(EXES_DEBUG_O2) $(EXES_DEBUG_O3)
+
+.PHONY: all clean progdirs # $(BASENAMES)
+
+all: $(EXES)
+
+clean:
+	rm -rf *.bin *.dwarfdump *.objdump *_dbg *_dbg.c
+
+progdirs: $(BASENAMES)
+
+%: %.c
+	mkdir $@; \
+	mv $< $@
+
+
+# dump the DWARF debugging info for a binary
+%.dwarfdump: %.bin
+	objdump -g $< > $@
+
+# dump the DWARF disassembly for a binary
+%.objdump: %.bin
+	objdump -D $< > $@
+
+%_debug_O0.bin: %.c
+	$(CC) -g -O0 -o $@ $<
+
+%_debug_O1.bin: %.c
+	$(CC) -g -O1 -o $@ $<
+
+%_debug_O2.bin: %.c
+	$(CC) -g -O2 -o $@ $<
+
+%_debug_O3.bin: %.c
+	$(CC) -g -O3 -o $@ $<
+
+%_O0.bin: %.c
+	$(CC) -O0 -o $@ $<
+
+%_O1.bin: %.c
+	$(CC) -O1 -o $@ $<
+
+%_O2.bin: %.c
+	$(CC) -O2 -o $@ $<
+
+%_O3.bin: %.c
+	$(CC) -O3 -o $@ $<
+

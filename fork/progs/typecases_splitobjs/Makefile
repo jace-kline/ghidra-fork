@@ -23,10 +23,6 @@ OBJS_O0_DEBUG := $(patsubst %.c,%_O0_debug.o,$(SRCS))
 OBJS_O1_DEBUG := $(patsubst %.c,%_O1_debug.o,$(SRCS))
 OBJS_O2_DEBUG := $(patsubst %.c,%_O2_debug.o,$(SRCS))
 OBJS_O3_DEBUG := $(patsubst %.c,%_O3_debug.o,$(SRCS))
-OBJS_STRIP_O0 := $(patsubst %.c,%_strip_O0.o,$(SRCS))
-OBJS_STRIP_O1 := $(patsubst %.c,%_strip_O1.o,$(SRCS))
-OBJS_STRIP_O2 := $(patsubst %.c,%_strip_O2.o,$(SRCS))
-OBJS_STRIP_O3 := $(patsubst %.c,%_strip_O3.o,$(SRCS))
 
 EXE_BASE := $(PROGNAME)
 EXE_O0 := $(EXE_BASE)_O0.bin
@@ -37,11 +33,7 @@ EXE_O0_DEBUG := $(EXE_BASE)_O0_debug.bin
 EXE_O1_DEBUG := $(EXE_BASE)_O1_debug.bin
 EXE_O2_DEBUG := $(EXE_BASE)_O2_debug.bin
 EXE_O3_DEBUG := $(EXE_BASE)_O3_debug.bin
-EXE_STRIP_O0 := $(EXE_BASE)_strip_O0.bin
-EXE_STRIP_O1 := $(EXE_BASE)_strip_O1.bin
-EXE_STRIP_O2 := $(EXE_BASE)_strip_O2.bin
-EXE_STRIP_O3 := $(EXE_BASE)_strip_O3.bin
-EXES := $(EXE_O0) $(EXE_O1) $(EXE_O2) $(EXE_O3) $(EXE_O0_DEBUG) $(EXE_O1_DEBUG) $(EXE_O2_DEBUG) $(EXE_O3_DEBUG) $(EXE_STRIP_O0) $(EXE_STRIP_O1) $(EXE_STRIP_O2) $(EXE_STRIP_O3)
+EXES := $(EXE_O0) $(EXE_O1) $(EXE_O2) $(EXE_O3) $(EXE_O0_DEBUG) $(EXE_O1_DEBUG) $(EXE_O2_DEBUG) $(EXE_O3_DEBUG)
 
 .PHONY: all clean
 
