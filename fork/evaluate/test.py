@@ -2,6 +2,7 @@ from resolve import *
 from resolve_stubs import *
 from parse_dwarf_util import *
 from parse_dwarf import *
+from util import OrderedZipper
 
 def modify(record):
     record.obj = "Hello World"
@@ -81,5 +82,36 @@ def test_genexp():
     for x in mygenexpfn():
         print(x)
 
+def test_iter():
+    ls = iter([1,2,3,4,5])
+    print(next(ls))
+    print(next(ls))
+    print(next(ls))
+    print(next(ls))
+    print(next(ls))
+    print(next(ls))
+
+def test_iter2():
+    def _next(_iter):
+        try:
+            return next(_iter)
+        except StopIteration:
+            return None
+
+    ls = iter([1,2,3,4,5])
+    print(_next(ls))
+    print(_next(ls))
+    for l in ls:
+        print(l)
+
+def test_ordered_zipper():
+    l1 = range(0,10,1)
+    l2 = range(0,20,2)
+    for res in OrderedZipper(l1, l2):
+        print(res)
+
+    for res in OrderedZipper(l2, l1):
+        print(res)
+
 if __name__ == "__main__":
-    test_genexp()
+    test_ordered_zipper()

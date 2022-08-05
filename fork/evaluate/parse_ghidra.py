@@ -2,7 +2,7 @@ from __main__ import * # import all the implicit GhidraScript state & methods fr
 
 from resolve import *
 from resolve_stubs import *
-from translation import *
+from lang import *
 from parse_ghidra_util import *
 from ghidra.program.model.data import Array, Structure, Enum, Pointer, TypeDef, FunctionDefinition, DefaultDataType, BuiltInDataType, BooleanDataType, CharDataType, AbstractIntegerDataType, AbstractFloatDataType, AbstractComplexDataType, AbstractStringDataType, Undefined, VoidDataType as _VoidDataType
 

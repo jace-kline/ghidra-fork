@@ -5,7 +5,7 @@ from elftools.dwarf.constants import *
 from elftools.dwarf.locationlists import LocationParser
 from elftools.dwarf.ranges import RangeEntry, BaseAddressEntry
 from elftools.dwarf.dwarf_expr import DWARFExprParser, DWARFExprOp
-from translation import *
+from lang import *
 
 ## Utility functions
 

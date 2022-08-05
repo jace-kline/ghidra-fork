@@ -1,4 +1,4 @@
-from translation import *
+from lang import *
 from resolve import *
 
 # Each "stub" is a flattened version of a desired data structure

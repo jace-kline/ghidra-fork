@@ -7,7 +7,7 @@
 # from ghidra.app.flatapi import FlatProgramAPI
 
 # to decompile
-from translation import *
+from lang import *
 from resolve import *
 from resolve_stubs import *
 from parse_ghidra import *
