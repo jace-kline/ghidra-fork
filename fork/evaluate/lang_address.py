@@ -30,6 +30,14 @@ class AddressType:
     def rangeable(addrtype):
         return addrtype in [ AddressType.ABSOLUTE, AddressType.REGISTER_OFFSET, AddressType.STACK ]
 
+    @staticmethod
+    def single_location(addrtype):
+        return addrtype in [ AddressType.REGISTER ]
+
+    @staticmethod
+    def unknown_location(addrtype):
+        return addrtype in [ AddressType.UNKNOWN, AddressType.EXTERNAL ]
+
 class Address(object):
     def __init__(self, addrtype):
         self.addrtype = addrtype
@@ -224,40 +232,13 @@ class AddressRange(object):
         overlap = self.get_overlap(other)
         return overlap.overlap is not None
 
+    def get_size(self):
+        return self.size
+
     # other: AddressRange
     # (AddressRange, AddressRange) -> AddressRangeOverlap
     def get_overlap(self, other):
-        # first, check that the ranges are of the same address type
-        if self.addrtype != other.addrtype:
-            return AddressRangeOverlap([self], None, [other])
-
-        swap = self.start > other.start
-        fst = other if swap else self
-        snd = self if swap else other
-
-        fstonly = []
-        sndonly = []
-        overlap = None
-        # we know fst.start <= all other addresses
-        if fst.end <= snd.start:
-            fstonly, overlap, sndonly = ([fst], None, [snd])
-
-        else: # fst.end > snd.start
-            if fst.start != snd.start:
-                fstonly.append(AddressRange(fst.start, snd.start))
-            
-            if fst.end <= snd.end:
-                overlap = AddressRange(snd.start, snd.end)
-                if fst.end != snd.end:
-                    sndonly.append(AddressRange(fst.end, end=snd.end))
-            
-            else: # fst.end > snd.end
-                overlap = snd
-                fstonly.append(AddressRange(snd.end, end=fst.end))
-        
-        leftonly = sndonly if swap else fstonly
-        rightonly = fstonly if swap else sndonly
-        return AddressRangeOverlap(leftonly, overlap, rightonly)
+        return AddressRangeOverlap(self, other)
 
     # does the given Address object fall within this AddressRange?
     def contains(self, addr):
@@ -373,24 +354,225 @@ class AddressLiveRangeSet(object):
             
 
 class AddressRangeOverlap(object):
-    # leftonly: [AddressRange] (either 0, 1, or 2 ranges)
-    # overlap: AddressRange | None
-    # rightonly: [AddressRange] (either 0, 1, or 2 ranges)
-    def __init__(self, leftonly, overlap, rightonly):
-        self.leftonly = leftonly
-        self.overlap = overlap
-        self.rightonly = rightonly
+
+    class SubRange(object):
+        # range types
+        LEFT_ONLY = 0
+        RIGHT_ONLY = 1
+        OVERLAP = 2
+
+        @staticmethod
+        def rangetype_to_str(rangetype):
+            if rangetype == AddressRangeOverlap.SubRange.LEFT_ONLY:
+                return "LEFT_ONLY"
+            elif rangetype == AddressRangeOverlap.SubRange.RIGHT_ONLY:
+                return "RIGHT_ONLY"
+            elif rangetype == AddressRangeOverlap.SubRange.OVERLAP:
+                return "OVERLAP"
+            else:
+                raise Exception("Invalid range type")
+
+        def __init__(self, rangetype, range):
+            self.rangetype = rangetype
+            self.range = range
+
+        def is_left_only(self):
+            return self.rangetype == AddressRangeOverlap.SubRange.LEFT_ONLY
+
+        def is_right_only(self):
+            return self.rangetype == AddressRangeOverlap.SubRange.RIGHT_ONLY
+
+        def is_overlap(self):
+            return self.rangetype == AddressRangeOverlap.SubRange.OVERLAP
+
+        def get_range(self):
+            return self.range
+
+        def get_rangetype(self):
+            return self.rangetype
+
+        def __str__(self):
+            return "<SubRange {} {}>".format(
+                AddressRangeOverlap.SubRange.rangetype_to_str(self.rangetype),
+                self.range
+            )
+
+        def __repr__(self):
+            return self.__str__()
+
+    def __init__(self, left_range, right_range):
+        self.left_range = left_range
+        self.right_range = right_range
+        self.subranges = AddressRangeOverlap.compute_subranges(self.left_range, self.right_range)
 
     @staticmethod
-    def does_overlap(addrl, addrr):
-        return addrl.does_overlap(addrr)
+    def compute_subranges(left_range, right_range):
 
-    @staticmethod
-    def get_overlap(addrl, addrr):
-        return addrl.get_overlap(addrr)
+        def left_subrange(range):
+            return AddressRangeOverlap.SubRange(AddressRangeOverlap.SubRange.LEFT_ONLY, range)
+
+        def right_subrange(range):
+            return AddressRangeOverlap.SubRange(AddressRangeOverlap.SubRange.RIGHT_ONLY, range)
+
+        def overlap_subrange(range):
+            return AddressRangeOverlap.SubRange(AddressRangeOverlap.SubRange.OVERLAP, range)
+
+        # first, check that the ranges are of the same address type
+        if left_range.addrtype != right_range.addrtype:
+            return [
+                left_subrange(left_range),
+                right_subrange(right_range)
+            ]
+
+        # start and end both align
+        elif left_range == right_range:
+            return [
+                overlap_subrange(left_range)
+            ]
+
+        elif left_range.start == right_range.start:
+            if left_range.end < right_range.end:
+                return [
+                    overlap_subrange(left_range),
+                    right_subrange(AddressRange(left_range.end, end=right_range.end))
+                ]
+
+            else: # right_range.end < left_range.end
+                return [
+                    overlap_subrange(right_range),
+                    right_subrange(AddressRange(right_range.end, end=left_range.end))
+                ]
+
+        elif left_range.end == right_range.end:
+            if left_range.start < right_range.start:
+                return [
+                    left_subrange(AddressRange(left_range.start, end=right_range.start)),
+                    overlap_subrange(right_range)
+                ]
+
+            else: # right_range.start < left_range.start
+                return [
+                    right_subrange(AddressRange(right_range.start, end=left_range.start)),
+                    overlap_subrange(left_range)
+                ]
+
+        elif left_range.start < left_range.end <= right_range.start < right_range.end:
+            return [
+                left_subrange(left_range),
+                right_subrange(right_range)
+            ]
+
+        elif right_range.start < right_range.end <= left_range.start < left_range.end:
+            return [
+                right_subrange(right_range),
+                left_subrange(left_range)
+            ]
+        
+        elif left_range.start < right_range.start < right_range.end < left_range.end:
+            return [
+                left_subrange(AddressRange(left_range.start, end=right_range.start)),
+                overlap_subrange(right_range),
+                left_subrange(AddressRange(right_range.end, end=left_range.end))
+            ]
+
+        elif right_range.start < left_range.start < left_range.end < right_range.end:
+            return [
+                right_subrange(AddressRange(right_range.start, end=left_range.start)),
+                overlap_subrange(left_range),
+                right_subrange(AddressRange(left_range.end, end=right_range.end))
+            ]
+
+        elif left_range.start < right_range.start < left_range.end < right_range.end:
+            return [
+                left_subrange(AddressRange(left_range.start, end=right_range.start)),
+                overlap_subrange(AddressRange(right_range.start, end=left_range.end)),
+                right_subrange(AddressRange(left_range.end, end=right_range.end))
+            ]
+
+        elif right_range.start < left_range.start < right_range.end < left_range.end:
+            return [
+                right_subrange(AddressRange(right_range.start, end=left_range.start)),
+                overlap_subrange(AddressRange(left_range.start, end=right_range.end)),
+                left_subrange(AddressRange(right_range.end, end=left_range.end))
+            ]
+
+    def get_left_range(self):
+        return self.left_range
+    
+    def get_right_range(self):
+        return self.right_range
+
+    def get_subranges(self):
+        return self.subranges
+
+    def get_overlap_range(self):
+        rngs = [ subrng.get_range() for subrng in self.subranges if subrng.is_overlap() ]
+        return rngs[0] if len(rngs) > 0 else None
+
+    def get_left_ranges(self):
+        return [ subrng.get_range() for subrng in self.subranges if subrng.is_left() ]
+
+    def get_right_ranges(self):
+        return [ subrng.get_range() for subrng in self.subranges if subrng.is_right() ]
+
+    def does_overlap(self):
+        return self.get_overlap_range() is not None
+
+    def start_aligned(self):
+        return self.subranges[0].is_overlap()
+
+    def end_aligned(self):
+        return self.subranges[-1].is_overlap()
+
+    def left_first(self):
+        return self.subranges[0].is_left()
+
+    def right_first(self):
+        return self.subranges[0].is_right()
+
+    def left_last(self):
+        return self.subranges[-1].is_left()
+
+    def right_last(self):
+        return self.subranges[-1].is_right()
+
+    def disjoint(self):
+        return not self.does_overlap()
+
+    def misaligned(self):
+        return self.overlap is not None and not self.left_contains_right() and not self.right_contains_left()
+
+    # all of the right address range is contained within left
+    def left_contains_right(self):
+        return self.does_overlap() \
+            and (self.left_first() or self.start_aligned()) \
+            and (self.left_last() or self.end_aligned())
+
+    # all of the left address range is contained within right
+    def right_contains_left(self):
+        return self.does_overlap() \
+            and (self.right_first() or self.start_aligned()) \
+            and (self.right_last() or self.end_aligned())
+
+    def ranges_equal(self):
+        return self.left_range == self.right_range
+
+    # left.start - right.start
+    def start_distance(self):
+        return self.left_range.start.distance(self.right_range.start)
+
+    # left.end - right.end
+    def end_distance(self):
+        return self.left_range.start.distance(self.right_range.start)
+
+    def bytes_overlapped(self):
+        return self.get_overlap_range().get_size() if self.does_overlap() else 0
+
+    def __str__(self):
+        return "<AddressRangeOverlap(subranges={})>".format(self.subranges)
 
     def __repr__(self):
-        return "<AddressRangeOverlap(leftonly={}, overlap={}, rightonly={})>".format(self.leftonly, self.overlap, self.rightonly)
+        return self.__str__
 
 # defines the mapping from x86-64 register names
 # to their associated register numbers

@@ -1,4 +1,18 @@
 
+def count(_iter, start=0, step=1):
+    __iter = iter(_iter)
+    cnt = start
+    while try_next(__iter) is not None:
+        cnt += step
+    return cnt
+
+# intercept StopIteration from the vanilla next() method and return None instead
+def try_next(_iter):
+    try:
+        return next(_iter)
+    except StopIteration:
+        return None
+
 # An Iterator class that "zips" 2 ordered iterators together
 # Produces and ordered iterator of 'Left', 'Right', and 'Conflict' objects
 class OrderedZipper(object):
@@ -7,7 +21,14 @@ class OrderedZipper(object):
         def __init__(self):
             pass
 
+        # get the value(s)
+        # () -> A | (A, A), where A the type of the obj being stored
         def get_value(self):
+            raise NotImplementedError()
+
+        # get the index(es) of this item from the original input iterator(s)
+        # () -> int | (int, int)
+        def get_idx(self):
             raise NotImplementedError()
         
         def is_left(self):
@@ -20,12 +41,16 @@ class OrderedZipper(object):
             return False
 
     class Left(ZipItem):
-        def __init__(self, obj):
+        def __init__(self, obj, idx):
             super(__class__, self).__init__()
             self.obj = obj
+            self.idx = idx
 
         def get_value(self):
             return self.obj
+
+        def get_idx(self):
+            return self.idx
 
         def is_left(self):
             return True
@@ -37,12 +62,16 @@ class OrderedZipper(object):
             return self.__str__()
 
     class Right(ZipItem):
-        def __init__(self, obj):
+        def __init__(self, obj, idx):
             super(__class__, self).__init__()
             self.obj = obj
+            self.idx = idx
 
         def get_value(self):
             return self.obj
+
+        def get_idx(self):
+            return self.idx
 
         def is_right(self):
             return True
@@ -54,13 +83,18 @@ class OrderedZipper(object):
             return self.__str__()
 
     class Conflict(object):
-        def __init__(self, objl, objr):
+        def __init__(self, objl, idxl, objr, idxr):
             super(__class__, self).__init__()
             self.objl = objl
+            self.idxl = idxl
             self.objr = objr
+            self.idxr = idxr
 
         def get_value(self):
             return (self.objl, self.objr)
+
+        def get_idx(self):
+            return (self.idxl, self.idxr)
 
         def is_conflict(self):
             return True
@@ -80,15 +114,12 @@ class OrderedZipper(object):
         self.key = key if key is not None else (lambda v: v)
 
         # get the first elements of each iterator
-        self.curleft = self._next(self.left)
-        self.curright = self._next(self.right)
+        self.curleft = try_next(self.left)
+        self.curright = try_next(self.right)
 
-    # intercept StopIteration from the vanilla next() method and return None instead
-    def _next(self, _iter):
-        try:
-            return next(_iter)
-        except StopIteration:
-            return None
+        # keep track of the current index of each of the iterators
+        self.left_idx = 0
+        self.right_idx = 0
 
     def _exhausted_left(self):
         return self.curleft == None
@@ -99,26 +130,32 @@ class OrderedZipper(object):
     def __next__(self):
         if self._exhausted_left():
             self.curright = next(self.right)
-            return OrderedZipper.Right(self.curright)
+            self.right_idx += 1
+            return OrderedZipper.Right(self.curright, self.right_idx)
 
         elif self._exhausted_right():
             self.curleft = next(self.left)
-            return OrderedZipper.Left(self.curleft)
+            self.left_idx += 1
+            return OrderedZipper.Left(self.curleft, self.left_idx)
 
         elif self.key(self.curleft) == self.key(self.curright):
-            ret = OrderedZipper.Conflict(self.curleft, self.curright)
-            self.curleft = self._next(self.left)
-            self.curright = self._next(self.right)
+            ret = OrderedZipper.Conflict(self.curleft, self.left_idx, self.curright, self.right_idx)
+            self.curleft = try_next(self.left)
+            self.left_idx += 1
+            self.curright = try_next(self.right)
+            self.right_idx += 1
             return ret
 
         elif self.key(self.curleft) < self.key(self.curright):
-            ret = OrderedZipper.Left(self.curleft)
-            self.curleft = self._next(self.left)
+            ret = OrderedZipper.Left(self.curleft, self.left_idx)
+            self.curleft = try_next(self.left)
+            self.left_idx += 1
             return ret
 
         elif self.key(self.curleft) > self.key(self.curright):
-            ret = OrderedZipper.Right(self.curright)
-            self.curright = self._next(self.right)
+            ret = OrderedZipper.Right(self.curright, self.right_idx)
+            self.curright = try_next(self.right)
+            self.right_idx += 1
             return ret
 
         else:

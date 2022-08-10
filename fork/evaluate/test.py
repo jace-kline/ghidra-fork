@@ -108,10 +108,17 @@ def test_ordered_zipper():
     l1 = range(0,10,1)
     l2 = range(0,20,2)
     for res in OrderedZipper(l1, l2):
-        print(res)
+        print("{}, idx={}".format(res, res.get_idx()))
 
     for res in OrderedZipper(l2, l1):
-        print(res)
+        print("{}, idx={}".format(res, res.get_idx()))
+
+def test_count():
+    l1 = range(0,10,1)
+    print(count(l1))
+
+def test_set():
+    xs = [5,4,3,2,1]
 
 if __name__ == "__main__":
-    test_ordered_zipper()
+    test_count()

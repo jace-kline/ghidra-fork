@@ -50,6 +50,71 @@ class MetaType(object):
         ]
         return metatypes[metatype_code]
 
+
+# Tracks a path into a recursive data type
+# Provides methods for querying information about the path
+class DataTypeRecursiveDescent(object):
+
+    # This class holds information about recursive descent of subtypes
+    # in a type tree. Captures chain of recurses + offsets.
+    class DescentRecord(object):
+        def __init__(self, offset, dtype):
+            # the DataType of this node
+            self.dtype = dtype
+            # the offset from the start address of the immediate parent
+            self.offset = offset
+
+        def __str__(self):
+            return "<DescentRecord dtype={}>".format(self.offset, self.dtype)
+
+        def __repr__(self):
+            return self.__str__()
+
+    # path : [(int, DataType)]
+    # a list of offsets (in parent) and datatypes
+    # front of list is the leaf, back is the parent
+    def __init__(self, path):
+        # self.root : DescentNode
+        self.path = [ DataTypeRecursiveDescent.DescentRecord(offset, dtype) for (offset, dtype) in path ]
+
+    # Create a DataTypeRecursiveDescent object for finding a given type at an offset of a root type
+    @staticmethod
+    def descend_find_type_at_offset_recursive(root, offset, size=None):
+        res = root.get_type_at_offset_recursive(0, offset, size)
+        if not res:
+            return None
+        return DataTypeRecursiveDescent(res)
+
+    def get_path(self):
+        return self.path
+
+    def no_descent(self):
+        return len(self.path) == 1
+
+    def get_root(self):
+        return self.path[-1].dtype
+    
+    def get_leaf(self):
+        return self.path[0].dtype
+
+    def get_total_offset(self):
+        return sum(( record.offset for record in self.path ))
+
+    def get_depth(self):
+        return len(self.path) - 1
+
+    def add_root(self, dtype):
+        self.path = self.path.append(DataTypeRecursiveDescent.DescentRecord(0, dtype))
+
+    def add_leaf(self, offset, dtype):
+        self.path = [DataTypeRecursiveDescent.DescentRecord(offset, dtype)] + self.path
+
+    # returns path record at the ith level deep
+    # self[i] = self.path[len(self.path) - i - 1]
+    def __getitem__(self, i):
+        return self.path[len(self.path) - i - 1]
+
+
 class DataType(object):
     """
     The base class for representing a data type.
@@ -67,20 +132,52 @@ class DataType(object):
         self.metatype = metatype
         self.size = size
 
+    def get_metatype(self):
+        return self.metatype
+
+    def get_size(self):
+        return self.size
+
     # Is this type a complex type? -> Has "sub-components"?
     def is_complex(self):
         return self.metatype in [MetaType.ARRAY, MetaType.STRUCT, MetaType.UNION]
 
-    # If this type is a complex type (containing sub-components),
-    # attempt to get the type at the offset.
+    # get the component type that starts at a given offset, possibly restricting size
     # int -> DataType | None
-    def get_member_type_at_offset(self, offset):
+    def get_component_type_at_offset(self, offset, size=None):
         return None
 
-    # For complex types, return a list of consituent types with associated offsets.
-    # () -> [(offset, DataType)]
-    def get_member_type_offsets(self):
-        return []
+    # get the component type that includes a given offset
+    # int -> (offset, DataType) | None
+    def get_component_type_containing_offset(self, offset):
+        return None
+
+    # get this type (self) OR a component type that starts at a given offset, possibly specifying size
+    # recursive -> collects a path into the datatype tree
+    # int -> [(int, DataType)] | None
+    def get_type_at_offset_recursive(self, offset_in_parent, offset, size=None):
+        record = (offset_in_parent, self)
+
+        # base case: offset == 0 and size matches (if size given)
+        if offset == 0 and (size is None or size == self.size):
+            return [record]
+
+        # otherwise, try to recurse, but only if complex type
+        elif not self.is_complex():
+            return None
+
+        # self is a complex type with sub-components
+        res = self.get_component_type_containing_offset(offset)
+        if not res:
+            return None
+        
+        _offset, subtype = res
+        recurse_offset = offset - _offset
+
+        rec = subtype.get_type_at_offset_recursive(_offset, recurse_offset, size)
+        if rec:
+            rec.append(record)
+            return rec
 
     def __str__(self):
         pass # implement in children
@@ -265,37 +362,32 @@ class DataTypeArray(DataType):
         self.length = length
 
     def length_unknown(self):
-        return self.length <= 1 or self.length is None or not self.resolved
+        return self.length <= 1 or self.length is None
 
-        # If this type is a complex type (containing sub-components),
-    # attempt to get the type at the offset.
+    # get the component type that starts at a given offset, possibly restricting size
     # int -> DataType | None
-    def get_member_type_at_offset(self, offset):
-        _offset = offset
-        for memtype in self.membertypes:
-            if _offset == 0:
-                return memtype
-            
-            _offset -= memtype.size
-            if _offset < 0:
-                break
+    def get_component_type_at_offset(self, offset, size=None):
+        if offset % self.basetype.size != 0 \
+            or (self.length is not None and offset >= self.length) \
+            or (size is not None and (size % self.basetype.size != 0 or offset + size > self.size)):
+            return None
+
+        # if specified size is a multiple (> 1) of basetype size, then construct a sub array type
+        if size is not None:
+            sublength = size // self.basetype.size
+            return self.basetype if sublength == 1 else DataTypeArray(basetype=self.basetype, length=sublength, size=(self.basetype.size * sublength))
+        else:
+            return self.basetype
+
+    # get the component type that includes a given offset
+    # return the actual offset the component type was found at
+    # actual offset <= offset
+    # int -> (int, DataType) | None
+    def get_component_type_containing_offset(self, offset):
+        if not self.length_unknown() and 0 <= offset < self.length:
+            _offset = offset - (offset % self.basetype.size)
+            return (self.basetype, _offset)
         return None
-
-    # For complex types, return a list of consituent types with associated offsets.
-    # () -> [(offset, DataType)]
-    def get_member_type_offsets(self):
-        offset_types = []
-        offset = 0
-        for memtype in self.membertypes:
-            offset_types.append((offset, memtype))
-            offset += memtype.size
-        return offset_types
-
-    def matches_member_type_at_offset(self, offset, dtype):
-        memtype = self.get_member_type_at_offset(offset)
-        if memtype:
-            return memtype == dtype # TODO: should this be strict ==?
-        return False
 
     def __str__(self):
         return "<ARRAY (subtype = {}) (length = {})>".format(str(self.basetype), self.size)
@@ -330,35 +422,30 @@ class DataTypeStruct(DataType):
             size=size
         )
 
-    # If this type is a complex type (containing sub-components),
-    # attempt to get the type at the offset.
+    # get the component type that starts at a given offset, possibly restricting size
     # int -> DataType | None
-    def get_member_type_at_offset(self, offset):
-        _offset = offset
+    def get_component_type_at_offset(self, offset, size=None):
+        _offset = 0
         for memtype in self.membertypes:
-            if _offset == 0:
-                return memtype
-            # TODO: what if the member type is itself complex?
-            _offset -= memtype.size
-            if _offset < 0:
+            if _offset == offset:
+                return memtype if size is None or size == self.size else None
+            
+            _offset += memtype.size
+            if _offset > offset:
                 break
         return None
 
-    # For complex types, return a list of consituent types with associated offsets.
-    # () -> [(offset, DataType)]
-    def get_member_type_offsets(self):
-        offset_types = []
-        offset = 0
+    # get the component type that includes a given offset
+    # return the actual offset the component type was found at
+    # actual offset <= offset
+    # int -> (int, DataType) | None
+    def get_component_type_containing_offset(self, offset):
+        _offset = 0
         for memtype in self.membertypes:
-            offset_types.append((offset, memtype))
-            offset += memtype.size
-        return offset_types
-
-    def matches_member_type_at_offset(self, offset, dtype):
-        memtype = self.get_member_type_at_offset(offset)
-        if memtype:
-            return memtype == dtype # TODO: should this be strict ==?
-        return False
+            if _offset <= offset < memtype.size:
+                return (_offset, memtype)
+            _offset += memtype.size
+        return None
 
     def __str__(self):
         s = "<STRUCT "
@@ -398,21 +485,28 @@ class DataTypeUnion(DataType):
             size=size
         )
 
-    # For complex types, return a list of consituent types with associated offsets.
-    # () -> [(offset, DataType)]
-    def get_member_type_offsets(self):
-        offset_types = []
-        for memtype in self.membertypes:
-            offset_types.append((0, memtype))
-            offset += memtype.size
-        return offset_types
+    # get this type (self) OR a component type that starts at a given offset, possibly specifying size
+    # recursive -> collects a path into the datatype tree
+    # int -> [(int, DataType)] | None
+    def get_type_at_offset_recursive(self, offset_in_parent, offset, size=None):
+        record = (offset_in_parent, self)
 
-    def matches_member_type_at_offset(self, offset, dtype):
-        if offset == 0:
-            for memtype in self.membertypes:
-                if memtype == dtype:
-                    return True
-        return False
+        # if offset == 0 and size not specified, return the entire union
+        if offset == 0 and size is None:
+            return [record]
+
+        # self is a complex type with sub-components
+        res = self.get_component_type_containing_offset(offset)
+        if not res:
+            return None
+
+        # try a recursive descent on each of the members (they all have offset 0)
+        # take the first one that matches
+        for memtype in self.membertypes:
+            rec = memtype.get_type_at_offset_recursive(0, offset, size)
+            if rec:
+                rec.append(record)
+                return rec
 
     def __str__(self):
         s = "<UNION "

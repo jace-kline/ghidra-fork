@@ -103,6 +103,7 @@ class Variable(object):
         self.param = param
         self.function = function
 
+
     def is_param(self):
         """ Is this variable a parameter? """
         return self.param
@@ -110,9 +111,6 @@ class Variable(object):
     def is_global(self):
         """ Is this variable a global variable? """
         return self.function is None
-
-    def get_member_as_variable(self):
-        pass
 
     # for the given PC, find the Address where this Variable resides (or None).
     def get_address_at_pc(self, pc):
