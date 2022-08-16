@@ -42,6 +42,9 @@ class Address(object):
     def __init__(self, addrtype):
         self.addrtype = addrtype
 
+    def get_addrtype(self):
+        return self.addrtype
+
     # a method that returns this Address's offset from
     # the base pointer of its "address space"
     def space_offset(self):
@@ -291,6 +294,9 @@ class AddressLiveRange(object):
     def is_global(self):
         return self.startpc.offset is None and self.endpc.offset is None
 
+    def get_addr(self):
+        return self.addr
+
     def get_pc_range(self):
         if not self.pc_range:
             self.pc_range = AddressRange(self.startpc, self.endpc)
@@ -316,42 +322,7 @@ class AddressLiveRange(object):
         return "<AddressLiveRange addr={} startpc={} endpc={}>".format(self.addr, self.startpc, self.endpc)
 
     def __repr__(self):
-        return self.__str__()
-
-# Ordered set of AddressLiveRange objects.
-# Ordering based on PC range
-class AddressLiveRangeSet(object):
-    # liveranges: Iter<AddressLiveRange>
-    def __init__(self, liveranges):
-        self.liveranges = sorted(liveranges)
-        self._verify_no_pc_overlaps()
-
-    # No overlaps in PC ranges should be permitted
-    def _verify_no_pc_overlaps(self):
-        for i in range(0, len(self.liveranges) - 1):
-            assert(self.liveranges[i].endpc <= self.liveranges[i + 1].startpc)
-
-    # Given a PC Address, find the Address of the AddressLiveRange associated with the containing PC range (or None).
-    def get_address_at_pc(self, pc):
-        for liverng in self.liveranges:
-            if liverng.get_pc_range().contains(pc):
-                return liverng.addr
-        return None
-
-    # support iteration
-    def __iter__(self):
-        return iter(self.liveranges)
-
-    # support bracket indexing
-    def __getitem__(self, i):
-        return self.liveranges[i]
-
-    def __str__(self):
-        return "<AddressLiveRangeSet {}>".format(self.liveranges)
-
-    def __repr__(self):
-        return self.__str__()
-            
+        return self.__str__()            
 
 class AddressRangeOverlap(object):
 

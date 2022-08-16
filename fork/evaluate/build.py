@@ -28,6 +28,14 @@ class PickleTarget(object):
         self.strip = strip
         self.debug = debug
 
+        self.build_result = None
+
+    def set_build_result(self, build_result):
+        self.build_result = build_result
+
+    def get_build_result(self):
+        return self.build_result
+
     def __str__(self):
         target = "{}_O{}".format(self.progname, self.opt_lvl)
         if self.debug:
@@ -87,6 +95,7 @@ class PickleBuilder(object):
         self.decompilers = decompilers
         self.targets = self._generate_targets()
         self.success = True
+        self.built = False
 
     # generate the string names of the target pickle files
     def _generate_targets(self):
@@ -119,17 +128,26 @@ class PickleBuilder(object):
         
         assert(os.path.exists(makefile_loc))
 
+    def clean(self):
+        self.success = subprocess.call(["make", "-C", self.dir, "clean"])
+        return self.success
+
     # This function runs the `make` build for the target source directory with the desired targets.
     # .c files -> .o files -> .bin (executable) -> [decompile/parse DWARF] -> [translate] -> .pickle files
-    def build(self):
+    def build(self, rebuild=False):
+        # copy the generic makefile to the build directory
         self._copy_makefile()
 
+        # if rebuild flag set, clean old artifacts & rebuild
+        if rebuild:
+            self.clean()
+            
         print("Building Makefile targets in directory '{}':".format(self.dir))
         for target in self.targets:
             print("\t{}".format(target))
         
         status = subprocess.call(["make", "-C", self.dir] + [ str(target) for target in self.targets] )
-        self.success = status == 0
+        self.success = self.success and status == 0
         if status == 0:
             print("Verifying targets...")
             self.success = all(( os.path.exists(os.path.join(self.dir, str(target))) for target in self.targets ))
@@ -140,12 +158,35 @@ class PickleBuilder(object):
         else:
             print("Error: Make process executed with return code {}.".format(status))
         
+        self.built = self.success
+
+        # if build failed, clean up
+        if not self.built:
+            self.clean()
+
         return self.success
+
+    def is_built(self):
+        return self.built
+
+    def get_targets(self):
+        return self.targets
 
     # For the given PickleTarget, load the pickle file from the filesystem
     def get_built_pickle(self, target):
+        if not self.is_built():
+            raise Exception("Error: build() has not been performed.")
         picklepath = os.path.join(self.dir, str(target))
         return load_pickle(picklepath)
+
+    # For each PickleTarget, load the associated Pickle file from the filesystem
+    # and inject into the target
+    def set_target_build_results(self):
+        if not self.is_built():
+            raise Exception("Error: build() has not been performed.")
+        for target in self.get_targets():
+            picklepath = os.path.join(self.dir, str(target))
+            target.set_build_result(load_pickle(picklepath))
 
 # str -> ProgramInfo
 def load_pickle(picklepath):
@@ -154,6 +195,18 @@ def load_pickle(picklepath):
     infile.close()
     return obj
 
+def build(progdir, optimization_levels=[0], debug=False, strip=False, decompilers=["ghidra"], rebuild=False):
+    builder = PickleBuilder(progdir, optimization_levels=optimization_levels, debug=debug, strip=strip, decompilers=decompilers)
+    if(builder.build(rebuild=rebuild)):
+        builder.set_target_build_results()
+        return builder.get_targets()
+
+def build2(progdir, opt_lvl, debug=False, strip=False, decompiler="ghidra"):
+    targets = build(progdir, optimization_levels=[opt_lvl], debug=debug, strip=strip, decompilers=[decompiler])
+    dwarf_proginfo = targets[0].get_build_result()
+    decomp_proginfo = targets[1].get_build_result()
+    return (dwarf_proginfo, decomp_proginfo)
+
 def test():
     picklepath_dwarf = "../progs/typecases_splitobjs/typecases_splitobjs_O0_debug.dwarf.pickle"
     picklepath_ghidra = "../progs/typecases_splitobjs/typecases_splitobjs_O0.ghidra.pickle"
@@ -161,8 +214,9 @@ def test():
     proginfo.print_summary()
 
 def test_build(dir):
-    builder = PickleBuilder(dir=dir, optimization_levels=[0,1,2,3])
-    success = builder.build()
+    builder = PickleBuilder(dir=dir, optimization_levels=[0,3])
+    success = builder.build(rebuild=True)
+    return success
 
 if __name__ == "__main__":
     dir = sys.argv[1]

@@ -1,4 +1,3 @@
-from turtle import right
 from lang import *
 from lang_address import *
 from lang_datatype import *
@@ -6,47 +5,62 @@ from util import *
 
 class StaticPCVariable(object):
     def __init__(self, pc, var):
-        self.pc = pc
+        # self.var: Variable
         self.var = var
 
-        # self.addr: Address
-        self.addr = self.var.get_address_at_pc(self.pc)
+        # self.liverange: AddressLiveRange
+        # holds the variable's address and associated PC range for the given PC
+        self.liverange = self.var.get_liverange_at_pc(pc)
 
         # self.size: int
-        if self.addr:
-            self.size = self.var.dtype.size
+        self.size = None
+        if self.liverange:
+            self.size = self.var.get_datatype().get_size()
             self.size = self.size if self.size else 0
         
         # self.addr_range: AddressRange
-        if self.addr and self.size > 0 and AddressType.rangeable(self.addr.addrtype):
-            self.addr_range = AddressRange(self.addr, size=self.size)
+        self.addr_range = None
+        if self.liverange and self.size > 0 and AddressType.rangeable(self.get_addr().get_addrtype()):
+            self.addr_range = AddressRange(self.get_addr(), size=self.size)
 
     # is this variable "alive" at the given PC? i.e., does it have a location?
     # This is assumed to be true for all other operations.
     def is_instantiated(self):
-        return self.addr is not None
+        return self.liverange is not None
+
+    def get_var(self):
+        return self.var
+
+    def get_liverange(self):
+        return self.liverange
+
+    def get_pc_range(self):
+        return self.liverange.get_pc_range()
+
+    def get_addr(self):
+        return self.liverange.get_addr()
+
+    def get_size(self):
+        return self.size
 
     def get_datatype(self):
-        return self.var.dtype
+        return self.var.get_datatype()
 
     def is_global(self):
         return self.var.is_global()
 
-    def get_addr(self):
-        return self.addr
-
     def get_addrtype(self):
-        return self.addr.addrtype
+        return self.get_addr().get_addrtype()
 
     def get_addr_range(self):
         return self.addr_range
 
     # does this variable contain the given address?
     def contains(self, addr):
-        if not self.addr:
+        if not self.is_instantiated():
             return False
         elif not self.addr_range:
-            return addr == self.addr
+            return addr == self.get_addr()
         else: # addr and addr_range are instantiated...
             self.addr_range.contains(addr)
 
@@ -63,6 +77,13 @@ class StaticPCVariable(object):
     # StaticPCVariable -> StaticPCVariableCompare2
     def compare(self, other):
         return StaticPCVariableCompare2(self, other)
+
+    # codify uniqueness -> determined by parent variable (self.var) and the instantiated address (self.addr)
+    def __hash__(self):
+        return hash((self.var, self.addr))
+
+    def __eq__(self, other):
+        return self.var is other.var and self.addr == other.addr
 
 class DataTypeCompare2(object):
     def __init__(self, left_dtype, right_dtype):
@@ -172,20 +193,21 @@ class StaticPCVariableCompare2(object):
 # Holds a StaticPCVariable + info pertaining to the comparison between this variable and another set of 
 # StaticPCVariable objects.
 # Tracks number of bytes "covered", variable overlaps, and more.
-class StaticPCVariableCompareRecord(object):
+# Caches previous comparisons for fast lookup.
+class StaticPCVariableCompareN(object):
     def __init__(self, var_inst):
         self.var_inst = var_inst
 
-        # self.overlaps: [StaticPCVariableCompare2]
-        self.comparisons = []
-        self.bytes_covered = 0
+        # dict[id(StaticPCVariable), StaticPCVariableCompare2]
+        self.comparisons = {}
+        self.bytes_overlapped = 0
 
     # given a StaticPCVariable from another set, compare and update the internal state
     def add_comparison(self, other_var_inst):
         comparison = StaticPCVariableCompare2(self.var_inst, other_var_inst)
         if comparison.does_overlap():
             self.comparisons.append(comparison)
-            self.bytes_covered += comparison.get_addr_range_overlap().bytes_overlapped()
+            self.bytes_overlapped += comparison.get_addr_range_overlap().bytes_overlapped()
         # TODO: finish
 
     def get_var_inst(self):
@@ -194,77 +216,11 @@ class StaticPCVariableCompareRecord(object):
     def get_comparisons(self):
         return self.comparisons
 
-    def get_bytes_covered(self):
-        return self.bytes_covered
+    def get_bytes_overlapped(self):
+        return self.bytes_overlapped
 
     def get_comparison_var_insts(self):
         return [ cmp.get_overlap().get_right_var_inst() for cmp in self.comparisons ]
-
-
-class StaticPCContext(object):
-    def __init__(self, pc, vars):
-        self.pc = pc
-        # map each Variable to a StaticPCVariable.
-        # filter out the those that aren't "instantiated" at the given PC.
-        self.var_insts = [ var_inst for var_inst 
-            in ( StaticPCVariable(self.pc, var) for var in vars ) 
-            if var_inst.is_instantiated() 
-        ]
-
-        # construct a list of StaticPCAddressSpace objects, one for each
-        # address type present
-        self.addr_spaces = self._partition_addr_spaces()
-
-    def _partition_addr_spaces(self):
-        # collect each StaticPCVariable by AddressType
-        # must separate registers by register number
-
-        # keys: AddressType code (int)
-        # values: [StaticPCVariable]
-        _map = {}
-
-        # keys: Register # (int)
-        # values: StaticPCVariable
-        _register_map = {}
-
-        for var_inst in self.var_insts:
-            addrtype = var_inst.get_addrtype()
-            if addrtype == AddressType.REGISTER:
-                regnum = var_inst.get_addr().register
-                _register_map[regnum] = var_inst
-            elif addrtype in _map:
-                _map[addrtype].append(var_inst)
-            else:
-                _map[addrtype] = [var_inst]
-
-        # for each AddressType list of StaticPCVariables, construct
-        # a StaticPCAddressSpace object
-        # TODO: account for registers each having their own space
-        # TODO: account for subclasses of StaticPCAddressSpace
-        addrspaces = []
-        for (addrtype, var_insts) in _map.items():
-            space = StaticPCAddressSpaceKnown(addrtype, var_insts) \
-                if AddressType.rangeable(addrtype) \
-                else StaticPCAddressSpaceUnknown(addrtype, var_insts)
-            addrspaces.append(space)
-
-        for (regnum, var_inst) in _register_map.items():
-            addrspaces.append(StaticPCAddressSpaceKnown(AddressType.REGISTER, [var_inst]))
-
-        return addrspaces
-
-    # Address -> StaticPCVariable | None
-    def get_var_at_address(self, addr):
-        for var_inst in self.var_insts:
-            if var_inst.contains(addr):
-                return var_inst
-        return None
-
-    def compare(self, other):
-        raise NotImplementedError()
-
-class StaticPCContextComparison(object):
-    pass
 
 # represents a "snapshot" of an Address region at a given PC during program execution.
 # holds a list of StaticPCVariable objects for the given region.
@@ -279,17 +235,40 @@ class StaticPCAddressSpace(object):
             assert (var_inst.get_addrtype() == self.addrtype)
 
     # is the given AddressSpace known / placeable in memory?
+    # i.e., the address space is not UNKNOWN or EXTERNAL
     @staticmethod
     def is_known():
         return False
 
-    def compare_var_insts(self, other):
+    # is the space rangeable?
+    @staticmethod
+    def is_rangeable():
+        return False
+
+    # does the space consist of only one location (e.g., a register)?
+    @staticmethod
+    def is_location():
+        return False
+
+    def get_addrtype(self):
+        return self.addrtype
+
+    def get_var_insts(self):
+        return self.var_insts
+
+    # is the other space referring to the same space as this one?
+    # default behavior: simple comparison of addrtypes
+    def same_space(self, other):
+        return self.get_addrtype() == other.get_addrtype()
+
+    # compares the variable instances of 2 address spaces
+    # returns StaticPCAddressSpaceCompare2 | None
+    def compare(self, other):
         raise NotImplementedError()
 
-
 # Represents a snapshot of an Address space at a given PC.
-# "Known" address spaces include stack frames, heap regions, memory accessible from register offset, register, etc.
-class StaticPCAddressSpaceKnown(StaticPCAddressSpace):
+# "Rangeable" address spaces include stack frames, heap regions, memory accessible as register offsets
+class StaticPCAddressSpaceRangeable(StaticPCAddressSpace):
     def __init__(self, addrtype, var_insts):
         super(__class__, self).__init__(addrtype, var_insts)
         self.var_insts.sort(key=lambda v: v.addr)
@@ -298,7 +277,12 @@ class StaticPCAddressSpaceKnown(StaticPCAddressSpace):
     def is_known():
         return True
 
-    def compare_var_insts(self, other):
+    @staticmethod
+    def is_rangeable():
+        return True
+
+    def compare(self, other):
+        assert( self.same_space(other) )
         #TODO: incorporate StaticPCVariableCompareRecord objects
         #TODO: use StaticPCAddressSpaceCompare2 to perform this logic
         
@@ -344,13 +328,48 @@ class StaticPCAddressSpaceKnown(StaticPCAddressSpace):
                     else:
                         prev_left = None
                 prev_right = right_var_inst
-                prev_left = None
 
             elif cur.is_conflict():
                 left_var_inst, right_var_inst = cur.get_value()
                 comparison = StaticPCVariableCompare2(left_var_inst, right_var_inst)
                 if comparison.does_overlap():
                     comparisons.append(comparison)
+                prev_left = left_var_inst
+                prev_right = right_var_inst
+
+
+# Represents an address "space" consisting of a single location
+# Identified by its Address object
+# e.g., a register location at a specific PC
+class StaticPCAddressSpaceLocation(StaticPCAddressSpace):
+    def __init__(self, var_inst):
+        self.var_inst = var_inst
+        super(__class__, self).__init__(self.get_addr().get_addrtype(), [var_inst])
+
+    @staticmethod
+    def is_known():
+        return True
+
+    @staticmethod
+    def is_location():
+        return True
+
+    def get_addr(self):
+        return self.var_inst.get_addr()
+
+    def get_var_inst(self):
+        return self.var_inst
+
+    # is the other space referring to the same space as this one?
+    # the locations must match exactly
+    def same_space(self, other):
+        return self.get_addr() == other.get_addr()
+
+    def compare(self, other):
+        # ensure the addresses being compared are identical
+        assert( self.same_space(other) )
+
+        return [StaticPCVariableCompare2(self.get_var_inst(), other.get_var_inst())]
 
 # Represents a snapshot of an Address space at a given PC.
 # Address spaces include stack frames, heap regions, memory accessible from register offset, register, etc.
@@ -362,8 +381,108 @@ class StaticPCAddressSpaceUnknown(StaticPCAddressSpace):
     def is_known():
         return False
 
-    def compare_var_insts(self, other):
-        raise NotImplementedError()
+    # how to compare unknown locations?
+    def compare(self, other):
+        return []
 
 class StaticPCAddressSpaceCompare2(object):
-    pass
+    def __init__(self, left_addrspace, right_addrspace):
+        # ensure the left and right address spaces are pointing to the same region
+        assert(left_addrspace.same_space(right_addrspace))
+        self.left_addrspace = left_addrspace
+        self.right_addrspace = right_addrspace
+        
+        self.var_inst_comparisons = self.left_addrspace.compare(self.right_addrspace)
+
+    def get_left_addrspace(self):
+        return self.left_addrspace
+
+    def get_right_addrspace(self):
+        return self.right_addrspace
+
+    def get_var_inst_comparisons(self):
+        return self.var_inst_comparisons
+
+# the "context" of program variables at a given PC
+class StaticPCContext(object):
+    def __init__(self, pc, vars):
+        self.pc = pc
+        # map each Variable to a StaticPCVariable.
+        # filter out the those that aren't "instantiated" at the given PC.
+        self.var_insts = [ var_inst for var_inst 
+            in ( StaticPCVariable(self.pc, var) for var in vars ) 
+            if var_inst.is_instantiated() 
+        ]
+
+        # construct a list of StaticPCAddressSpace objects, one for each
+        # address type present
+        self.addrspaces = self._partition_addr_spaces()
+
+    def _partition_addr_spaces(self):
+        # collect each StaticPCVariable by AddressType
+        # must separate registers by register number
+
+        # keys: AddressType code (int)
+        # values: [StaticPCVariable]
+        _map = {}
+
+        # keys: Register # (int)
+        # values: StaticPCVariable
+        _register_map = {}
+
+        for var_inst in self.var_insts:
+            addrtype = var_inst.get_addrtype()
+            if addrtype == AddressType.REGISTER:
+                regnum = var_inst.get_addr().get_register()
+                _register_map[regnum] = var_inst
+            elif addrtype in _map:
+                _map[addrtype].append(var_inst)
+            else:
+                _map[addrtype] = [var_inst]
+
+        # for each AddressType list of StaticPCVariables, construct
+        # a StaticPCAddressSpace object
+        # TODO: account for registers each having their own space
+        # TODO: account for subclasses of StaticPCAddressSpace
+        addrspaces = []
+        for (addrtype, var_insts) in _map.items():
+            space = StaticPCAddressSpaceRangeable(addrtype, var_insts) \
+                if AddressType.rangeable(addrtype) \
+                else StaticPCAddressSpaceUnknown(addrtype, var_insts)
+            addrspaces.append(space)
+
+        for (regnum, var_inst) in _register_map.items():
+            addrspaces.append(StaticPCAddressSpaceLocation(var_inst))
+
+        return addrspaces
+
+    def get_addrspaces(self):
+        return self.addrspaces
+
+    # Address -> StaticPCVariable | None
+    def get_var_inst_at_address(self, addr):
+        for var_inst in self.var_insts:
+            if var_inst.contains(addr):
+                return var_inst
+        return None
+
+    # return StaticPCContextCompare2
+    def compare(self, other):
+        return StaticPCContextCompare2(self, other)
+
+class StaticPCContextCompare2(object):
+    def __init__(self, left_context, right_context):
+        self.left_context = left_context
+        self.right_context = right_context
+
+        # TODO: 
+        self.addrspace_comparisons = []
+
+    def _merge_addrspaces(self):
+        # we need addrspaces for each left and right to be in some order for easier merging
+        # use OrderedZipper again?
+        # define ordering based on AddressType of addrspaces?
+        pass
+
+    def _compare(self):
+        pass
