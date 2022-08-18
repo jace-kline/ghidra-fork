@@ -58,6 +58,9 @@ class Function(object):
     def is_inlined(self):
         return self.startaddr is None and self.endaddr is None
 
+    def is_variadic(self):
+        return self.variadic
+
     # returns DataTypeFunctionPrototype
     def get_prototype(self):
         return DataTypeFunctionPrototype(
@@ -72,6 +75,9 @@ class Function(object):
     def get_params(self):
         """ Returns the list of parameter Variable objects in the correct order """
         return [ v for v in self.vars if v.is_param() ]
+
+    def get_vars(self):
+        return self.vars
 
     def same(self, other):
         return self.startaddr == other.startaddr

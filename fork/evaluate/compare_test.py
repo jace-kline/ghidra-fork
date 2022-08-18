@@ -1,7 +1,7 @@
 from lang import *
 from lang_address import *
 from lang_datatype import *
-from compare import *
+from compare_optimized import *
 from util import *
 from build import *
 

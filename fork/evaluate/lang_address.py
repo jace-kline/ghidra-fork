@@ -100,6 +100,10 @@ class AbsoluteAddress(Address):
     def distance(self, addr):
         return addr.addr - self.addr
 
+    # overload '-' operator -> returns int
+    def __sub__(self, addr):
+        return self.addr - addr.addr
+
     def __lt__(self, addr):
         return self.addr < addr.addr
 
@@ -144,6 +148,10 @@ class RegisterOffsetAddress(Address):
     def distance(self, addr):
         return addr.offset - self.offset
 
+    # overload '-' operator -> returns int
+    def __sub__(self, addr):
+        return self.offset - addr.offset
+
     def __lt__(self, addr):
         return self.offset < addr.offset
 
@@ -179,6 +187,10 @@ class StackAddress(Address):
 
     def distance(self, addr):
         return addr.offset - self.offset
+
+    # overload '-' operator -> returns int
+    def __sub__(self, addr):
+        return self.offset - addr.offset
 
     def __lt__(self, addr):
         return self.offset < addr.offset
