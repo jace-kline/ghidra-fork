@@ -1,4 +1,4 @@
-from typing import List, Union
+from typing import List, Tuple, Union
 from typing_extensions import Self
 from lang import *
 from lang_address import *
@@ -203,12 +203,12 @@ class VariableCompare(object):
         else:
             return VariableCompare.OverlapMisaligned(left, right)
 
-class DataTypeCompare:
+class DataTypeCompare(object):
     class CompareCode(object):
         # no valid comparison could be made
         NO_MATCH = 0
 
-        # same metatype, offset = 0, maybe different sizes
+        # same metatype, offset == 0, maybe different sizes
         MATCH = 1
 
         # left is a subset / member of right (possibly recursively) at given offset
@@ -231,14 +231,78 @@ class DataTypeCompare:
 
             # offset from left start addr to right start addr
             # if negative, indicates that right starts before left
+            # == right var addr - left var addr
             self.offset = offset
 
-            # check offset and sizes for misalignment
-            # is this necessary though? recursive descent should catch this
+            # compute the (DataTypeRecursiveDescent | None) objects
+            # either 0 or 1 will be a descent, otherwise None
+            self.left_descent, self.right_descent = self._compute_descents()
 
-            # try to compute DataTypeRecursiveDescent if one contains the other
+            # compute comparison code given prior information
+            self.compare_code = self._compute_code()
 
-            # compute code given prior information
+        # returns (left descent, right descent)
+        # either 0 or 1 should be populated, not both
+        def _compute_descents(self) -> Tuple[Union[DataTypeRecursiveDescent, None], Union[DataTypeRecursiveDescent, None]]:
+            left_descent = None
+            right_descent = None
+
+            # compute left descent?
+            if (self.left_before_right() or self.start_aligned()) and self.left_bigger_right():
+                left_descent = DataTypeRecursiveDescent.descend_find_type_at_offset_recursive(
+                    self.get_left(),
+                    self.get_offset(),
+                    self.get_right().get_size()
+                )
+            # compute right descent?
+            elif (self.right_before_left() or self.start_aligned()) and self.right_bigger_left():
+                right_descent = DataTypeRecursiveDescent.descend_find_type_at_offset_recursive(
+                    self.get_right(),
+                    self.get_offset(),
+                    self.get_left().get_size()
+                )
+
+            return (left_descent, right_descent)
+
+        def _compute_code(self) -> int:
+            # TODO: finish this
+
+            # default: return NO_MATCH
+            return DataTypeCompare.CompareCode.NO_MATCH
+
+        def get_left(self) -> DataType:
+            return self.left
+
+        def get_right(self) -> DataType:
+            return self.right
+
+        def get_offset(self) -> int:
+            return self.offset
+
+        def same_metatype(self) -> bool:
+            return self.get_left().get_metatype() == self.get_right().get_metatype()
+
+        def start_aligned(self):
+            return self.get_offset() == 0
+
+        def right_before_left(self) -> bool:
+            return self.get_offset() < 0
+
+        def left_before_right(self) -> bool:
+            return self.get_offset() > 0
+
+        # right size - left size
+        def get_size_diff(self) -> int:
+            return self.get_right().get_size() - self.get_left().get_size()
+
+        def same_size(self) -> bool:
+            return self.get_size_diff() == 0
+
+        def left_bigger_right(self) -> bool:
+            return self.get_size_diff() < 0
+
+        def right_bigger_left(self) -> bool:
+            return self.get_size_diff() > 0
 
         def flip(self) -> Self:
             pass

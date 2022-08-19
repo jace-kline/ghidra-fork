@@ -113,12 +113,27 @@ def test_ordered_zipper():
     for res in OrderedZipper(l2, l1):
         print("{}, idx={}".format(res, res.get_idx()))
 
-def test_count():
-    l1 = range(0,10,1)
-    print(count(l1))
-
 def test_set():
     xs = [5,4,3,2,1]
 
+class A(object):
+    class Nested(object):
+        FIELD0 = 0
+        FIELD1 = 1
+        FIELD2 = 2
+
+        @staticmethod
+        def to_string(code):
+            _cls = A.Nested
+            _map = {
+                _cls.FIELD0: "FIELD0",
+                _cls.FIELD1: "FIELD1",
+                _cls.FIELD2: "FIELD2"
+            }
+            return _map[code]
+
+def test_nested():
+    print(A.Nested.to_string(A.Nested.FIELD0))
+
 if __name__ == "__main__":
-    test_count()
+    test_nested()
