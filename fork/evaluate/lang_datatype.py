@@ -57,16 +57,18 @@ class DataTypeRecursiveDescent(object):
 
     # the relationship a record has to its parent (or ROOT)
     class Relationship(object):
-        ELEMENT = 0 # element of parent array
-        MEMBER = 1 # member of parent struct / union
-        SUBSET = 2 # a subarray, partial struct, etc.
+        ARRAY_ELEMENT = 0 # element of parent array
+        STRUCT_MEMBER = 1 # member of parent struct
+        UNION_MEMBER = 2 # member of parent union
+        SUBSET = 3 # a subarray, partial struct, etc.
 
         @staticmethod
         def to_string(code):
             _cls = DataTypeRecursiveDescent.Relationship
             _map = {
-                _cls.ELEMENT: "ELEMENT",
-                _cls.MEMBER: "MEMBER",
+                _cls.ARRAY_ELEMENT: "ARRAY_ELEMENT",
+                _cls.STRUCT_MEMBER: "STRUCT_MEMBER",
+                _cls.UNION_MEMBER: "UNION_MEMBER",
                 _cls.SUBSET: "SUBSET"
             }
             return _map[code]
@@ -93,7 +95,7 @@ class DataTypeRecursiveDescent(object):
 
         def __str__(self):
             return "<DescentRecord {} offset={} dtype={}>".format(
-                DataTypeRecursiveDescent.Relationship.to_string(self.code),
+                DataTypeRecursiveDescent.Relationship.to_string(self.relationship),
                 self.offset,
                 self.dtype
             )
@@ -107,12 +109,12 @@ class DataTypeRecursiveDescent(object):
         # self.root: DataType
         self.root = root
         # self.path: [DescentRecord]
-        self.path = [ DataTypeRecursiveDescent.DescentRecord(relationship, offset, dtype) for (relationship, offset, dtype) in path ]
+        self.path = path
 
     # Create a DataTypeRecursiveDescent object for finding a given type at an offset of a root type
     @staticmethod
-    def descend_find_type_at_offset_recursive(root, offset, size=None):
-        res = root.get_type_at_offset_recursive(offset, size)
+    def descend_find_type_at_offset_recursive(root, offset, match_type=None, exact_match=False):
+        res = root.get_type_at_offset_recursive(offset, match_type=match_type, exact_match=exact_match)
         return DataTypeRecursiveDescent(root, res) if res is not None else None
 
     def get_path(self):
@@ -136,6 +138,16 @@ class DataTypeRecursiveDescent(object):
     # returns path record at the ith level deep
     def __getitem__(self, i):
         return self.path[i]
+
+    def __str__(self):
+        return "<DataTypeRecursiveDescent root={} offset={} depth={}>".format(
+            self.root,
+            self.get_total_offset(),
+            self.get_depth()
+        )
+
+    def __repr__(self):
+        return str(self)
 
 
 class DataType(object):
@@ -413,11 +425,16 @@ class DataTypeArray(DataType):
         size: int
             The total number of bytes allocated to the array. -1 if unknown.
         """
-        # if size is None:
-        #     size = basetype.size * length
+        _size = size
+        if _size is None:
+            if length is not None:
+                _size = basetype.size * length
+            else:
+                _size = 0
+
         super(DataTypeArray, self).__init__(
             metatype=MetaType.ARRAY,
-            size=size
+            size=_size
         )
         self.basetype = basetype
         self.length = length
@@ -428,15 +445,18 @@ class DataTypeArray(DataType):
     # get the component type that starts at a given offset, possibly restricting size
     # int -> DescentRecord | None
     def get_component_type_at_offset(self, offset, size=None):
+        assert (self.size is not None)
+        if self.length == 0:
+            return None
 
         # check for alignment, size, etc.
         if offset % self.basetype.size != 0 \
-            or (self.length is not None and offset >= self.length) \
+            or (offset >= self.size) \
             or (size is not None and (size % self.basetype.size != 0 or offset + size > self.size)):
             return None
 
         # default scenario is that we are nesting into element of the array
-        relationship = DataTypeRecursiveDescent.Relationship.ELEMENT
+        relationship = DataTypeRecursiveDescent.Relationship.ARRAY_ELEMENT
         subtype = self.basetype
 
         # if specified size is a multiple (> 1) of basetype size, then construct a sub array type
@@ -456,13 +476,13 @@ class DataTypeArray(DataType):
     def get_component_type_containing_offset(self, offset):
         
         # checks
-        if self.length_unknown() or not (0 <= offset < self.length):
+        if self.length_unknown() or not (0 <= offset < self.size):
             return None
 
         # actual_offset = the actual offset to the desired element
         actual_offset = offset - (offset % self.basetype.size)
         return DataTypeRecursiveDescent.DescentRecord(
-            DataTypeRecursiveDescent.Relationship.ELEMENT,
+            DataTypeRecursiveDescent.Relationship.ARRAY_ELEMENT,
             actual_offset,
             self.basetype
         )
@@ -473,7 +493,7 @@ class DataTypeArray(DataType):
             and self.length == other.length
 
     def __str__(self):
-        return "<ARRAY (subtype = {}) (length = {})>".format(str(self.basetype), self.size)
+        return "<ARRAY subtype={} length={} size={}>".format(str(self.basetype), self.length, self.size)
 
     @classmethod
     def from_DataType(cls, dtype):
@@ -492,24 +512,25 @@ class DataTypeStruct(DataType):
     def __init__(self, name=None, membertypes=None, size=None):
         self.name = name
         self.membertypes = membertypes
-        # if size is None: # if explicit size not provided, calculate on our own
-        #     size = sum([ mem.size for mem in membertypes ])
+        _size = size
+        if size is None: # if explicit size not provided, calculate on our own
+            _size = sum([ mem.size for mem in membertypes ])
         super(DataTypeStruct, self).__init__(
             metatype=MetaType.STRUCT,
-            size=size
+            size=_size
         )
 
     # get the component type that starts at a given offset, possibly restricting size
     # int -> DescentRecord | None
     def get_component_type_at_offset(self, offset, size=None):
-        _offset = 0
+        _offset = 0 # the offset to the start of the current member
         for memtype in self.membertypes:
             if _offset == offset:
                 return DataTypeRecursiveDescent.DescentRecord(
-                    DataTypeRecursiveDescent.Relationship.MEMBER,
+                    DataTypeRecursiveDescent.Relationship.STRUCT_MEMBER,
                     offset,
                     memtype
-                ) if size is None or size == self.size else None
+                ) if size is None or size <= memtype.size else None
             
             _offset += memtype.size
             if _offset > offset:
@@ -521,12 +542,12 @@ class DataTypeStruct(DataType):
     # actual offset <= offset
     # int -> (int, DataType) | None
     def get_component_type_containing_offset(self, offset):
-        _offset = 0
+        _offset = 0 # the offset to the start of the current member in focus
         for memtype in self.membertypes:
-            if _offset <= offset < memtype.size:
+            if _offset <= offset < _offset + memtype.size:
                 return DataTypeRecursiveDescent.DescentRecord(
-                    DataTypeRecursiveDescent.Relationship.MEMBER,
-                    offset - _offset,
+                    DataTypeRecursiveDescent.Relationship.STRUCT_MEMBER,
+                    _offset,
                     memtype
                 )
             _offset += memtype.size
@@ -540,8 +561,8 @@ class DataTypeStruct(DataType):
         if self.name is not None:
             s += self.name + " "
 
-        s += "(members = {}) ".format(len(self.membertypes))
-        s += "(size = {})>".format(self.size)
+        s += "members={} ".format(len(self.membertypes))
+        s += "size={}>".format(self.size)
 
         return s
 
@@ -566,11 +587,12 @@ class DataTypeUnion(DataType):
         """
         self.name = name
         self.membertypes = membertypes
-        # if size is None: # if explicit size not provided, calculate on our own
-        #     size = max([ mem.size for mem in membertypes ])
+        _size = size
+        if size is None: # if explicit size not provided, calculate on our own
+            _size = max([ mem.size for mem in membertypes ])
         super(DataTypeUnion, self).__init__(
             metatype=MetaType.UNION,
-            size=size
+            size=_size
         )
 
     # offset = the offset into this datatype to find match for
@@ -594,7 +616,7 @@ class DataTypeUnion(DataType):
             recurse = memtype.get_type_at_offset_recursive(offset, match_type=match_type, exact_match=exact_match)
             if recurse is not None:
                 record = DataTypeRecursiveDescent.DescentRecord(
-                    DataTypeRecursiveDescent.Relationship.MEMBER,
+                    DataTypeRecursiveDescent.Relationship.UNION_MEMBER,
                     0, # offset to each member is 0
                     memtype
                 )
@@ -610,8 +632,8 @@ class DataTypeUnion(DataType):
         if self.name is not None:
             s += self.name + " "
 
-        s += "(members = {}) ".format(len(self.membertypes))
-        s += "(size = {})>".format(self.size)
+        s += "members={} ".format(len(self.membertypes))
+        s += "size={}>".format(self.size)
 
         return s
 

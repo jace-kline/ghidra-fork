@@ -10,3 +10,6 @@
 *.pickle
 **/*.rep
 *.gpr
+**__pycache__
+*.pyc
+**.jython_cache
