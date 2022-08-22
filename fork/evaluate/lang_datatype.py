@@ -387,7 +387,7 @@ class DataTypePointer(DataType):
     """
     Datatype representing a pointer of some base type.
     """
-    def __init__(self, basetype=None, size=None, resolved=False):
+    def __init__(self, basetype=None, size=None):
         """
         basetype: DataType
             The type of the object being pointed to

@@ -163,7 +163,46 @@ def test6(offset=0):
 
     dtype1 = DataTypePointer(basetype=DataTypeInt(size=4), size=8)
     test_DataTypeRecursiveDescent(dtype0, dtype1, offset, exact_match=True)
+
+def test7():
+    dtype0 = DataTypeUnion(
+        name="myunion",
+        membertypes=[
+            DataTypeInt(size=4),
+            DataTypeFloat(size=8),
+            DataTypeArray(
+                basetype=DataTypeStruct(
+                    name="mystruct",
+                    membertypes=[
+                        DataTypeInt(size=4),
+                        DataTypePointer(basetype=DataTypeInt(size=4), size=8)
+                    ]
+                ),
+                length=10
+            )
+        ]
+    )
+
+    dtype1 = DataTypeUnion(
+        name="myunion",
+        membertypes=[
+            DataTypeInt(size=4),
+            DataTypeFloat(size=8),
+            DataTypeArray(
+                basetype=DataTypeStruct(
+                    name="mystruct",
+                    membertypes=[
+                        DataTypeInt(size=4),
+                        DataTypePointer(basetype=DataTypeInt(size=4), size=8)
+                    ]
+                ),
+                length=10
+            )
+        ]
+    )
+
+    assert (dtype0 == dtype1)
     
 
 if __name__ == "__main__":
-    test6(offset=4)
+    test7()
