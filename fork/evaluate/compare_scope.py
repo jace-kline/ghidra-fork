@@ -6,6 +6,10 @@ from util import *
 
 from compare_variable import *
 
+def make_address_space(region: AddressRegion, varnodes: List[Varnode]) -> 'ConstPCAddressSpace':
+    _cls = ConstPCAddressSpaceRangeable if region.is_range() else ConstPCAddressSpace
+    return _cls(region, varnodes)
+
 # represents a "snapshot"/set of variables at a given PC during the program
 # allows us to compare memory regions, etc. for variables at a given PC
 class ConstPCVariableSetSnapshot(object):
@@ -26,12 +30,8 @@ class ConstPCVariableSetSnapshot(object):
             else:
                 _map[region] = [varnode]
 
-        def _make_address_space(region: AddressRegion, varnodes: List[Varnode]) -> ConstPCAddressSpace:
-            _cls = ConstPCAddressSpaceRangeable if region.is_range() else ConstPCAddressSpace
-            return _cls(region, varnodes)
-
         # construct the ConstPCAddressSpace objects for each
-        return dict([ (region, _make_address_space(region, varnodes)) for (region, varnodes) in _map.items() ])
+        return dict([ (region, make_address_space(region, varnodes)) for (region, varnodes) in _map.items() ])
 
     def get_varnodes(self) -> List[Varnode]:
         return self.varnodes
@@ -60,8 +60,22 @@ class ConstPCVariableSetSnapshotCompare2(object):
         self.space_comparisons: dict[AddressRegion, ConstPCAddressSpaceCompare2] = self._compare_spaces()
 
     def _compare_spaces(self):
-        # TODO: match based on region key
-        pass
+        
+        _map: dict[AddressRegion, ConstPCAddressSpaceCompare2] = {}
+
+        for region, left_space in self.left.get_address_spaces().items():
+            right_space = self.right.get_address_space(region)
+            right_space = right_space if right_space is not None else make_address_space(region, [])
+            comparison = ConstPCAddressSpaceCompare2(left_space, right_space, exact_match=self.exact_match)
+            _map[region] = comparison
+
+        for region, right_space in self.right.get_address_spaces().items():
+            if region not in _map:
+                left_space = make_address_space(region, [])
+                comparison = ConstPCAddressSpaceCompare2(left_space, right_space, exact_match=self.exact_match)
+                _map[region] = comparison
+
+        return _map
 
     def get_left(self) -> ConstPCVariableSetSnapshot:
         return self.left
@@ -69,15 +83,53 @@ class ConstPCVariableSetSnapshotCompare2(object):
     def get_right(self) -> ConstPCVariableSetSnapshot:
         return self.right
 
+    def flip(self) -> 'ConstPCVariableSetSnapshotCompare2':
+        return __class__(self.right, self.left, exact_match=self.exact_match)
+
+    def bytes_overlapped(self) -> int:
+        return sum([ cmp.bytes_overlapped() for cmp in self.space_comparisons.values() ])
+
     # map each Varnode in left to its associated VarnodeCompareRecord
     def get_left_varnode_compare_records(self) -> 'dict[Varnode, VarnodeCompareRecord]':
-        # fold over each left address space, collect, and combine
-        pass
+        _map = {}
+        for region, compare2 in self.space_comparisons.items():
+            _map.update(compare2.get_left_varnode_compare_records())
+        return _map
 
     # map each Varnode in right to its associated VarnodeCompareRecord
     def get_right_varnode_compare_records(self) -> 'dict[Varnode, VarnodeCompareRecord]':
-        # fold over each right address space, collect, and combine
-        pass
+        _map = {}
+        for region, compare2 in self.space_comparisons.items():
+            _map.update(compare2.get_right_varnode_compare_records())
+        return _map
+
+    def make_left_compare_record(self) -> 'ConstPCVariableSetSnapshotCompareRecord':
+        return ConstPCVariableSetSnapshotCompareRecord(self.left, self)
+
+    def make_right_compare_record(self) -> 'ConstPCVariableSetSnapshotCompareRecord':
+        return self.flip().make_left_compare_record()
+
+class ConstPCVariableSetSnapshotCompareRecord(object):
+    def __init__(self,
+        varset: ConstPCVariableSetSnapshot,
+        comparison: ConstPCVariableSetSnapshotCompare2
+    ):
+        self.varset = varset
+        self.comparison = comparison
+
+        assert( self.varset is self.comparison.get_left() )
+
+    def get_varset(self) -> ConstPCVariableSetSnapshot:
+        return self.varset
+
+    def get_comparison(self) -> ConstPCVariableSetSnapshotCompare2:
+        return self.comparison
+
+    def get_varnode_compare_records(self) -> 'dict[Varnode, VarnodeCompareRecord]':
+        return self.comparison.get_left_varnode_compare_records()
+
+    def bytes_overlapped(self) -> int:
+        return self.comparison.bytes_overlapped()
 
 
 # associates an AddressRegion (group of 0+ addresses) with the varnodes that occupy it for a particular PC in the program
@@ -196,9 +248,6 @@ class ConstPCAddressSpaceCompare2(object):
         # ensure regions are matched
         assert ( left.get_region() == right.get_region() )
 
-        # ensure addrspaces are comparable
-        assert ( left.comparable() and right.comparable() )
-
         self.left = left
         self.right = right
 
@@ -247,3 +296,6 @@ class ConstPCAddressSpaceCompare2(object):
 
     def get_right_varnode_compare_records(self) -> 'dict[Varnode, VarnodeCompareRecord]':
         return self.right_varnode_compare_records
+
+    def bytes_overlapped(self) -> int:
+        return sum([ cmp.bytes_overlapped() for cmp in self.left_varnode_comparisons ])

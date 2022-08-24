@@ -75,6 +75,12 @@ class Function(object):
     def get_pc_range(self):
         return AddressRange(self.startaddr, end=self.endaddr)
 
+    def get_start_pc(self):
+        return self.startaddr
+
+    def get_end_pc(self):
+        return self.endaddr
+
     def get_params(self):
         """ Returns the list of parameter Variable objects in the correct order """
         return [ v for v in self.vars if v.is_param() ]

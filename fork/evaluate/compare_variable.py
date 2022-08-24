@@ -28,9 +28,14 @@ class Varnode(object):
     # builds a VarnodeCompareRecord|None from the infomation contained in the
     # given variable. Only builds if the variable is associated with exactly one address.
     @staticmethod
-    def from_unoptimized_variable(var: Variable):
+    def from_single_location_variable(var: Variable):
         liveranges = var.get_liveranges()
         return __class__(var, liveranges[0].get_addr()) if liveranges and len(liveranges) == 1 else None
+
+    @staticmethod
+    def from_variable_at_pc(var: Variable, pc: AbsoluteAddress):
+        addr = var.get_address_at_pc(pc)
+        return Varnode(var, addr) if addr is not None else None
 
     def __hash__(self) -> int:
         return hash((self.var, self.addr))
