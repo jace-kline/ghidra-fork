@@ -243,6 +243,9 @@ class DataType(object):
     def __str__(self):
         pass # implement in children
 
+    def __hash__(self):
+        return hash((self.metatype, self.size))
+
 class DataTypeFunctionPrototype(DataType):
     """
     Data type representing a function prototype.
@@ -255,7 +258,7 @@ class DataTypeFunctionPrototype(DataType):
             size=0
         )
         self.rettype = rettype
-        self.paramtypes = paramtypes
+        self.paramtypes = tuple(paramtypes)
         self.variadic = variadic
 
     def __eq__(self, other):
@@ -274,7 +277,9 @@ class DataTypeFunctionPrototype(DataType):
             s += "[...]"
         s += ") -> " + str(self.rettype)
         return s
-
+    
+    def __hash__(self):
+        return hash((self.metatype, self.size, self.rettype, self.paramtypes, self.variadic))
 
 class DataTypeInt(DataType):
     """
@@ -304,6 +309,9 @@ class DataTypeInt(DataType):
             s += "int" + str(self.size)
         return s
 
+    def __hash__(self):
+        return hash((self.metatype, self.size, self.signed))
+
     @classmethod
     def from_DataType(cls, dtype):
         # Create new child obj from DataType base instance
@@ -326,6 +334,9 @@ class DataTypeFloat(DataType):
 
     def __str__(self):
         return "float" + str(self.size)
+
+    def __hash__(self):
+        return hash((self.metatype, self.size))
 
     @classmethod
     def from_DataType(cls, dtype):
@@ -350,6 +361,9 @@ class DataTypeUndefined(DataType):
     def __str__(self):
         return "undefined" + str(self.size)
 
+    def __hash__(self):
+        return hash((self.metatype, self.size))
+
     @classmethod
     def from_DataType(cls, dtype):
         # Create new child obj from DataType base instance
@@ -372,6 +386,9 @@ class DataTypeVoid(DataType):
     
     def __str__(self):
         return "void"
+
+    def __hash__(self):
+        return hash((self.metatype, self.size))
 
     @classmethod
     def from_DataType(cls, dtype):
@@ -403,6 +420,9 @@ class DataTypePointer(DataType):
 
     def __str__(self):
         return str(self.basetype) + " *"
+
+    def __hash__(self):
+        return hash((self.metatype, self.size, self.basetype))
 
     @classmethod
     def from_DataType(cls, dtype):
@@ -495,6 +515,9 @@ class DataTypeArray(DataType):
     def __str__(self):
         return "<ARRAY subtype={} length={} size={}>".format(str(self.basetype), self.length, self.size)
 
+    def __hash__(self):
+        return hash((self.metatype, self.size, self.basetype, self.length))
+
     @classmethod
     def from_DataType(cls, dtype):
         # Create new child obj from DataType base instance
@@ -511,7 +534,7 @@ class DataTypeStruct(DataType):
     """
     def __init__(self, name=None, membertypes=None, size=None):
         self.name = name
-        self.membertypes = membertypes
+        self.membertypes = tuple(membertypes)
         _size = size
         if size is None: # if explicit size not provided, calculate on our own
             _size = sum([ mem.size for mem in membertypes ])
@@ -566,6 +589,9 @@ class DataTypeStruct(DataType):
 
         return s
 
+    def __hash__(self):
+        return hash((self.metatype, self.size, self.membertypes))
+
     @classmethod
     def from_DataType(cls, dtype):
         # Create new child obj from DataType base instance
@@ -586,7 +612,7 @@ class DataTypeUnion(DataType):
             The data types of that could possibly be instantiated in the union.
         """
         self.name = name
-        self.membertypes = membertypes
+        self.membertypes = tuple(membertypes)
         _size = size
         if size is None: # if explicit size not provided, calculate on our own
             _size = max([ mem.size for mem in membertypes ])
@@ -636,6 +662,9 @@ class DataTypeUnion(DataType):
         s += "size={}>".format(self.size)
 
         return s
+
+    def __hash__(self):
+        return hash((self.metatype, self.size, self.membertypes))
 
     @classmethod
     def from_DataType(cls, dtype):

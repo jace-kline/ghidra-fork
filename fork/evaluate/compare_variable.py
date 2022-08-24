@@ -32,6 +32,9 @@ class Varnode(object):
         liveranges = var.get_liveranges()
         return __class__(var, liveranges[0].get_addr()) if liveranges and len(liveranges) == 1 else None
 
+    def __hash__(self) -> int:
+        return hash((self.var, self.addr))
+
 
 class VarnodeCompare2Code(object):
     NO_OVERLAP = 0 # variables do not overlap at all

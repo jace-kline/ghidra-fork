@@ -38,12 +38,131 @@ class AddressType:
     def unknown_location(addrtype):
         return addrtype in [ AddressType.UNKNOWN, AddressType.EXTERNAL ]
 
+# every address has an address "region" which determines whether it can
+# be compared / overlapped with another address
+class AddressRegion(object):
+    def __init__(self, addrtype):
+        self.addrtype = addrtype
+
+    def get_addrtype(self):
+        return self.addrtype
+
+    # is this region a range?
+    def is_range(self):
+        return False
+
+    # is this a precise region in address/register space?
+    # or is it an unknown space (UNKNOWN / EXTERNAL)?
+    def is_known(self):
+        return False
+
+    # is this region a register?
+    def is_register(self):
+        return False
+
+    def is_register_offset(self):
+        return False
+
+    def is_stack(self):
+        return False
+
+    def is_absolute(self):
+        return False
+
+    # by default, equality tests whether the addrtypes are equal
+    # can be overridden by subclasses though
+    def __eq__(self, other):
+        return self.addrtype == other.addrtype and other == self
+
+    def __hash__(self):
+        return hash(self.addrtype)
+
+class AddressRegionUnknown(AddressRegion):
+    def __init__(self):
+        super(__class__, self).__init__(AddressType.UNKNOWN)
+
+class AddressRegionExternal(AddressRegion):
+    def __init__(self):
+        super(__class__, self).__init__(AddressType.EXTERNAL)
+
+class AddressRegionRegister(AddressRegion):
+    def __init__(self, register):
+        super(__class__, self).__init__(AddressType.REGISTER)
+        self.register = register # AddressRegister
+
+    def is_known(self):
+        return True
+
+    def is_register(self):
+        return True
+
+    def get_register(self):
+        return self.register
+
+    def __eq__(self, other):
+        return other.is_register() and self.register == other.register
+
+class AddressRegionRegisterOffset(AddressRegion):
+    def __init__(self, register):
+        super(__class__, self).__init__(AddressType.REGISTER_OFFSET)
+        self.register = register # AddressRegister
+
+    def is_known(self):
+        return True
+
+    def is_register_offset(self):
+        return True
+
+    def is_range(self):
+        return True
+
+    def get_register(self):
+        return self.register
+
+    def __eq__(self, other):
+        return other.is_register_offset() and self.register == other.register
+
+class AddressRegionStack(AddressRegion):
+    def __init__(self):
+        super(__class__, self).__init__(AddressType.STACK)
+
+    def is_known(self):
+        return True
+
+    def is_stack(self):
+        return True
+
+    def is_range(self):
+        return True
+
+    def __eq__(self, other):
+        return other.is_stack()
+
+class AddressRegionAbsolute(AddressRegion):
+    def __init__(self):
+        super(__class__, self).__init__(AddressType.ABSOLUTE)
+
+    def is_known(self):
+        return True
+
+    def is_absolute(self):
+        return True
+
+    def is_range(self):
+        return True
+
+    def __eq__(self, other):
+        return other.is_absolute()
+
 class Address(object):
     def __init__(self, addrtype):
         self.addrtype = addrtype
 
     def get_addrtype(self):
         return self.addrtype
+
+    def get_region(self):
+        raise NotImplementedError()
 
     # a method that returns this Address's offset from
     # the base pointer of its "address space"
@@ -82,11 +201,17 @@ class Address(object):
 
     def __str__(self):
         return "<{}>".format(AddressType.to_string(self.addrtype))
+    
+    def __hash__(self):
+        return hash(self.addrtype)
 
 class AbsoluteAddress(Address):
     def __init__(self, addr):
         super(AbsoluteAddress, self).__init__(addrtype=AddressType.ABSOLUTE)
         self.addr = addr
+
+    def get_region(self):
+        return AddressRegionAbsolute()
 
     def space_offset(self):
         return self.addr
@@ -122,10 +247,16 @@ class AbsoluteAddress(Address):
     def __str__(self):
         return "<{}:{:#x}>".format(AddressType.to_string(self.addrtype), self.addr)
 
+    def __hash__(self):
+        return hash((self.addrtype, self.addr))
+
 class RegisterAddress(Address):
     def __init__(self, register):
         super(RegisterAddress, self).__init__(addrtype=AddressType.REGISTER)
         self.register = register
+
+    def get_region(self):
+        return AddressRegionRegister(self)
 
     def __eq__(self, addr):
         return self.register == addr.register
@@ -133,14 +264,23 @@ class RegisterAddress(Address):
     def __str__(self):
         return "<{}:{}>".format(AddressType.to_string(self.addrtype), self.register)
 
+    def __hash__(self):
+        return hash((self.addrtype, self.register))
+
 class RegisterOffsetAddress(Address):
     def __init__(self, register, offset):
         super(RegisterOffsetAddress, self).__init__(addrtype=AddressType.REGISTER_OFFSET)
         self.register = register
         self.offset = offset
 
+    def get_region(self):
+        return AddressRegionRegisterOffset(self.register)
+
     def space_offset(self):
         return self.offset
+
+    def get_register(self):
+        return self.register
 
     def add_const(self, n):
         return RegisterOffsetAddress(self.register, self.offset + n)
@@ -173,11 +313,17 @@ class RegisterOffsetAddress(Address):
         offsetstr = -1 * self.offset if negative else self.offset
         return "<{}:reg({}){}{:#x}>".format(AddressType.to_string(self.addrtype), self.register, opstr, offsetstr)
 
+    def __hash__(self):
+        return hash((self.addrtype, self.register, self.offset))
+
 # offset from a stack frame's base pointer
 class StackAddress(Address):
     def __init__(self, offset):
         super(StackAddress, self).__init__(addrtype=AddressType.STACK)
         self.offset = offset
+
+    def get_region(self):
+        return AddressRegionStack()
 
     def space_offset(self):
         return self.offset
@@ -210,13 +356,28 @@ class StackAddress(Address):
     def __str__(self):
         return "<{}:{:#x}>".format(AddressType.to_string(self.addrtype), self.offset)
 
+    def __hash__(self):
+        return hash((self.addrtype, self.offset))
+
 class ExternalAddress(Address):
     def __init__(self):
         super(ExternalAddress, self).__init__(addrtype=AddressType.EXTERNAL)
 
+    def get_region(self):
+        return AddressRegionExternal()
+
+    def __hash__(self):
+        return hash(self.addrtype)
+
 class UnknownAddress(Address):
     def __init__(self):
         super(UnknownAddress, self).__init__(addrtype=AddressType.UNKNOWN)
+
+    def get_region(self):
+        return AddressRegionUnknown()
+
+    def __hash__(self):
+        return hash(self.addrtype)
 
 
 # Range includes start, excludes end.
@@ -281,6 +442,9 @@ class AddressRange(object):
     def __repr__(self):
         return self.__str__()
 
+    def __hash__(self):
+        return hash((self.start, self.end))
+
 class AddressLiveRange(object):
     """
     This class represents the association between an Address (stack location, register, etc.)
@@ -300,7 +464,9 @@ class AddressLiveRange(object):
         self.addr = addr
         self.startpc = startpc
         self.endpc = endpc
-        self.pc_range = None
+        self.pc_range = AddressRange(self.startpc, self.endpc) \
+            if self.startpc is not None and self.endpc is not None \
+            else None
 
     # if startpc & endpc are both None, this range is considered global
     def is_global(self):
@@ -310,8 +476,6 @@ class AddressLiveRange(object):
         return self.addr
 
     def get_pc_range(self):
-        if not self.pc_range:
-            self.pc_range = AddressRange(self.startpc, self.endpc)
         return self.pc_range
 
     # comparison operators based on where the PC AddressRange starts line up
@@ -334,7 +498,10 @@ class AddressLiveRange(object):
         return "<AddressLiveRange addr={} startpc={} endpc={}>".format(self.addr, self.startpc, self.endpc)
 
     def __repr__(self):
-        return self.__str__()            
+        return self.__str__()
+
+    def __hash__(self):
+        return hash((self.startpc, self.endpc, self.addr))
 
 class AddressRangeOverlap(object):
 
@@ -382,6 +549,9 @@ class AddressRangeOverlap(object):
 
         def __repr__(self):
             return self.__str__()
+
+        def __hash__(self):
+            return hash((self.rangetype, self.range))
 
     def __init__(self, left_range, right_range):
         self.left_range = left_range
@@ -556,6 +726,9 @@ class AddressRangeOverlap(object):
 
     def __repr__(self):
         return self.__str__()
+
+    def __hash__(self):
+        return hash((self.left_range, self.right_range))
 
 # defines the mapping from x86-64 register names
 # to their associated register numbers

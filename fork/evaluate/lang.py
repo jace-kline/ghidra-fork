@@ -6,8 +6,8 @@ from lang_datatype import *
 # from either DWARF info or Ghidra decompilation
 class ProgramInfo(object):
     def __init__(self, globals=[], functions=[]):
-        self.globals = globals
-        self.functions = functions
+        self.globals = tuple(globals)
+        self.functions = tuple(functions)
 
     def get_globals(self):
         return self.globals
@@ -24,6 +24,9 @@ class ProgramInfo(object):
         print("----------------FUNCTIONS--------------------")
         for fn in self.functions:
             fn.print_summary()
+
+    def __hash__(self):
+        return hash((self.globals, self.functions))
 
 class Function(object):
     """
@@ -49,8 +52,8 @@ class Function(object):
         self.startaddr = startaddr
         self.endaddr = endaddr
         self.rettype = rettype
-        self.params = params
-        self.vars = vars
+        self.params = tuple(params)
+        self.vars = tuple(vars)
         self.variadic = variadic
 
     # if start and end addrs are None, this function is inlined
@@ -87,6 +90,9 @@ class Function(object):
         for var in (self.params + self.vars):
             print("\t{}".format(var))
 
+    def __hash__(self):
+        return hash((self.startaddr, self.endaddr, self.rettype, self.params, self.vars, self.variadic))
+
 class Variable(object):
     def __init__(self, name=None, dtype=None, liveranges=None, param=False, function=None):
         """
@@ -105,7 +111,7 @@ class Variable(object):
         """
         self.name = name
         self.dtype = dtype
-        self.liveranges = sorted(liveranges) if bool(liveranges) else []
+        self.liveranges = tuple(sorted(liveranges) if bool(liveranges) else [])
         self.param = param
         self.function = function
 
@@ -158,4 +164,7 @@ class Variable(object):
     def __str__(self):
         lbl = "PARAM" if self.is_param() else "VAR"
         return "<{} {} :: {} @ {}>".format(lbl, self.name, self.dtype, self.liveranges)
+
+    def __hash__(self):
+        return hash((self.dtype, self.liveranges, self.param))
 
