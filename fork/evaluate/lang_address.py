@@ -555,7 +555,7 @@ class AddressRangeOverlap(object):
         return "<AddressRangeOverlap(subranges={})>".format(self.subranges)
 
     def __repr__(self):
-        return self.__str__
+        return self.__str__()
 
 # defines the mapping from x86-64 register names
 # to their associated register numbers
