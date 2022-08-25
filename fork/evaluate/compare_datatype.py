@@ -4,6 +4,9 @@ from lang_address import *
 from lang_datatype import *
 from util import *
 
+# should comparison between primitive types use '==' (True) or 'rough_equal' (False)?
+EXACT_MATCH: bool = True
+
 class DataTypeCompareCode(object):
     # no valid comparison could be made
     NO_MATCH = 0
@@ -34,8 +37,7 @@ class DataTypeCompare2(object):
         self,
         left: DataType,
         right: DataType,
-        offset: int, # offset from left start addr to right start addr
-        exact_match: bool = False # should we use '==' to compare?
+        offset: int # offset from left start addr to right start addr
     ):
         self.left = left
         self.right = right
@@ -44,9 +46,6 @@ class DataTypeCompare2(object):
         # if negative, indicates that right starts before left
         # == right var addr - left var addr
         self.offset = offset
-
-        # should we use '==' or 'rough_match()' to compare?
-        self.exact_match = exact_match
 
         # initialize the descent and compare_code members to None
         self.left_descent = self.right_descent = None
@@ -68,7 +67,7 @@ class DataTypeCompare2(object):
                 self.left,
                 self.offset,
                 match_type=self.right,
-                exact_match=self.exact_match
+                exact_match=EXACT_MATCH
             )
 
             # if there is a descent found, the right is a subset type of the left type
@@ -82,7 +81,7 @@ class DataTypeCompare2(object):
                 self.right,
                 self.offset,
                 match_type=self.left,
-                exact_match=self.exact_match
+                exact_match=EXACT_MATCH
             )
 
             # if there is a descent found, the right is a subset type of the left type
@@ -94,7 +93,7 @@ class DataTypeCompare2(object):
         self.compare_code = DataTypeCompareCode.NO_MATCH
 
     def _match(self):
-        return self.left == self.right if self.exact_match else self.left.rough_match(self.right)
+        return self.left == self.right if EXACT_MATCH else self.left.rough_match(self.right)
 
     def top_level_match(self):
         return self.compare_code == DataTypeCompareCode.MATCH
@@ -155,7 +154,7 @@ class DataTypeCompare2(object):
         return 0 if self.no_match() else min(self.left.get_size(), self.right.get_size())
 
     def flip(self):
-        pass
+        return __class__(self.right, self.left, -1 * self.offset)
 
     def __str__(self):
         return "<DataTypeCompare2 compare_code={} left={} right={} offset={} left_descent={} right_descent={}>".format(

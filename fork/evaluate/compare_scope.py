@@ -48,12 +48,10 @@ class ConstPCVariableSetSnapshot(object):
 class ConstPCVariableSetSnapshotCompare2(object):
     def __init__(self,
         left: ConstPCVariableSetSnapshot,
-        right: ConstPCVariableSetSnapshot,
-        exact_match: bool = False # should variables match exactly?
+        right: ConstPCVariableSetSnapshot
     ):
         self.left = left
         self.right = right
-        self.exact_match = exact_match
 
         # match left address spaces with right address spaces based on region
         # if there is a region that doesn't match, create empty space to compare with
@@ -66,13 +64,13 @@ class ConstPCVariableSetSnapshotCompare2(object):
         for region, left_space in self.left.get_address_spaces().items():
             right_space = self.right.get_address_space(region)
             right_space = right_space if right_space is not None else make_address_space(region, [])
-            comparison = ConstPCAddressSpaceCompare2(left_space, right_space, exact_match=self.exact_match)
+            comparison = ConstPCAddressSpaceCompare2(left_space, right_space)
             _map[region] = comparison
 
         for region, right_space in self.right.get_address_spaces().items():
             if region not in _map:
                 left_space = make_address_space(region, [])
-                comparison = ConstPCAddressSpaceCompare2(left_space, right_space, exact_match=self.exact_match)
+                comparison = ConstPCAddressSpaceCompare2(left_space, right_space)
                 _map[region] = comparison
 
         return _map
@@ -84,7 +82,7 @@ class ConstPCVariableSetSnapshotCompare2(object):
         return self.right
 
     def flip(self) -> 'ConstPCVariableSetSnapshotCompare2':
-        return __class__(self.right, self.left, exact_match=self.exact_match)
+        return __class__(self.right, self.left)
 
     def bytes_overlapped(self) -> int:
         return sum([ cmp.bytes_overlapped() for cmp in self.space_comparisons.values() ])
@@ -204,9 +202,9 @@ class ConstPCAddressSpaceRangeable(ConstPCAddressSpace):
         # could possibly overlap with the next right addr range.
         # The same applies for prev_right.
 
-        # StaticPCVariable | None
+        # Varnode | None
         prev_left = None
-        # StaticPCVariable | None
+        # Varnode | None
         prev_right = None
 
         def _addr_range_overlap(l: Varnode, r: Varnode) -> bool:
@@ -242,16 +240,13 @@ class ConstPCAddressSpaceRangeable(ConstPCAddressSpace):
 class ConstPCAddressSpaceCompare2(object):
     def __init__(self,
         left: ConstPCAddressSpace,
-        right: ConstPCAddressSpace,
-        exact_match: bool = False
+        right: ConstPCAddressSpace
     ):
         # ensure regions are matched
         assert ( left.get_region() == right.get_region() )
 
         self.left = left
         self.right = right
-
-        self.exact_match = exact_match
         
         # gather Varnode comparisons between the 2 sets
         self.left_varnode_comparisons: List[VarnodeCompare2] = []
@@ -276,7 +271,7 @@ class ConstPCAddressSpaceCompare2(object):
     # compare the 2 varnodes and update the internal state
     def _compare(self, left_varnode: Varnode, right_varnode: Varnode):
         # do comparison
-        left_comparison = VarnodeCompare2(left_varnode, right_varnode, exact_match=self.exact_match)
+        left_comparison = VarnodeCompare2(left_varnode, right_varnode)
 
         # store into left_varnode_comparisons
         if left_comparison and left_comparison.does_overlap():
