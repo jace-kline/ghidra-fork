@@ -10,7 +10,7 @@ from compare_variable import *
 # allows us to compare memory regions, etc. for variables at a given PC
 class ConstPCVariableSetSnapshot(object):
     def __init__(self, varnodes: List[Varnode]):
-        self.varnodes = tuple(varnodes)
+        self.varnodes = varnodes
 
         # partition Varnodes into address spaces based on their address regions
         self.spaces: dict[AddressRegion, ConstPCAddressSpace] = self._partition_spaces()
@@ -40,7 +40,7 @@ class ConstPCVariableSetSnapshot(object):
         return self.spaces.get(region, None)
 
     def __hash__(self) -> int:
-        return hash(self.varnodes)
+        return hash(tuple(self.varnodes))
 
 # compares 2 sets of variables representing a certain "scope" in the program (constant PC)
 # this could mean a point in a function or the global scope
@@ -115,7 +115,7 @@ class ConstPCAddressSpace(object):
         varnodes: List[Varnode] # the list of varnodes within the region
     ):
         self.region = region
-        self.varnodes = tuple(sorted(varnodes, key=lambda v: v.get_addr()) if self.rangeable() else varnodes)
+        self.varnodes = sorted(varnodes, key=lambda v: v.get_addr()) if self.rangeable() else varnodes
 
         for varnode in self.varnodes:
             self._verify_region(varnode)
@@ -192,8 +192,10 @@ class ConstPCAddressSpace(object):
                 prev_left = left_varnode
                 prev_right = right_varnode
 
+        return pairs
+
     def __hash__(self) -> int:
-        return hash((self.region, self.varnodes))
+        return hash((self.region, tuple(self.varnodes)))
 
 
 # compare the varnode sets in left and right address spaces
@@ -232,7 +234,7 @@ class ConstPCAddressSpaceCompare2(object):
         # store into varnode_comparisons
         if comparison and comparison.does_overlap():
             self.varnode_comparisons.append(comparison)
-            self.varnode_compare_record_map[left_varnode] = comparison
+            self.varnode_compare_record_map[left_varnode].add_comparison(comparison)
 
     def get_varnode_compare_record(self, varnode: Varnode) -> Union[VarnodeCompareRecord, None]:
         return self.varnode_compare_record_map.get(varnode, None)

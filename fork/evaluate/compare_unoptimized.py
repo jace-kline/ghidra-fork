@@ -1,4 +1,6 @@
 from typing import List, Tuple, Union
+from collections import OrderedDict
+
 from lang import *
 from lang_address import *
 from lang_datatype import *
@@ -12,17 +14,19 @@ class UnoptimizedProgramInfo(object):
         self.proginfo: ProgramInfo = proginfo
         
         # maps function start address to UnoptimizedFunction object
-        self.unoptimized_functions: dict[AbsoluteAddress, UnoptimizedFunction] \
+        self.unoptimized_functions: OrderedDict[AbsoluteAddress, UnoptimizedFunction] \
             = self._make_unoptimized_functions()
 
         # the set of global variables (converted to Varnodes)
         self.globals_set: ConstPCVariableSetSnapshot = self._make_unoptimized_globals_set()
 
-    def _make_unoptimized_functions(self) -> 'dict[AbsoluteAddress, UnoptimizedFunction]':
+    def _make_unoptimized_functions(self) -> 'OrderedDict[AbsoluteAddress, UnoptimizedFunction]':
         _map = {}
         for function in self.get_proginfo().get_functions():
             _map[function.get_start_pc()] = UnoptimizedFunction(function)
-        return _map
+
+        # sort the dict by key (Address) & return
+        return ordered_dict_by_key(_map)
 
     def _make_unoptimized_globals_set(self) -> ConstPCVariableSetSnapshot:
         varnodes = [ 
@@ -35,7 +39,7 @@ class UnoptimizedProgramInfo(object):
     def get_proginfo(self) -> ProgramInfo:
         return self.proginfo
 
-    def get_unoptimized_functions(self) -> 'dict[AbsoluteAddress, UnoptimizedFunction]':
+    def get_unoptimized_functions(self) -> 'OrderedDict[AbsoluteAddress, UnoptimizedFunction]':
         return self.unoptimized_functions
 
     def get_unoptimized_globals_set(self) -> ConstPCVariableSetSnapshot:
@@ -61,12 +65,17 @@ class UnoptimizedProgramInfoCompare2(object):
         # store dict of UnoptimizedFunction -> UnoptimizedFunctionCompareRecord
         self.unoptimized_function_compare_map = self._make_function_compare_map()
 
-    def _make_function_compare_map(self) -> 'dict[UnoptimizedFunction, UnoptimizedFunctionCompareRecord]':
+    # map unoptimized functions to compare records
+    # order the map by the start PC of the function
+    def _make_function_compare_map(self) -> 'OrderedDict[UnoptimizedFunction, UnoptimizedFunctionCompareRecord]':
+        key = lambda fn: fn.get_start_pc()
+
         # use Zipper util to find conflicts based on start PC
+        # assume ordered unoptimized functions based on start PC from both sets
         zipper = OrderedZipper(
             self.left.get_unoptimized_functions().values(),
             self.right.get_unoptimized_functions().values(),
-            key=lambda fn: fn.get_start_pc() # order by start PC
+            key=key # order by start PC
         )
         
         _map = {}
@@ -83,7 +92,7 @@ class UnoptimizedProgramInfoCompare2(object):
                 comparison = UnoptimizedFunctionCompare2(l, r)
                 _map[l] = UnoptimizedFunctionCompareRecord(l, comparison)
 
-        return _map
+        return ordered_dict_by_key(_map, transform=key)
 
 
     def get_left(self) -> UnoptimizedProgramInfo:

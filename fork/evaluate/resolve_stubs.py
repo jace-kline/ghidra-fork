@@ -248,23 +248,6 @@ class DataTypeUnionStub(DataTypeStub):
         record.obj.size = self.size
         return record.obj
 
-# # Qualifier (const, volatile, etc.) or alias (typedef, enum)
-# # In essence, this is a wrapper/alias of another type (or void)
-# class DataTypeQualifierAliasStub(DataTypeStub):
-#     def __init__(self, metatype=None, basetyperef=None):
-#         super(DataTypeQualifierAliasStub, self).__init__(
-#             metatype=metatype,
-#             size=None
-#         )
-#         self.basetyperef = basetyperef
-
-#     def resolve(self, record):
-#         assert_not_none(self, "basetyperef")
-        
-#         # directly return the aliased type
-#         record.obj = record.db.resolve(self.basetyperef)
-#         return record.obj
-
 class DataTypeTypedefStub(DataTypeStub):
     def __init__(self, name="", basetyperef=None):
         super(DataTypeTypedefStub, self).__init__(

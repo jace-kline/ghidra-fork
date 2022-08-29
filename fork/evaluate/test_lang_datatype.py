@@ -202,7 +202,39 @@ def test7():
     )
 
     assert (dtype0 == dtype1)
+
+def test_recursive_eq():
+    dtype0 = DataTypeStruct(
+        name="mystruct",
+        membertypes=[
+            DataTypeInt(size=8, signed=True),
+            DataTypePointer(
+                basetype=None,
+                size=8
+            )
+        ]
+    )
+
+    dtype0.membertypes[1].basetype = dtype0
+
+    dtype1 = DataTypeStruct(
+        name="mystruct",
+        membertypes=[
+            DataTypeInt(size=8, signed=True),
+            DataTypePointer(
+                basetype=None,
+                size=8
+            )
+        ]
+    )
+
+    dtype1.membertypes[1].basetype = dtype1
+
+    print(dtype0 == dtype1)
+    print(hash(dtype0))
+    print(hash(dtype1))
+    print(dtype0)
     
 
 if __name__ == "__main__":
-    test7()
+    test_recursive_eq()

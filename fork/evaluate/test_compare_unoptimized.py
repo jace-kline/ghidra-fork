@@ -52,14 +52,44 @@ def test1():
 
     test_compare_dtypes(left, right, 16)
 
-def test_compare_unoptimized(dwarf_proginfo, ghidra_proginfo):
+def test_compare_unoptimized(progdir, rebuild=False):
+    dwarf_proginfo, ghidra_proginfo = build2(progdir, 0, rebuild=rebuild)
+
     dwarf = UnoptimizedProgramInfo(dwarf_proginfo)
     ghidra = UnoptimizedProgramInfo(ghidra_proginfo)
 
     comparison = UnoptimizedProgramInfoCompare2(ghidra, dwarf)
-    print(comparison)
+    return comparison
 
 if __name__ == "__main__":
     progdir = "../progs/typecases/"
-    dwarf_proginfo, ghidra_proginfo = build2(progdir, 0, rebuild=True)
-    test_compare_unoptimized(dwarf_proginfo, ghidra_proginfo)
+    cmp = test_compare_unoptimized(progdir, rebuild=False)
+    # cmp.get_left().get_proginfo().print_summary()
+
+    # for fn, record in cmp.get_function_compare_record_map().items():
+    #     if record.is_comparison():
+    #         print("{} : {}".format(
+    #             fn.get_function().get_name(),
+    #             record.get_comparison())
+    #         )
+
+    # for varnode, record in cmp.get_global_compare_record_map().items():
+    #     print("{} : {}".format(
+    #         varnode.get_addr(),
+    #         record.get_status_str()
+    #     ))
+
+    zipper = OrderedZipper(
+        cmp.get_left().get_unoptimized_functions().values(),
+        cmp.get_right().get_unoptimized_functions().values(),
+        key=lambda fn: fn.get_start_pc()
+    )
+
+    for item in zipper:
+        if item.is_left():
+            print("Left({})".format(item.get_value().get_start_pc()))
+        elif item.is_right():
+            print("Right({})".format(item.get_value().get_start_pc()))
+        elif item.is_conflict():
+            l, r = item.get_value()
+            print("Conflict({}, {})".format(l.get_start_pc(), r.get_start_pc()))

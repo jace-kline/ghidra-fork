@@ -6,8 +6,8 @@ from lang_datatype import *
 # from either DWARF info or Ghidra decompilation
 class ProgramInfo(object):
     def __init__(self, globals=[], functions=[]):
-        self.globals = tuple(globals)
-        self.functions = tuple(functions)
+        self.globals = globals
+        self.functions = functions
 
     def get_globals(self):
         return self.globals
@@ -26,7 +26,7 @@ class ProgramInfo(object):
             fn.print_summary()
 
     def __hash__(self):
-        return hash((self.globals, self.functions))
+        return hash((tuple(self.globals), tuple(self.functions)))
 
 class Function(object):
     """
@@ -52,8 +52,8 @@ class Function(object):
         self.startaddr = startaddr
         self.endaddr = endaddr
         self.rettype = rettype
-        self.params = tuple(params)
-        self.vars = tuple(vars)
+        self.params = params
+        self.vars = vars
         self.variadic = variadic
 
     # if start and end addrs are None, this function is inlined
@@ -63,6 +63,9 @@ class Function(object):
 
     def is_variadic(self):
         return self.variadic
+
+    def get_name(self):
+        return self.name
 
     # returns DataTypeFunctionPrototype
     def get_prototype(self):
@@ -100,7 +103,7 @@ class Function(object):
             print("\t{}".format(var))
 
     def __hash__(self):
-        return hash((self.startaddr, self.endaddr, self.rettype, self.params, self.vars, self.variadic))
+        return hash((self.startaddr, self.endaddr, self.rettype, tuple(self.params), tuple(self.vars), self.variadic))
 
 class Variable(object):
     def __init__(self, name=None, dtype=None, liveranges=None, param=False, function=None):
@@ -120,7 +123,7 @@ class Variable(object):
         """
         self.name = name
         self.dtype = dtype
-        self.liveranges = tuple(sorted(liveranges) if bool(liveranges) else [])
+        self.liveranges = sorted(liveranges) if bool(liveranges) else []
         self.param = param
         self.function = function
 
@@ -175,5 +178,5 @@ class Variable(object):
         return "<{} {} :: {} @ {}>".format(lbl, self.name, self.dtype, self.liveranges)
 
     def __hash__(self):
-        return hash((self.dtype, self.liveranges, self.param))
+        return hash((self.dtype, tuple(self.liveranges), self.param))
 

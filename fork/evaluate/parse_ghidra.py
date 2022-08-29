@@ -362,17 +362,19 @@ class ParseGhidra(object):
 
         startpc = endpc = None
         rng = self.util.get_varnode_pc_range(varnode)
-        if rng:
+        if rng is not None:
             startpc, endpc = rng
 
         # If this doesn't have a getPCAddress(), then assume its a parameter.
         # If parameter, take the start address to be that of the start of the parent function.
-        startpc = startpc if startpc else fnstart
-        endpc = endpc if endpc else fnend
+        startpc = startpc if startpc is not None else fnstart
+        endpc = endpc if endpc is not None else fnend
+
+        # TODO: what if startpc is not None and endpc is None?
 
         # fail if there is...
         # no address OR it is a local variable and there are missing PC bounds
-        if not addr or (local and (not startpc or not endpc)):
+        if addr is None or (local and (not startpc or not endpc)):
             return None
 
         return AddressLiveRange(

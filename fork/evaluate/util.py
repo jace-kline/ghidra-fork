@@ -1,3 +1,9 @@
+from collections import OrderedDict
+
+# _map: the original unordered dict
+# transform: the transformation to apply to the key before ordering
+def ordered_dict_by_key(_map: dict, transform=lambda x: x) -> OrderedDict:
+    return OrderedDict(sorted(_map.items(), key=lambda pair: transform(pair[0])))
 
 def count(_iter, start=0, step=1):
     __iter = iter(_iter)
@@ -82,7 +88,7 @@ class OrderedZipper(object):
         def __repr__(self):
             return self.__str__()
 
-    class Conflict(object):
+    class Conflict(ZipItem):
         def __init__(self, objl, idxl, objr, idxr):
             super(__class__, self).__init__()
             self.objl = objl
@@ -109,9 +115,9 @@ class OrderedZipper(object):
     # right: Iterator<A>
     # key: (Ord B) => A -> B
     def __init__(self, left, right, key=None):
-        self.left = iter(left)
-        self.right = iter(right)
         self.key = key if key is not None else (lambda v: v)
+        self.left = iter(sorted(left, key=self.key))
+        self.right = iter(sorted(right, key=self.key))
 
         # get the first elements of each iterator
         self.curleft = try_next(self.left)

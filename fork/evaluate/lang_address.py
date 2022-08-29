@@ -412,7 +412,8 @@ class AddressRange(object):
         assert(AddressType.rangeable(self.addrtype))
         if end:
             assert(end.addrtype == self.start.addrtype)
-            assert(start < end)
+            if start > end:
+                raise Exception("start > end in AddressRange\nstart = {}\nend = {}".format(start, end))
             self.end = end
             self.size = self.start.distance(self.end)
         elif size:
@@ -424,7 +425,7 @@ class AddressRange(object):
 
     def does_overlap(self, other):
         overlap = self.get_overlap(other)
-        return overlap.overlap is not None
+        return overlap.does_overlap()
 
     def get_size(self):
         return self.size
@@ -482,7 +483,7 @@ class AddressLiveRange(object):
         self.addr = addr
         self.startpc = startpc
         self.endpc = endpc
-        self.pc_range = AddressRange(self.startpc, self.endpc) \
+        self.pc_range = AddressRange(self.startpc, end=self.endpc) \
             if self.startpc is not None and self.endpc is not None \
             else None
 
@@ -681,10 +682,10 @@ class AddressRangeOverlap(object):
         return rngs[0] if len(rngs) > 0 else None
 
     def get_left_ranges(self):
-        return [ subrng.get_range() for subrng in self.subranges if subrng.is_left() ]
+        return [ subrng.get_range() for subrng in self.subranges if subrng.is_left_only() ]
 
     def get_right_ranges(self):
-        return [ subrng.get_range() for subrng in self.subranges if subrng.is_right() ]
+        return [ subrng.get_range() for subrng in self.subranges if subrng.is_right_only() ]
 
     def does_overlap(self):
         return self.get_overlap_range() is not None
@@ -696,22 +697,22 @@ class AddressRangeOverlap(object):
         return self.subranges[-1].is_overlap()
 
     def left_first(self):
-        return self.subranges[0].is_left()
+        return self.subranges[0].is_left_only()
 
     def right_first(self):
-        return self.subranges[0].is_right()
+        return self.subranges[0].is_right_only()
 
     def left_last(self):
-        return self.subranges[-1].is_left()
+        return self.subranges[-1].is_left_only()
 
     def right_last(self):
-        return self.subranges[-1].is_right()
+        return self.subranges[-1].is_right_only()
 
     def disjoint(self):
         return not self.does_overlap()
 
     def misaligned(self):
-        return self.overlap is not None and not self.left_contains_right() and not self.right_contains_left()
+        return self.does_overlap() and not self.left_contains_right() and not self.right_contains_left()
 
     # all of the right address range is contained within left
     def left_contains_right(self):

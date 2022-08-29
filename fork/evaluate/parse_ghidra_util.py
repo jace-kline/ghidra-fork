@@ -1,3 +1,4 @@
+from ghidra.program.flatapi import FlatProgramAPI
 from ghidra.app.decompiler import DecompInterface, DecompileOptions
 from ghidra.app.util.opinion import ElfLoader
 from ghidra.app.util.bin.format.dwarf4.next import DWARFRegisterMappingsManager
@@ -14,6 +15,8 @@ class GhidraUtil(object):
         self.curr = curr # getCurrentProgram()
         # the program monitor
         self.monitor = monitor # getMonitor()
+        # the FlatProgramAPI
+        self.flatapi = FlatProgramAPI(self.curr, self.monitor)
 
         # self.decompiler :: DecompInterface
         self.decompiler = self._generate_decomp_interface()
@@ -120,9 +123,11 @@ class GhidraUtil(object):
     # Get the absolute addresses where a Function starts and ends.
     # Function -> (int, int)
     def get_function_pc_range(self, func):
+        start = func.getEntryPoint().getOffset()
+        end = func.getBody().getMaxAddress().getOffset() + 2 # TODO: figure out how to fix this
         return (
-            self.resolve_absolute_address(func.getEntryPoint().getOffset()),
-            self.resolve_absolute_address(func.getBody().getMaxAddress().getOffset())
+            self.resolve_absolute_address(start),
+            self.resolve_absolute_address(end)
         )
 
     # Does the function range fall within executable sections of the binary?

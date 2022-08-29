@@ -173,9 +173,15 @@ class DataType(object):
     def get_size(self):
         return self.size
 
-    # Is this type a complex type? -> Has "sub-components"?
+    # by default, assume a primitive type (doesn't reference any other types)
+    # override in children
+    def is_primitive(self):
+        return True
+
+    # Is this type a complex type? -> References "sub-components"?
+    # override in children
     def is_complex(self):
-        return self.metatype in [MetaType.ARRAY, MetaType.STRUCT, MetaType.UNION]
+        return False
 
     # get the component type that starts at a given offset, possibly restricting size
     # int -> DescentRecord | None
@@ -258,8 +264,18 @@ class DataTypeFunctionPrototype(DataType):
             size=0
         )
         self.rettype = rettype
-        self.paramtypes = tuple(paramtypes)
+        self.paramtypes = paramtypes
         self.variadic = variadic
+
+    # by default, assume a primitive type (doesn't reference any other types)
+    # override in children
+    def is_primitive(self):
+        return False
+
+    # Is this type a complex type? -> References "sub-components"?
+    # override in children
+    def is_complex(self):
+        return True
 
     def __eq__(self, other):
         return self.rough_match(other) \
@@ -279,7 +295,7 @@ class DataTypeFunctionPrototype(DataType):
         return s
     
     def __hash__(self):
-        return hash((self.metatype, self.size, self.rettype, self.paramtypes, self.variadic))
+        return hash((self.metatype, self.size, self.rettype, tuple(self.paramtypes), self.variadic))
 
 class DataTypeInt(DataType):
     """
@@ -312,15 +328,6 @@ class DataTypeInt(DataType):
     def __hash__(self):
         return hash((self.metatype, self.size, self.signed))
 
-    @classmethod
-    def from_DataType(cls, dtype):
-        # Create new child obj from DataType base instance
-        obj = cls()
-        # Copy all values of A to B
-        # It does not have any problem since they have common template
-        for key, value in dtype.__dict__.items():
-            obj.__dict__[key] = value
-        return obj
 
 class DataTypeFloat(DataType):
     """
@@ -338,15 +345,6 @@ class DataTypeFloat(DataType):
     def __hash__(self):
         return hash((self.metatype, self.size))
 
-    @classmethod
-    def from_DataType(cls, dtype):
-        # Create new child obj from DataType base instance
-        obj = cls()
-        # Copy all values of A to B
-        # It does not have any problem since they have common template
-        for key, value in dtype.__dict__.items():
-            obj.__dict__[key] = value
-        return obj
 
 class DataTypeUndefined(DataType):
     """
@@ -364,16 +362,6 @@ class DataTypeUndefined(DataType):
     def __hash__(self):
         return hash((self.metatype, self.size))
 
-    @classmethod
-    def from_DataType(cls, dtype):
-        # Create new child obj from DataType base instance
-        obj = cls()
-        # Copy all values of A to B
-        # It does not have any problem since they have common template
-        for key, value in dtype.__dict__.items():
-            obj.__dict__[key] = value
-        return obj
-
 class DataTypeVoid(DataType):
     """
     Void datatype (size = 0).
@@ -390,15 +378,6 @@ class DataTypeVoid(DataType):
     def __hash__(self):
         return hash((self.metatype, self.size))
 
-    @classmethod
-    def from_DataType(cls, dtype):
-        # Create new child obj from DataType base instance
-        obj = cls()
-        # Copy all values of A to B
-        # It does not have any problem since they have common template
-        for key, value in dtype.__dict__.items():
-            obj.__dict__[key] = value
-        return obj
 
 class DataTypePointer(DataType):
     """
@@ -415,24 +394,26 @@ class DataTypePointer(DataType):
         )
         self.basetype = basetype
 
+    # by default, assume a primitive type (doesn't reference any other types)
+    # override in children
+    def is_primitive(self):
+        return False
+
+    # Is this type a complex type? -> References "sub-components"?
+    # override in children
+    def is_complex(self):
+        return True
+
     def __eq__(self, other):
-        return self.rough_match(other) and self.basetype == other.basetype
+        return self.rough_match(other) and self.basetype.rough_match(other.basetype)
 
     def __str__(self):
         return str(self.basetype) + " *"
 
     def __hash__(self):
-        return hash((self.metatype, self.size, self.basetype))
-
-    @classmethod
-    def from_DataType(cls, dtype):
-        # Create new child obj from DataType base instance
-        obj = cls()
-        # Copy all values of A to B
-        # It does not have any problem since they have common template
-        for key, value in dtype.__dict__.items():
-            obj.__dict__[key] = value
-        return obj
+        # approximate the basetype since it may be recursive/self-referential
+        basetype_approx = (self.basetype.get_metatype(), self.basetype.get_size())
+        return hash((self.metatype, self.size, basetype_approx))
 
 
 class DataTypeArray(DataType):
@@ -445,22 +426,33 @@ class DataTypeArray(DataType):
         size: int
             The total number of bytes allocated to the array. -1 if unknown.
         """
-        _size = size
-        if _size is None:
-            if length is not None:
-                _size = basetype.size * length
-            else:
-                _size = 0
 
         super(DataTypeArray, self).__init__(
             metatype=MetaType.ARRAY,
-            size=_size
+            size=size
         )
         self.basetype = basetype
         self.length = length
 
+    def _resolve_size(self):
+        if self.size is None:
+            if self.length is not None and self.basetype is not None:
+                self.size = self.basetype.get_size() * self.length
+            else:
+                self.size = 0
+
     def length_unknown(self):
         return self.length <= 1 or self.length is None
+
+    # by default, assume a primitive type (doesn't reference any other types)
+    # override in children
+    def is_primitive(self):
+        return False
+
+    # Is this type a complex type? -> References "sub-components"?
+    # override in children
+    def is_complex(self):
+        return True
 
     # get the component type that starts at a given offset, possibly restricting size
     # int -> DescentRecord | None
@@ -518,15 +510,6 @@ class DataTypeArray(DataType):
     def __hash__(self):
         return hash((self.metatype, self.size, self.basetype, self.length))
 
-    @classmethod
-    def from_DataType(cls, dtype):
-        # Create new child obj from DataType base instance
-        obj = cls()
-        # Copy all values of A to B
-        # It does not have any problem since they have common template
-        for key, value in dtype.__dict__.items():
-            obj.__dict__[key] = value
-        return obj
 
 class DataTypeStruct(DataType):
     """
@@ -534,14 +517,25 @@ class DataTypeStruct(DataType):
     """
     def __init__(self, name=None, membertypes=None, size=None):
         self.name = name
-        self.membertypes = tuple(membertypes)
-        _size = size
-        if size is None: # if explicit size not provided, calculate on our own
-            _size = sum([ mem.size for mem in membertypes ])
+        self.membertypes = membertypes
         super(DataTypeStruct, self).__init__(
             metatype=MetaType.STRUCT,
-            size=_size
+            size=size
         )
+
+    def _resolve_size(self):
+        if self.size is None and self.membertypes is not None: # if explicit size not provided, calculate on our own
+            self.size = sum([ mem.get_size() for mem in self.membertypes ])
+
+    # by default, assume a primitive type (doesn't reference any other types)
+    # override in children
+    def is_primitive(self):
+        return False
+
+    # Is this type a complex type? -> References "sub-components"?
+    # override in children
+    def is_complex(self):
+        return True
 
     # get the component type that starts at a given offset, possibly restricting size
     # int -> DescentRecord | None
@@ -590,17 +584,7 @@ class DataTypeStruct(DataType):
         return s
 
     def __hash__(self):
-        return hash((self.metatype, self.size, self.membertypes))
-
-    @classmethod
-    def from_DataType(cls, dtype):
-        # Create new child obj from DataType base instance
-        obj = cls()
-        # Copy all values of A to B
-        # It does not have any problem since they have common template
-        for key, value in dtype.__dict__.items():
-            obj.__dict__[key] = value
-        return obj
+        return hash((self.metatype, self.size, tuple(self.membertypes)))
 
 class DataTypeUnion(DataType):
     """
@@ -612,14 +596,25 @@ class DataTypeUnion(DataType):
             The data types of that could possibly be instantiated in the union.
         """
         self.name = name
-        self.membertypes = tuple(membertypes)
-        _size = size
-        if size is None: # if explicit size not provided, calculate on our own
-            _size = max([ mem.size for mem in membertypes ])
+        self.membertypes = membertypes
         super(DataTypeUnion, self).__init__(
             metatype=MetaType.UNION,
-            size=_size
+            size=size
         )
+
+    def _resolve_size(self):
+        if self.size is None and self.membertypes is not None: # if explicit size not provided, calculate on our own
+            self.size = max([ mem.get_size() for mem in self.membertypes ])
+
+    # by default, assume a primitive type (doesn't reference any other types)
+    # override in children
+    def is_primitive(self):
+        return False
+
+    # Is this type a complex type? -> References "sub-components"?
+    # override in children
+    def is_complex(self):
+        return True
 
     # offset = the offset into this datatype to find match for
     # offset_to_subtype = the actual offset of the direct subtype in recursion
@@ -664,14 +659,4 @@ class DataTypeUnion(DataType):
         return s
 
     def __hash__(self):
-        return hash((self.metatype, self.size, self.membertypes))
-
-    @classmethod
-    def from_DataType(cls, dtype):
-        # Create new child obj from DataType base instance
-        obj = cls()
-        # Copy all values of A to B
-        # It does not have any problem since they have common template
-        for key, value in dtype.__dict__.items():
-            obj.__dict__[key] = value
-        return obj
+        return hash((self.metatype, self.size, tuple(self.membertypes)))
