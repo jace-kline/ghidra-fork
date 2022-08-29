@@ -2,11 +2,13 @@ from lang import *
 from lang_address import *
 from lang_datatype import *
 from util import *
+
+from build import *
 from compare_unoptimized import *
 
-def test_compare_dtypes(left, right, offset, exact_match=False):
+def test_compare_dtypes(left, right, offset):
     # compare
-    comparison = DataTypeCompare.Compare2(left, right, offset, exact_match=exact_match)
+    comparison = DataTypeCompare2(left, right, offset)
     print(comparison)
 
     # get the descent
@@ -23,7 +25,7 @@ def test0():
     left = DataTypeInt(size=4)
     right = DataTypeInt(size=4)
 
-    test_compare_dtypes(left, right, 0, exact_match=True)
+    test_compare_dtypes(left, right, 0)
 
 def test1():
     left = DataTypeStruct(
@@ -48,7 +50,16 @@ def test1():
 
     right = DataTypeInt(size=4)
 
-    test_compare_dtypes(left, right, 16, exact_match=True)
+    test_compare_dtypes(left, right, 16)
+
+def test_compare_unoptimized(dwarf_proginfo, ghidra_proginfo):
+    dwarf = UnoptimizedProgramInfo(dwarf_proginfo)
+    ghidra = UnoptimizedProgramInfo(ghidra_proginfo)
+
+    comparison = UnoptimizedProgramInfoCompare2(ghidra, dwarf)
+    print(comparison)
 
 if __name__ == "__main__":
-    test1()
+    progdir = "../progs/typecases/"
+    dwarf_proginfo, ghidra_proginfo = build2(progdir, 0, rebuild=True)
+    test_compare_unoptimized(dwarf_proginfo, ghidra_proginfo)

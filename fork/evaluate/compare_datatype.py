@@ -168,3 +168,6 @@ class DataTypeCompare2(object):
 
     def __repr__(self):
         return str(self)
+
+    def __hash__(self):
+        return hash((self.left, self.right))

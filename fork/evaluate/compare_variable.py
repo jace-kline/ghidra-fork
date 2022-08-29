@@ -157,9 +157,8 @@ class VarnodeCompare2(object):
         overlap = self.get_overlap()
         return overlap.bytes_overlapped() if overlap else 0
 
-    # Take this comparison and "flip" it so the left and right are switched
-    def flip(self):
-        return __class__(self.get_right(), self.get_left())
+    def __hash__(self) -> int:
+        return hash((self.left, self.right))
 
 class VarnodeCompareStatus(object):
     NOT_COMPARABLE = 0 # this varnode cannot be compared with others (due to its address most likely)

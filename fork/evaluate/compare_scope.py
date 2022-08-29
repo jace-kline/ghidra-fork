@@ -6,10 +6,6 @@ from util import *
 
 from compare_variable import *
 
-def make_address_space(region: AddressRegion, varnodes: List[Varnode]) -> 'ConstPCAddressSpace':
-    _cls = ConstPCAddressSpaceRangeable if region.is_range() else ConstPCAddressSpace
-    return _cls(region, varnodes)
-
 # represents a "snapshot"/set of variables at a given PC during the program
 # allows us to compare memory regions, etc. for variables at a given PC
 class ConstPCVariableSetSnapshot(object):
@@ -31,7 +27,7 @@ class ConstPCVariableSetSnapshot(object):
                 _map[region] = [varnode]
 
         # construct the ConstPCAddressSpace objects for each
-        return dict([ (region, make_address_space(region, varnodes)) for (region, varnodes) in _map.items() ])
+        return dict([ (region, ConstPCAddressSpace(region, varnodes)) for (region, varnodes) in _map.items() ])
 
     def get_varnodes(self) -> List[Varnode]:
         return self.varnodes
@@ -42,6 +38,9 @@ class ConstPCVariableSetSnapshot(object):
     # returns the correct ConstPCAddressSpace based on the AddressRegion key (or None)
     def get_address_space(self, region: AddressRegion) -> 'Union[ConstPCAddressSpace, None]':
         return self.spaces.get(region, None)
+
+    def __hash__(self) -> int:
+        return hash(self.varnodes)
 
 # compares 2 sets of variables representing a certain "scope" in the program (constant PC)
 # this could mean a point in a function or the global scope
@@ -55,7 +54,9 @@ class ConstPCVariableSetSnapshotCompare2(object):
 
         # match left address spaces with right address spaces based on region
         # if there is a region that doesn't match, create empty space to compare with
-        self.space_comparisons: dict[AddressRegion, ConstPCAddressSpaceCompare2] = self._compare_spaces()
+        self.space_comparison_map: dict[AddressRegion, ConstPCAddressSpaceCompare2] = self._compare_spaces()
+
+        self.varnode_compare_record_map: dict[Varnode, VarnodeCompareRecord] = self._make_varnode_compare_record_map()
 
     def _compare_spaces(self):
         
@@ -63,16 +64,23 @@ class ConstPCVariableSetSnapshotCompare2(object):
 
         for region, left_space in self.left.get_address_spaces().items():
             right_space = self.right.get_address_space(region)
-            right_space = right_space if right_space is not None else make_address_space(region, [])
+            right_space = right_space if right_space is not None else ConstPCAddressSpace(region, [])
             comparison = ConstPCAddressSpaceCompare2(left_space, right_space)
             _map[region] = comparison
 
         for region, right_space in self.right.get_address_spaces().items():
             if region not in _map:
-                left_space = make_address_space(region, [])
+                left_space = ConstPCAddressSpace(region, [])
                 comparison = ConstPCAddressSpaceCompare2(left_space, right_space)
                 _map[region] = comparison
 
+        return _map
+
+    # combine the subspace Varnode->VarnodeCompareRecord maps into a single map
+    def _make_varnode_compare_record_map(self) -> 'dict[Varnode, VarnodeCompareRecord]':
+        _map = {}
+        for region, compare2 in self.space_comparison_map.items():
+            _map.update(compare2.get_varnode_compare_record_map())
         return _map
 
     def get_left(self) -> ConstPCVariableSetSnapshot:
@@ -81,53 +89,23 @@ class ConstPCVariableSetSnapshotCompare2(object):
     def get_right(self) -> ConstPCVariableSetSnapshot:
         return self.right
 
-    def flip(self) -> 'ConstPCVariableSetSnapshotCompare2':
-        return __class__(self.right, self.left)
-
     def bytes_overlapped(self) -> int:
-        return sum([ cmp.bytes_overlapped() for cmp in self.space_comparisons.values() ])
+        return sum([ cmp.bytes_overlapped() for cmp in self.space_comparison_map.values() ])
 
-    # map each Varnode in left to its associated VarnodeCompareRecord
-    def get_left_varnode_compare_records(self) -> 'dict[Varnode, VarnodeCompareRecord]':
-        _map = {}
-        for region, compare2 in self.space_comparisons.items():
-            _map.update(compare2.get_left_varnode_compare_records())
-        return _map
+    def get_space_comparison(self, region: AddressRegion) -> 'Union[ConstPCAddressSpaceCompare2, None]':
+        return self.space_comparison_map.get(region, None)
 
-    # map each Varnode in right to its associated VarnodeCompareRecord
-    def get_right_varnode_compare_records(self) -> 'dict[Varnode, VarnodeCompareRecord]':
-        _map = {}
-        for region, compare2 in self.space_comparisons.items():
-            _map.update(compare2.get_right_varnode_compare_records())
-        return _map
+    def get_space_comparison_map(self) -> 'dict[AddressRegion, ConstPCAddressSpaceCompare2]':
+        return self.space_comparison_map
 
-    def make_left_compare_record(self) -> 'ConstPCVariableSetSnapshotCompareRecord':
-        return ConstPCVariableSetSnapshotCompareRecord(self.left, self)
+    def get_varnode_compare_record(self, varnode: Varnode) -> 'Union[VarnodeCompareRecord, None]':
+        return self.varnode_compare_record_map.get(varnode, None)
 
-    def make_right_compare_record(self) -> 'ConstPCVariableSetSnapshotCompareRecord':
-        return self.flip().make_left_compare_record()
+    def get_varnode_compare_record_map(self) -> 'dict[Varnode, VarnodeCompareRecord]':
+        return self.varnode_compare_record_map
 
-class ConstPCVariableSetSnapshotCompareRecord(object):
-    def __init__(self,
-        varset: ConstPCVariableSetSnapshot,
-        comparison: ConstPCVariableSetSnapshotCompare2
-    ):
-        self.varset = varset
-        self.comparison = comparison
-
-        assert( self.varset is self.comparison.get_left() )
-
-    def get_varset(self) -> ConstPCVariableSetSnapshot:
-        return self.varset
-
-    def get_comparison(self) -> ConstPCVariableSetSnapshotCompare2:
-        return self.comparison
-
-    def get_varnode_compare_records(self) -> 'dict[Varnode, VarnodeCompareRecord]':
-        return self.comparison.get_left_varnode_compare_records()
-
-    def bytes_overlapped(self) -> int:
-        return self.comparison.bytes_overlapped()
+    def __hash__(self) -> int:
+        return hash((self.left, self.right))
 
 
 # associates an AddressRegion (group of 0+ addresses) with the varnodes that occupy it for a particular PC in the program
@@ -137,7 +115,7 @@ class ConstPCAddressSpace(object):
         varnodes: List[Varnode] # the list of varnodes within the region
     ):
         self.region = region
-        self.varnodes = tuple(varnodes)
+        self.varnodes = tuple(sorted(varnodes, key=lambda v: v.get_addr()) if self.rangeable() else varnodes)
 
         for varnode in self.varnodes:
             self._verify_region(varnode)
@@ -147,6 +125,9 @@ class ConstPCAddressSpace(object):
 
     def get_region(self) -> AddressRegion:
         return self.region
+
+    def get_varnodes(self) -> Tuple[Varnode]:
+        return self.varnodes
 
     # is this address space "rangeable" / can the addresses be ordered?
     # by default, return False
@@ -159,34 +140,9 @@ class ConstPCAddressSpace(object):
 
     # by default, no comparison pairs can be formed
     def get_comparison_pairs(self, other: 'ConstPCAddressSpace') -> 'List[ConstPCAddressSpace]':
-        return []
+        return self._get_comparison_pairs_rangeable(other) if self.rangeable() else []
 
-# holds an ordered list of Varnode objects of the same Address type
-# the address space type must be orderable/rangeable
-class ConstPCAddressSpaceRangeable(ConstPCAddressSpace):
-    def __init__(self, addrtype: int, varnodes: List[Varnode]):
-        # ensure the given address type is "rangeable"
-        assert( AddressType.rangeable(addrtype) )
-
-        # instantiate parent
-        super(__class__, self).__init__(addrtype, varnodes)
-
-        # sort the passed varnodes (ascending) by address
-        self.varnodes = sorted(varnodes, key=lambda v: v.get_addr())
-
-    def rangeable(self):
-        return True
-
-    def comparable(self):
-        return True
-
-    def get_addrtype(self):
-        return self.addrtype
-
-    def get_varnodes(self):
-        return self.varnodes
-
-    def get_comparison_pairs(self, other: 'ConstPCAddressSpaceRangeable') -> 'List[ConstPCAddressSpaceRangeable]':
+    def _get_comparison_pairs_rangeable(self, other: 'ConstPCAddressSpace') -> 'List[ConstPCAddressSpace]':
         # create iterator the "merges" the 2 address spaces
         zipper = OrderedZipper(
             self.get_varnodes(),
@@ -236,6 +192,10 @@ class ConstPCAddressSpaceRangeable(ConstPCAddressSpace):
                 prev_left = left_varnode
                 prev_right = right_varnode
 
+    def __hash__(self) -> int:
+        return hash((self.region, self.varnodes))
+
+
 # compare the varnode sets in left and right address spaces
 class ConstPCAddressSpaceCompare2(object):
     def __init__(self,
@@ -248,17 +208,13 @@ class ConstPCAddressSpaceCompare2(object):
         self.left = left
         self.right = right
         
-        # gather Varnode comparisons between the 2 sets
-        self.left_varnode_comparisons: List[VarnodeCompare2] = []
-        self.right_varnode_comparisons: List[VarnodeCompare2] = []
+        # gather Varnode comparisons for the left "target" set
+        self.varnode_comparisons: List[VarnodeCompare2] = []
 
         # map of Varnode -> VarnodeCompareRecord for each (left, right) address space
         # we will update these maps each time we make a comparison
-        self.left_varnode_compare_records: dict[Varnode, VarnodeCompareRecord] = \
+        self.varnode_compare_record_map: dict[Varnode, VarnodeCompareRecord] = \
             dict([(varnode, VarnodeCompareRecord(varnode)) for varnode in self.left.get_varnodes()])
-        
-        self.right_varnode_compare_records: dict[Varnode, VarnodeCompareRecord] = \
-            dict([(varnode, VarnodeCompareRecord(varnode)) for varnode in self.right.get_varnodes()])
 
         # merge the two sets and get pairs of varnodes to compare
         # based on address overlaps
@@ -271,26 +227,21 @@ class ConstPCAddressSpaceCompare2(object):
     # compare the 2 varnodes and update the internal state
     def _compare(self, left_varnode: Varnode, right_varnode: Varnode):
         # do comparison
-        left_comparison = VarnodeCompare2(left_varnode, right_varnode)
+        comparison = VarnodeCompare2(left_varnode, right_varnode)
 
-        # store into left_varnode_comparisons
-        if left_comparison and left_comparison.does_overlap():
-            self.left_varnode_comparisons.append(left_comparison)
-            self.left_varnode_compare_records[left_varnode] = left_comparison
+        # store into varnode_comparisons
+        if comparison and comparison.does_overlap():
+            self.varnode_comparisons.append(comparison)
+            self.varnode_compare_record_map[left_varnode] = comparison
 
-        # flip comparison
-        right_comparison = left_comparison.flip()
-
-        # store into right_varnode_comparisons
-        if right_comparison and right_comparison.does_overlap():
-            self.right_varnode_comparisons.append(right_comparison)
-            self.right_varnode_compare_records[right_varnode] = right_comparison
+    def get_varnode_compare_record(self, varnode: Varnode) -> Union[VarnodeCompareRecord, None]:
+        return self.varnode_compare_record_map.get(varnode, None)
     
-    def get_left_varnode_compare_records(self) -> 'dict[Varnode, VarnodeCompareRecord]':
-        return self.left_varnode_compare_records
-
-    def get_right_varnode_compare_records(self) -> 'dict[Varnode, VarnodeCompareRecord]':
-        return self.right_varnode_compare_records
+    def get_varnode_compare_record_map(self) -> 'dict[Varnode, VarnodeCompareRecord]':
+        return self.varnode_compare_record_map
 
     def bytes_overlapped(self) -> int:
-        return sum([ cmp.bytes_overlapped() for cmp in self.left_varnode_comparisons ])
+        return sum([ cmp.bytes_overlapped() for cmp in self.varnode_comparisons ])
+
+    def __hash__(self) -> int:
+        return hash((self.left, self.right))

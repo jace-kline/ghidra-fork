@@ -81,9 +81,15 @@ class AddressRegionUnknown(AddressRegion):
     def __init__(self):
         super(__class__, self).__init__(AddressType.UNKNOWN)
 
+    def __hash__(self):
+        return hash(self.addrtype)
+
 class AddressRegionExternal(AddressRegion):
     def __init__(self):
         super(__class__, self).__init__(AddressType.EXTERNAL)
+
+    def __hash__(self):
+        return hash(self.addrtype)
 
 class AddressRegionRegister(AddressRegion):
     def __init__(self, register):
@@ -101,6 +107,9 @@ class AddressRegionRegister(AddressRegion):
 
     def __eq__(self, other):
         return other.is_register() and self.register == other.register
+
+    def __hash__(self):
+        return hash((self.addrtype, self.register))
 
 class AddressRegionRegisterOffset(AddressRegion):
     def __init__(self, register):
@@ -122,6 +131,9 @@ class AddressRegionRegisterOffset(AddressRegion):
     def __eq__(self, other):
         return other.is_register_offset() and self.register == other.register
 
+    def __hash__(self):
+        return hash((self.addrtype, self.register))
+
 class AddressRegionStack(AddressRegion):
     def __init__(self):
         super(__class__, self).__init__(AddressType.STACK)
@@ -138,6 +150,9 @@ class AddressRegionStack(AddressRegion):
     def __eq__(self, other):
         return other.is_stack()
 
+    def __hash__(self):
+        return hash(self.addrtype)
+
 class AddressRegionAbsolute(AddressRegion):
     def __init__(self):
         super(__class__, self).__init__(AddressType.ABSOLUTE)
@@ -153,6 +168,9 @@ class AddressRegionAbsolute(AddressRegion):
 
     def __eq__(self, other):
         return other.is_absolute()
+
+    def __hash__(self):
+        return hash(self.addrtype)
 
 class Address(object):
     def __init__(self, addrtype):

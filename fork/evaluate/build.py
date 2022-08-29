@@ -201,8 +201,8 @@ def build(progdir, optimization_levels=[0], debug=False, strip=False, decompiler
         builder.set_target_build_results()
         return builder.get_targets()
 
-def build2(progdir, opt_lvl, debug=False, strip=False, decompiler="ghidra"):
-    targets = build(progdir, optimization_levels=[opt_lvl], debug=debug, strip=strip, decompilers=[decompiler])
+def build2(progdir, opt_lvl, debug=False, strip=False, decompiler="ghidra", rebuild=False):
+    targets = build(progdir, optimization_levels=[opt_lvl], debug=debug, strip=strip, decompilers=[decompiler], rebuild=rebuild)
     dwarf_proginfo = targets[0].get_build_result()
     decomp_proginfo = targets[1].get_build_result()
     return (dwarf_proginfo, decomp_proginfo)

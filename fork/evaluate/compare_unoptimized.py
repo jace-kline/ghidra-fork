@@ -25,14 +25,24 @@ class UnoptimizedProgramInfo(object):
         return _map
 
     def _make_unoptimized_globals_set(self) -> ConstPCVariableSetSnapshot:
-        varnodes = [ varnode for varnode in 
-            [ Varnode.from_single_location_variable(var) for var in globals ]
+        varnodes = [ 
+            varnode for varnode in 
+            [ Varnode.from_single_location_variable(var) for var in self.proginfo.get_globals() ]
             if varnode is not None
         ]
         return ConstPCVariableSetSnapshot(varnodes)
 
     def get_proginfo(self) -> ProgramInfo:
         return self.proginfo
+
+    def get_unoptimized_functions(self) -> 'dict[AbsoluteAddress, UnoptimizedFunction]':
+        return self.unoptimized_functions
+
+    def get_unoptimized_globals_set(self) -> ConstPCVariableSetSnapshot:
+        return self.globals_set
+
+    def __hash__(self) -> int:
+        return hash(self.proginfo)
 
 class UnoptimizedProgramInfoCompare2(object):
     def __init__(self,
@@ -42,33 +52,67 @@ class UnoptimizedProgramInfoCompare2(object):
         self.left = left
         self.right = right
 
+        # compare global variable sets
+        self.globals_comparison = ConstPCVariableSetSnapshotCompare2(
+            self.left.get_unoptimized_globals_set(),
+            self.right.get_unoptimized_globals_set()
+        )
+
+        # store dict of UnoptimizedFunction -> UnoptimizedFunctionCompareRecord
+        self.unoptimized_function_compare_map = self._make_function_compare_map()
+
+    def _make_function_compare_map(self) -> 'dict[UnoptimizedFunction, UnoptimizedFunctionCompareRecord]':
+        # use Zipper util to find conflicts based on start PC
+        zipper = OrderedZipper(
+            self.left.get_unoptimized_functions().values(),
+            self.right.get_unoptimized_functions().values(),
+            key=lambda fn: fn.get_start_pc() # order by start PC
+        )
+        
+        _map = {}
+
+        for cur in zipper:
+            # if left only, map function->None
+            if cur.is_left():
+                l = cur.get_value()
+                _map[l] = UnoptimizedFunctionCompareRecord(l, None)
+            
+            # if matching start PC, map function->comparison
+            elif cur.is_conflict():
+                l, r = cur.get_value()
+                comparison = UnoptimizedFunctionCompare2(l, r)
+                _map[l] = UnoptimizedFunctionCompareRecord(l, comparison)
+
+        return _map
+
+
     def get_left(self) -> UnoptimizedProgramInfo:
         return self.left
 
     def get_right(self) -> UnoptimizedProgramInfo:
         return self.right
 
+    def get_function_compare_record(self, unoptimized_fn: 'UnoptimizedFunction') -> 'Union[UnoptimizedFunctionCompareRecord, None]':
+        return self.unoptimized_function_compare_map.get(unoptimized_fn, None)
+
+    def get_function_compare_record_map(self) -> 'dict[UnoptimizedFunction, UnoptimizedFunctionCompareRecord]':
+        return self.unoptimized_function_compare_map
+
+    def get_globals_comparison(self) -> ConstPCVariableSetSnapshotCompare2:
+        return self.globals_comparison
+
+    def get_global_compare_record(self, global_varnode: Varnode) -> 'Union[VarnodeCompareRecord, None]':
+        return self.globals_comparison.get_varnode_compare_record(global_varnode)
+
+    def get_global_compare_record_map(self) -> 'dict[Varnode, VarnodeCompareRecord]':
+        return self.globals_comparison.get_varnode_compare_record_map()
+
+    # at the top level, we may want to "flip" the comparison
     def flip(self) -> 'UnoptimizedProgramInfoCompare2':
         return __class__(self.right, self.left)
 
-    def make_left_compare_record(self) -> 'UnoptimizedProgramInfoCompareRecord':
-        return UnoptimizedProgramInfoCompareRecord(self.left, self)
-
-    def make_right_compare_record(self) -> 'UnoptimizedProgramInfoCompareRecord':
-        return self.flip().make_left_compare_record()
-
-# wraps an UnoptimizedProgramInfo object
-# exposes info about the comparison between this proginfo and another
-class UnoptimizedProgramInfoCompareRecord(object):
-    def __init__(self,
-        unoptimized_proginfo: UnoptimizedProgramInfo,
-        comparison: UnoptimizedProgramInfoCompare2
-    ):
-        self.unoptimized_proginfo = unoptimized_proginfo
-        self.comparison = comparison
-
-        # ensure the comparison aligns with the proginfo
-        assert( self.unoptimized_proginfo is self.comparison.get_left() )
+    def __hash__(self) -> int:
+        return hash((self.left, self.right))
 
 # A wrapper around a Function object that assumes that all variables
 # & params have only 1 location throughout the course of the function.
@@ -82,11 +126,37 @@ class UnoptimizedFunction(object):
     def get_pc_range(self) -> AddressRange:
         return self.function.get_pc_range()
 
-    def get_param_varnodes(self) -> List[Varnode]:
-        pass
+    def get_start_pc(self) -> Address:
+        return self.function.get_start_pc()
 
+    # get the varnodes representing parameters
+    def get_param_varnodes(self) -> List[Varnode]:
+        return [
+            varnode for varnode in 
+            [ Varnode.from_single_location_variable(var) for var in self.function.get_params() ]
+            if varnode is not None 
+        ]
+
+    # get the varnodes representing local variables within function
     def get_variable_varnodes(self) -> List[Varnode]:
-        pass
+        return [
+            varnode for varnode in
+            [ Varnode.from_single_location_variable(var) for var in self.function.get_vars() ]
+            if varnode is not None
+        ]
+
+    def get_param_varnodes_set(self) -> ConstPCVariableSetSnapshot:
+        return ConstPCVariableSetSnapshot(self.get_param_varnodes())
+
+    def get_variable_varnodes_set(self) -> ConstPCVariableSetSnapshot:
+        return ConstPCVariableSetSnapshot(self.get_variable_varnodes())
+
+    # get all varnodes tied to the function (params + locals)
+    def get_varnodes(self) -> List[Varnode]:
+        return self.get_param_varnodes() + self.get_variable_varnodes()
+
+    def __hash__(self) -> int:
+        return hash(self.function)
 
 class UnoptimizedFunctionCompare2(object):
     def __init__(self,
@@ -98,10 +168,30 @@ class UnoptimizedFunctionCompare2(object):
 
         self.pc_range_overlap = AddressRangeOverlap(self.left.get_pc_range(), self.right.get_pc_range())
 
-        # only if start PC of functions is equal do we compare the variables/params
+        # initialize comparison fields to None
+        self.rettype_compare2: Union[DataTypeCompare2, None] = None
+        self.param_set_compare2: Union[ConstPCVariableSetSnapshotCompare2, None] = None
+        self.variable_set_compare2: Union[ConstPCVariableSetSnapshotCompare2, None] = None
+
+        # only if start PC of functions is equal do we compare the return types & variables/params
         if self.pc_range_start_aligned():
-            # TODO: compare param/variable sets
-            pass
+            self._compare()
+
+    def _compare(self):
+        # compare return types & store result
+        self.rettype_compare2 = DataTypeCompare2(self.left.get_function().get_return_type(), self.right.get_function().get_return_type(), 0)
+
+        # fetch the left & right param/variable sets
+        left_param_set = self.left.get_param_varnodes_set()
+        left_variable_set = self.left.get_variable_varnodes_set()
+
+        right_param_set = self.right.get_param_varnodes_set()
+        right_variable_set = self.right.get_variable_varnodes_set()
+
+        # compare the parameter/variable sets and store
+        self.param_set_compare2 = ConstPCVariableSetSnapshotCompare2(left_param_set, right_param_set)
+        self.variable_set_compare2 = ConstPCVariableSetSnapshotCompare2(left_variable_set, right_variable_set)
+
 
     def get_left(self) -> UnoptimizedFunction:
         return self.left
@@ -124,12 +214,29 @@ class UnoptimizedFunctionCompare2(object):
     def pc_range_bytes_overlapped(self) -> int:
         return self.pc_range_overlap.bytes_overlapped()
 
+    def return_type_match(self) -> bool:
+        return self.rettype_compare2.top_level_match() if self.rettype_compare2 is not None else False
+
+    def get_return_type_comparison(self) -> Union[DataTypeCompare2, None]:
+        return self.rettype_compare2
+
+    def get_param_set_comparison(self) -> Union[ConstPCVariableSetSnapshotCompare2, None]:
+        return self.param_set_compare2
+
+    def get_variable_set_comparison(self) -> Union[ConstPCVariableSetSnapshotCompare2, None]:
+        return self.variable_set_compare2
+
     def flip(self) -> 'UnoptimizedFunctionCompare2':
         return __class__(self.right, self.left)
 
+    def __hash__(self) -> int:
+        return hash((self.left, self.right))
+
+
+# TODO: is this necessary? Should we just use the UnoptimizedFunctionCompare2?
 # Wraps an UnoptimizedFunction object.
 # Stores and exposes information about this function's comparison
-# with 0+ other functions.
+# with 0 or 1 other functions.
 class UnoptimizedFunctionCompareRecord(object):
     def __init__(self,
         unoptimized_function: UnoptimizedFunction,
@@ -141,24 +248,11 @@ class UnoptimizedFunctionCompareRecord(object):
     def get_unoptimized_function(self) -> UnoptimizedFunction:
         return self.unoptimized_function
 
+    def is_comparison(self) -> bool:
+        return self.comparison is not None
+
     def get_comparison(self) -> Union[UnoptimizedFunctionCompare2, None]:
         return self.comparison
 
-# Holds information about the comparison between 2 unoptimized functions.
-class UnoptimizedFunctionCompare2(object):
-    def __init__(self,
-        left: UnoptimizedFunction,
-        right: UnoptimizedFunction
-    ):
-        self.left = left
-        self.right = right
-
-    def get_left(self) -> UnoptimizedFunction:
-        return self.left
-
-    def get_right(self) -> UnoptimizedFunction:
-        return self.right
-
-    
-
-
+    def __hash__(self) -> int:
+        return hash((self.unoptimized_function, self.comparison))

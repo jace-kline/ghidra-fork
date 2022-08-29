@@ -68,9 +68,12 @@ class Function(object):
     def get_prototype(self):
         return DataTypeFunctionPrototype(
             rettype=self.rettype,
-            paramtypes=[ param.dtype for param in self.params ],
+            paramtypes=[ param.get_datatype() for param in self.params ],
             variadic=self.variadic
         )
+
+    def get_return_type(self):
+        return self.rettype
 
     def get_pc_range(self):
         return AddressRange(self.startaddr, end=self.endaddr)
