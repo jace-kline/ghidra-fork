@@ -157,13 +157,11 @@ class DataTypeCompare2(object):
         return __class__(self.right, self.left, -1 * self.offset)
 
     def __str__(self):
-        return "<DataTypeCompare2 compare_code={} left={} right={} offset={} left_descent={} right_descent={}>".format(
+        return "<DataTypeCompare2 left={} right={} offset={} compare_code={}>".format(
             DataTypeCompareCode.to_string(self.compare_code),
             self.left,
             self.right,
-            self.offset,
-            self.left_descent,
-            self.right_descent
+            self.offset
         )
 
     def __repr__(self):

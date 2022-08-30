@@ -107,6 +107,16 @@ class ConstPCVariableSetSnapshotCompare2(object):
     def __hash__(self) -> int:
         return hash((self.left, self.right))
 
+    def show_summary(self, indent=0) -> str:
+        # for record in self.varnode_compare_record_map.values():
+        #     record.show_summary
+        s = "".join([
+            record.show_summary(indent=0)
+            for record in self.varnode_compare_record_map.values()
+        ])
+
+        return indent_str(s, indent)
+
 
 # associates an AddressRegion (group of 0+ addresses) with the varnodes that occupy it for a particular PC in the program
 class ConstPCAddressSpace(object):
@@ -126,7 +136,7 @@ class ConstPCAddressSpace(object):
     def get_region(self) -> AddressRegion:
         return self.region
 
-    def get_varnodes(self) -> Tuple[Varnode]:
+    def get_varnodes(self) -> List[Varnode]:
         return self.varnodes
 
     # is this address space "rangeable" / can the addresses be ordered?

@@ -430,6 +430,12 @@ class AddressRange(object):
     def get_size(self):
         return self.size
 
+    def get_start(self):
+        return self.start
+
+    def get_end(self):
+        return self.end
+
     # other: AddressRange
     # (AddressRange, AddressRange) -> AddressRangeOverlap
     def get_overlap(self, other):

@@ -476,7 +476,7 @@ class DataTypeArray(DataType):
             sublength = size // self.basetype.size
             if sublength > 1:
                 relationship = DataTypeRecursiveDescent.Relationship.SUBSET
-                subtype = DataTypeArray(basetype=self.basetype, length=sublength, size=(self.basetype.size * sublength))
+                subtype = DataTypeArray(basetype=self.basetype, length=sublength, size=self.basetype.size * sublength)
             
         return DataTypeRecursiveDescent.DescentRecord(relationship, offset, subtype)
             
@@ -578,7 +578,7 @@ class DataTypeStruct(DataType):
         if self.name is not None:
             s += self.name + " "
 
-        s += "members={} ".format(len(self.membertypes))
+        s += "membertypes={} ".format(len(self.membertypes))
         s += "size={}>".format(self.size)
 
         return s
@@ -653,7 +653,7 @@ class DataTypeUnion(DataType):
         if self.name is not None:
             s += self.name + " "
 
-        s += "members={} ".format(len(self.membertypes))
+        s += "membertypes={} ".format(len(self.membertypes))
         s += "size={}>".format(self.size)
 
         return s

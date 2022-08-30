@@ -64,6 +64,8 @@ def test_compare_unoptimized(progdir, rebuild=False):
 if __name__ == "__main__":
     progdir = "../progs/typecases/"
     cmp = test_compare_unoptimized(progdir, rebuild=False)
+    print(cmp.show_summary())
+
     # cmp.get_left().get_proginfo().print_summary()
 
     # for fn, record in cmp.get_function_compare_record_map().items():
@@ -79,17 +81,17 @@ if __name__ == "__main__":
     #         record.get_status_str()
     #     ))
 
-    zipper = OrderedZipper(
-        cmp.get_left().get_unoptimized_functions().values(),
-        cmp.get_right().get_unoptimized_functions().values(),
-        key=lambda fn: fn.get_start_pc()
-    )
+    # zipper = OrderedZipper(
+    #     cmp.get_left().get_unoptimized_functions().values(),
+    #     cmp.get_right().get_unoptimized_functions().values(),
+    #     key=lambda fn: fn.get_start_pc()
+    # )
 
-    for item in zipper:
-        if item.is_left():
-            print("Left({})".format(item.get_value().get_start_pc()))
-        elif item.is_right():
-            print("Right({})".format(item.get_value().get_start_pc()))
-        elif item.is_conflict():
-            l, r = item.get_value()
-            print("Conflict({}, {})".format(l.get_start_pc(), r.get_start_pc()))
+    # for item in zipper:
+    #     if item.is_left():
+    #         print("Left({})".format(item.get_value().get_start_pc()))
+    #     elif item.is_right():
+    #         print("Right({})".format(item.get_value().get_start_pc()))
+    #     elif item.is_conflict():
+    #         l, r = item.get_value()
+    #         print("Conflict({}, {})".format(l.get_start_pc(), r.get_start_pc()))

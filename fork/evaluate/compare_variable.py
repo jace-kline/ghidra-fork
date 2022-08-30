@@ -43,6 +43,15 @@ class Varnode(object):
     def __hash__(self) -> int:
         return hash((self.var, self.addr))
 
+    def __str__(self) -> str:
+        return "<Varnode address={} datatype={}>".format(
+            self.addr,
+            self.get_datatype()
+        )
+
+    def __repr__(self) -> str:
+        return str(self)
+
 
 class VarnodeCompare2Code(object):
     NO_OVERLAP = 0 # variables do not overlap at all
@@ -160,6 +169,22 @@ class VarnodeCompare2(object):
     def __hash__(self) -> int:
         return hash((self.left, self.right))
 
+    def __str__(self) -> str:
+        return "<VarnodeCompare2 left={} right={} compare_code={}>".format(
+            self.left,
+            self.right,
+            self.get_compare_code_str()
+        )
+
+    def __repr__(self) -> str:
+        return str(self)
+
+    def show_summary(self, indent=0) -> str:
+        return "Comparison:\n\tother={}\n\tcompare_code={}".format(
+            self.right,
+            self.get_compare_code_str()
+        )
+
 class VarnodeCompareStatus(object):
     NOT_COMPARABLE = 0 # this varnode cannot be compared with others (due to its address most likely)
     NO_MATCH = 1 # this varnode does not overlap with any others
@@ -197,7 +222,7 @@ class VarnodeCompareRecord(object):
 
         # references to all the comparisons this variable is involved in
         # this varnode is always the "left" varnode in these comparisons
-        self.comparisons: dict[Varnode, VarnodeCompare2] = {}
+        self.varnode_comparison_map: dict[Varnode, VarnodeCompare2] = {}
 
         # set the default status to NO_MATCH or NOT_COMPARABLE, depending on address type
         self.status: int = VarnodeCompareStatus.NO_MATCH if self.is_comparable() else VarnodeCompareStatus.NOT_COMPARABLE
@@ -281,15 +306,32 @@ class VarnodeCompareRecord(object):
         assert(compare2.get_left() is self.get_varnode())
         # ensure this varnode we are comparing against hasn't already
         # been inserted
-        if compare2.get_right() not in self.comparisons:
-            self.comparisons[compare2.get_right()] = compare2
+        if compare2.get_right() not in self.varnode_comparison_map:
+            self.varnode_comparison_map[compare2.get_right()] = compare2
             self._update_status(compare2)
 
     def get_compared_varnodes(self):
-        return self.comparisons.keys()
+        return self.varnode_comparison_map.keys()
 
-    def get_comparisons(self) -> 'dict[Varnode, VarnodeCompare2]':
-        return self.comparisons
+    def get_varnode_comparison_map(self) -> 'dict[Varnode, VarnodeCompare2]':
+        return self.varnode_comparison_map
 
     def bytes_overlapped(self):
-        return sum([ cmp.bytes_overlapped() for cmp in self.comparisons.values() ])
+        return sum([ cmp.bytes_overlapped() for cmp in self.varnode_comparison_map.values() ])
+
+    def show_summary(self, indent=0) -> str:
+        s = str(self)
+        for cmp in self.varnode_comparison_map.values():
+            s += "\n" + cmp.show_summary(indent=1)
+        s += "\n"
+
+        return indent_str(s, indent)
+
+    def __str__(self) -> str:
+        return "<VarnodeCompareRecord varnode={} status={}>".format(
+            self.varnode,
+            self.get_status_str()
+        )
+
+    def __repr__(self) -> str:
+        return str(self)

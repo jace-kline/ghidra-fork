@@ -123,6 +123,17 @@ class UnoptimizedProgramInfoCompare2(object):
     def __hash__(self) -> int:
         return hash((self.left, self.right))
 
+    def show_summary(self, indent=0) -> str:
+        s = "PROGRAM INFERENCE RESULTS:\n"
+        s += "----------GLOBAL COMPARISONS----------\n"
+        s += self.globals_comparison.show_summary(indent=0)
+
+        s += "\n----------FUNCTION COMPARISONS----------\n"
+        for record in self.unoptimized_function_compare_map.values():
+            s += record.show_summary(indent=0)
+
+        return indent_str(s, indent)
+
 # A wrapper around a Function object that assumes that all variables
 # & params have only 1 location throughout the course of the function.
 class UnoptimizedFunction(object):
@@ -166,6 +177,14 @@ class UnoptimizedFunction(object):
 
     def __hash__(self) -> int:
         return hash(self.function)
+
+    def __str__(self) -> str:
+        pc_range = self.get_pc_range()
+        return "<UnoptimizedFunction {} startpc={} endpc={}>".format(
+            self.function.get_name() if self.function.get_name() is not None else "",
+            pc_range.get_start(),
+            pc_range.get_end()
+        )
 
 class UnoptimizedFunctionCompare2(object):
     def __init__(self,
@@ -241,8 +260,27 @@ class UnoptimizedFunctionCompare2(object):
     def __hash__(self) -> int:
         return hash((self.left, self.right))
 
+    def __str__(self) -> str:
+        return "<UnoptimizedFunctionCompare2 start_aligned={}>".format(
+            self.pc_range_start_aligned()
+        )
 
-# TODO: is this necessary? Should we just use the UnoptimizedFunctionCompare2?
+    def __repr__(self) -> str:
+        return str(self)
+
+    def show_summary(self, indent=0) -> str:
+        s = ""
+        if self.pc_range_start_aligned():
+            s += "Parameters:\n"
+            s += self.param_set_compare2.show_summary(indent=1)
+
+            s += "Local Variables:\n"
+            s += self.variable_set_compare2.show_summary(indent=1)
+        else:
+            s = "NO FUNCTION MATCH\n"
+        
+        return indent_str(s, indent)
+
 # Wraps an UnoptimizedFunction object.
 # Stores and exposes information about this function's comparison
 # with 0 or 1 other functions.
@@ -265,3 +303,23 @@ class UnoptimizedFunctionCompareRecord(object):
 
     def __hash__(self) -> int:
         return hash((self.unoptimized_function, self.comparison))
+
+    def __str__(self) -> str:
+        fname = self.unoptimized_function.get_function().get_name()
+        return "<UnoptimizedFunctionCompareRecord name={} startpc={} compared={}>".format(
+            fname if fname else "UNKNOWN",
+            self.unoptimized_function.get_start_pc(),
+            self.is_comparison()
+        )
+
+    def __repr__(self) -> str:
+        return str(self)
+
+    def show_summary(self, indent=0) -> str:
+        s = str(self)
+        if self.is_comparison():
+            s += "\n" + self.comparison.show_summary(indent=1)
+        else:
+            s += ": NO FUNCTION MATCH\n"
+
+        return indent_str(s, indent)

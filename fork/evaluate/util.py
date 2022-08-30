@@ -5,6 +5,13 @@ from collections import OrderedDict
 def ordered_dict_by_key(_map: dict, transform=lambda x: x) -> OrderedDict:
     return OrderedDict(sorted(_map.items(), key=lambda pair: transform(pair[0])))
 
+def indent_str(s: str, indent: int) -> str:
+    if indent <= 0:
+        return s
+    
+    lines = s.splitlines()
+    return "".join(["{}{}\n".format("\t" * indent, _s) for i,_s in enumerate(lines) if i+1 < len(lines)])
+
 def count(_iter, start=0, step=1):
     __iter = iter(_iter)
     cnt = start
