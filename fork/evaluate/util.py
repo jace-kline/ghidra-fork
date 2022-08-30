@@ -10,7 +10,7 @@ def indent_str(s: str, indent: int) -> str:
         return s
     
     lines = s.splitlines()
-    return "".join(["{}{}\n".format("\t" * indent, _s) for i,_s in enumerate(lines) if i+1 < len(lines)])
+    return "".join(["{}{}\n".format("\t" * indent, _s) for _s in lines])
 
 def count(_iter, start=0, step=1):
     __iter = iter(_iter)

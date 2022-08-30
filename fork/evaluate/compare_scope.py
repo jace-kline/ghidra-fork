@@ -108,12 +108,10 @@ class ConstPCVariableSetSnapshotCompare2(object):
         return hash((self.left, self.right))
 
     def show_summary(self, indent=0) -> str:
-        # for record in self.varnode_compare_record_map.values():
-        #     record.show_summary
-        s = "".join([
-            record.show_summary(indent=0)
-            for record in self.varnode_compare_record_map.values()
-        ])
+        s = ""
+        for record in self.varnode_compare_record_map.values():
+            s += record.show_summary(indent=0)
+        s += "\n"
 
         return indent_str(s, indent)
 
@@ -149,10 +147,10 @@ class ConstPCAddressSpace(object):
         return self.rangeable()
 
     # by default, no comparison pairs can be formed
-    def get_comparison_pairs(self, other: 'ConstPCAddressSpace') -> 'List[ConstPCAddressSpace]':
+    def get_comparison_pairs(self, other: 'ConstPCAddressSpace') -> 'List[Tuple[Varnode, Varnode]]':
         return self._get_comparison_pairs_rangeable(other) if self.rangeable() else []
 
-    def _get_comparison_pairs_rangeable(self, other: 'ConstPCAddressSpace') -> 'List[ConstPCAddressSpace]':
+    def _get_comparison_pairs_rangeable(self, other: 'ConstPCAddressSpace') -> 'List[Tuple[Varnode, Varnode]]':
         # create iterator the "merges" the 2 address spaces
         zipper = OrderedZipper(
             self.get_varnodes(),

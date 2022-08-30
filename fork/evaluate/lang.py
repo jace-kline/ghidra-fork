@@ -88,8 +88,7 @@ class Function(object):
         return self.endaddr
 
     def get_params(self):
-        """ Returns the list of parameter Variable objects in the correct order """
-        return [ v for v in self.vars if v.is_param() ]
+        return self.params
 
     def get_vars(self):
         return self.vars
@@ -170,8 +169,13 @@ class Variable(object):
     # for the given PC, find the Address where this Variable resides (or None).
     def get_address_at_pc(self, pc):
         if self.is_global():
-            return self.liveranges[0].addr
-        return self.liveranges.get_address_at_pc(pc)
+            return self.liveranges[0].get_addr()
+        
+        for liverange in self.liveranges:
+            if liverange.get_pc_range().contains(pc):
+                return liverange.get_addr()
+
+        return None
 
     def __str__(self):
         lbl = "PARAM" if self.is_param() else "VAR"

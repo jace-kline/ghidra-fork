@@ -124,8 +124,7 @@ class UnoptimizedProgramInfoCompare2(object):
         return hash((self.left, self.right))
 
     def show_summary(self, indent=0) -> str:
-        s = "PROGRAM INFERENCE RESULTS:\n"
-        s += "----------GLOBAL COMPARISONS----------\n"
+        s = "----------GLOBAL COMPARISONS----------\n"
         s += self.globals_comparison.show_summary(indent=0)
 
         s += "\n----------FUNCTION COMPARISONS----------\n"
@@ -153,7 +152,7 @@ class UnoptimizedFunction(object):
     def get_param_varnodes(self) -> List[Varnode]:
         return [
             varnode for varnode in 
-            [ Varnode.from_single_location_variable(var) for var in self.function.get_params() ]
+            [ Varnode.from_unoptimized_variable(var) for var in self.function.get_params() ]
             if varnode is not None 
         ]
 
@@ -161,7 +160,7 @@ class UnoptimizedFunction(object):
     def get_variable_varnodes(self) -> List[Varnode]:
         return [
             varnode for varnode in
-            [ Varnode.from_single_location_variable(var) for var in self.function.get_vars() ]
+            [ Varnode.from_unoptimized_variable(var) for var in self.function.get_vars() ]
             if varnode is not None
         ]
 
@@ -318,7 +317,8 @@ class UnoptimizedFunctionCompareRecord(object):
     def show_summary(self, indent=0) -> str:
         s = str(self)
         if self.is_comparison():
-            s += "\n" + self.comparison.show_summary(indent=1)
+            s += "\n"
+            s += self.comparison.show_summary(indent=1)
         else:
             s += ": NO FUNCTION MATCH\n"
 

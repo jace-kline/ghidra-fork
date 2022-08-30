@@ -31,20 +31,27 @@ class Varnode(object):
     # builds a VarnodeCompareRecord|None from the infomation contained in the
     # given variable. Only builds if the variable is associated with exactly one address.
     @staticmethod
-    def from_single_location_variable(var: Variable):
+    def from_single_location_variable(var: Variable) -> 'Union[Varnode, None]':
         liveranges = var.get_liveranges()
-        return __class__(var, liveranges[0].get_addr()) if liveranges and len(liveranges) == 1 else None
+        return Varnode(var, liveranges[0].get_addr()) if liveranges and len(liveranges) == 1 else None
 
     @staticmethod
-    def from_variable_at_pc(var: Variable, pc: AbsoluteAddress):
+    def from_variable_at_pc(var: Variable, pc: AbsoluteAddress) -> 'Union[Varnode, None]':
         addr = var.get_address_at_pc(pc)
         return Varnode(var, addr) if addr is not None else None
+
+    @staticmethod
+    def from_unoptimized_variable(var: Variable) -> 'Union[Varnode, None]':
+        varnode = Varnode.from_single_location_variable(var)
+        return varnode if varnode is not None \
+            else Varnode.from_variable_at_pc(var, var.get_parent_function().get_start_pc())
 
     def __hash__(self) -> int:
         return hash((self.var, self.addr))
 
     def __str__(self) -> str:
-        return "<Varnode address={} datatype={}>".format(
+        return "<Varnode name={} address={} datatype={}>".format(
+            self.var.get_name() if self.var.get_name() else "?",
             self.addr,
             self.get_datatype()
         )
@@ -180,10 +187,12 @@ class VarnodeCompare2(object):
         return str(self)
 
     def show_summary(self, indent=0) -> str:
-        return "Comparison:\n\tother={}\n\tcompare_code={}".format(
+        s = "Comparison:\n\tother={}\n\tcompare_code={}".format(
             self.right,
             self.get_compare_code_str()
         )
+
+        return indent_str(s, indent)
 
 class VarnodeCompareStatus(object):
     NOT_COMPARABLE = 0 # this varnode cannot be compared with others (due to its address most likely)
@@ -322,7 +331,8 @@ class VarnodeCompareRecord(object):
     def show_summary(self, indent=0) -> str:
         s = str(self)
         for cmp in self.varnode_comparison_map.values():
-            s += "\n" + cmp.show_summary(indent=1)
+            s += "\n"
+            s += cmp.show_summary(indent=1)
         s += "\n"
 
         return indent_str(s, indent)

@@ -5,7 +5,7 @@ from lang_datatype import *
 from util import *
 
 # should comparison between primitive types use '==' (True) or 'rough_equal' (False)?
-EXACT_MATCH: bool = True
+EXACT_MATCH: bool = False
 
 class DataTypeCompareCode(object):
     # no valid comparison could be made

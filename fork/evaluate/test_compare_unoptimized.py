@@ -1,3 +1,4 @@
+import sys
 from lang import *
 from lang_address import *
 from lang_datatype import *
@@ -57,41 +58,29 @@ def test_compare_unoptimized(progdir, rebuild=False):
 
     dwarf = UnoptimizedProgramInfo(dwarf_proginfo)
     ghidra = UnoptimizedProgramInfo(ghidra_proginfo)
-
     comparison = UnoptimizedProgramInfoCompare2(ghidra, dwarf)
-    return comparison
+
+    return (comparison, comparison.flip())
+
+def main():
+    args = sys.argv
+    progdir = args[1] # path to program source directory is first arg
+    cmp_ghidra, cmp_dwarf = test_compare_unoptimized(progdir, rebuild=False)
+
+    print("----------GHIDRA DECOMPILER OUTPUT----------\n")
+    cmp_ghidra.get_left().get_proginfo().print_summary()
+
+    print("\n----------DWARF OUTPUT (ground truth)----------\n")
+    cmp_ghidra.get_right().get_proginfo().print_summary()
+
+    print("\n---------GHIDRA VS DWARF----------\n")
+    print(cmp_ghidra.show_summary())
+
+    print("\n---------DWARF VS GHIDRA----------\n")
+    print(cmp_dwarf.show_summary())
+    
+    # mainfn = [ fn for fn in cmp_ghidra.get_left().get_unoptimized_functions().values() if fn.get_function().get_name() == "main" ][0]
 
 if __name__ == "__main__":
-    progdir = "../progs/typecases/"
-    cmp = test_compare_unoptimized(progdir, rebuild=False)
-    print(cmp.show_summary())
-
-    # cmp.get_left().get_proginfo().print_summary()
-
-    # for fn, record in cmp.get_function_compare_record_map().items():
-    #     if record.is_comparison():
-    #         print("{} : {}".format(
-    #             fn.get_function().get_name(),
-    #             record.get_comparison())
-    #         )
-
-    # for varnode, record in cmp.get_global_compare_record_map().items():
-    #     print("{} : {}".format(
-    #         varnode.get_addr(),
-    #         record.get_status_str()
-    #     ))
-
-    # zipper = OrderedZipper(
-    #     cmp.get_left().get_unoptimized_functions().values(),
-    #     cmp.get_right().get_unoptimized_functions().values(),
-    #     key=lambda fn: fn.get_start_pc()
-    # )
-
-    # for item in zipper:
-    #     if item.is_left():
-    #         print("Left({})".format(item.get_value().get_start_pc()))
-    #     elif item.is_right():
-    #         print("Right({})".format(item.get_value().get_start_pc()))
-    #     elif item.is_conflict():
-    #         l, r = item.get_value()
-    #         print("Conflict({}, {})".format(l.get_start_pc(), r.get_start_pc()))
+    # progdir = "../progs/typecases/"
+    main()
