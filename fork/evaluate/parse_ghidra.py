@@ -213,12 +213,21 @@ class ParseGhidra(object):
 
         elif metatype == MetaType.ARRAY:
             basetype = dtype.getDataType()
-            basetyperef = self.register_obj(basetype)
             length = dtype.getNumElements()
+
+            # while basetyperef is an array type, add more dimensions to the top-level array
+            dimensions = [length]
+            while ParseGhidra.datatype2metatype(basetype) == MetaType.ARRAY:
+                dim = basetype.getNumElements()
+                dimensions.append(dim)
+                basetype = basetype.getDataType()
+
+            # fall through... the basetype is no longer an array type
+            basetyperef = self.register_obj(basetype)
 
             stub = DataTypeArrayStub(
                 basetyperef=basetyperef,
-                length=length
+                dimensions=tuple(dimensions)
             )
             subtyperefs.append(basetyperef)
 

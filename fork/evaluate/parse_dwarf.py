@@ -205,18 +205,28 @@ class ParseDWARF:
             # get the child subrange DIE object -> specifies the
             # bounds of the array
             rangedies = [ die for die in die.iter_children() if die.tag == "DW_TAG_subrange_type" ]
-            length = None
-            if len(rangedies) > 0:
-                rangedie = rangedies[0]
+
+            def dim(rangedie):
                 upbound = rangedie.attributes.get("DW_AT_upper_bound", 0)
-                length = upbound.value + 1 if upbound != 0 else 0
+                if upbound != 0:
+                    return upbound.value + 1
+                
+                length = rangedie.attributes.get("DW_AT_count", 0)
+                if length != 0:
+                    return length.value
+
+                return 0
+
+            dimensions = tuple([ dim(subrange) for subrange in rangedies ])
             
             basetyperef = self.get_DIE_key(get_DIE_attr_ref_DIE(die, "DW_AT_type"))
+
+            assert(len(dimensions) > 0)
             assert(basetyperef is not None)
 
             stub = DataTypeArrayStub(
                     basetyperef=basetyperef,
-                    length=length
+                    dimensions=dimensions
                 )
             subrefs.append(basetyperef)
 

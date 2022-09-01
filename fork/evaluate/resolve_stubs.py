@@ -179,26 +179,33 @@ class DataTypePointerStub(DataTypeStub):
         return record.obj
 
 class DataTypeArrayStub(DataTypeStub):
-    def __init__(self, basetyperef=None, length=None):
+    def __init__(self, basetyperef=None, dimensions=None):
         super(DataTypeArrayStub, self).__init__(
             metatype=MetaType.ARRAY,
             size=None
         )
         self.basetyperef = basetyperef
-        self.length = length
+        self.dimensions = dimensions
+
+    def _compute_size(self, dims, basetype_size):
+        agg = 1
+        for dim in dims:
+            agg *= dim
+        agg *= basetype_size
+        return agg
 
     def resolve(self, record):
         assert_not_none(self, "basetyperef")
-        assert_not_none(self, "length")
+        assert_not_none(self, "dimensions")
 
         record.obj = DataTypeArray()
 
         basetype = record.db.resolve(self.basetyperef)
         if self.size is None:
-            self.size = self.length * basetype.size
+            self.size = self._compute_size(self.dimensions, basetype.size)
 
         record.obj.basetype = basetype
-        record.obj.length = self.length,
+        record.obj.dimensions = self.dimensions,
         record.obj.size = self.size
         return record.obj
 

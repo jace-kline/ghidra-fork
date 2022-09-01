@@ -154,8 +154,8 @@ def test_gathered_funcs_gblvars():
     print(functionrefs),
         
 
-def test_parse_dwarf():
-    objfile = "../progs/typecases_O0.bin_dbg"
+def test_parse_dwarf(objfile):
+    # objfile = "../progs/typecases_O0.bin_dbg"
     proginfo = parse_from_objfile(objfile)
     proginfo.print_summary()
 
@@ -170,4 +170,5 @@ def test_merge_ranges():
     print(merge_ranges(ranges))
 
 if __name__ == "__main__":
-    test_parse_dwarf()
+    objfile = "../progs/ndarray/ndarray_O0_debug.bin"
+    test_parse_dwarf(objfile)

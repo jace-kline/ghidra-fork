@@ -417,7 +417,7 @@ class DataTypePointer(DataType):
 
 
 class DataTypeArray(DataType):
-    def __init__(self, basetype=None, length=None, size=None):
+    def __init__(self, basetype=None, dimensions=None, size=None):
         """
         basetype: DataType
             The type of the elements in the array
@@ -432,17 +432,30 @@ class DataTypeArray(DataType):
             size=size
         )
         self.basetype = basetype
-        self.length = length
+        self.dimensions = dimensions
+
+    def _compute_size(self, dims, basetype_size):
+        agg = 1
+        for dim in dims:
+            agg *= dim
+        agg *= basetype_size
+        return agg
 
     def _resolve_size(self):
         if self.size is None:
-            if self.length is not None and self.basetype is not None:
-                self.size = self.basetype.get_size() * self.length
+            if self.dimensions is not None and self.basetype is not None:
+                self.size = self._compute_size(self.dimensions, self.basetype.get_size())
             else:
                 self.size = 0
 
-    def length_unknown(self):
-        return self.length <= 1 or self.length is None
+    def num_dimensions(self):
+        return len(self.dimensions)
+
+    def get_dimensions(self):
+        return self.dimensions
+
+    def dimensions_unknown(self):
+        return len(self.dimensions) == 0 or self.dimensions is None
 
     # by default, assume a primitive type (doesn't reference any other types)
     # override in children
@@ -458,13 +471,13 @@ class DataTypeArray(DataType):
     # int -> DescentRecord | None
     def get_component_type_at_offset(self, offset, size=None):
         assert (self.size is not None)
-        if self.length == 0:
+        if self.dimensions_unknown():
             return None
 
         # check for alignment, size, etc.
-        if offset % self.basetype.size != 0 \
+        if offset % self.basetype.get_size() != 0 \
             or (offset >= self.size) \
-            or (size is not None and (size % self.basetype.size != 0 or offset + size > self.size)):
+            or (size is not None and (size % self.basetype.get_size() != 0 or offset + size > self.size)):
             return None
 
         # default scenario is that we are nesting into element of the array
@@ -476,7 +489,7 @@ class DataTypeArray(DataType):
             sublength = size // self.basetype.size
             if sublength > 1:
                 relationship = DataTypeRecursiveDescent.Relationship.SUBSET
-                subtype = DataTypeArray(basetype=self.basetype, length=sublength, size=self.basetype.size * sublength)
+                subtype = DataTypeArray(basetype=self.basetype, dimensions=(sublength,), size=self.basetype.get_size() * sublength)
             
         return DataTypeRecursiveDescent.DescentRecord(relationship, offset, subtype)
             
@@ -488,11 +501,11 @@ class DataTypeArray(DataType):
     def get_component_type_containing_offset(self, offset):
         
         # checks
-        if self.length_unknown() or not (0 <= offset < self.size):
+        if self.dimensions_unknown() or not (0 <= offset < self.size):
             return None
 
         # actual_offset = the actual offset to the desired element
-        actual_offset = offset - (offset % self.basetype.size)
+        actual_offset = offset - (offset % self.basetype.get_size())
         return DataTypeRecursiveDescent.DescentRecord(
             DataTypeRecursiveDescent.Relationship.ARRAY_ELEMENT,
             actual_offset,
@@ -502,13 +515,13 @@ class DataTypeArray(DataType):
     def __eq__(self, other):
         return self.rough_match(other) \
             and self.basetype == other.basetype \
-            and self.length == other.length
+            and self.dimensions == other.dimensions
 
     def __str__(self):
-        return "<ARRAY subtype={} length={} size={}>".format(str(self.basetype), self.length, self.size)
+        return "<ARRAY subtype={} dimensions={} size={}>".format(str(self.basetype), self.dimensions, self.size)
 
     def __hash__(self):
-        return hash((self.metatype, self.size, self.basetype, self.length))
+        return hash((self.metatype, self.size, self.basetype, self.dimensions))
 
 
 class DataTypeStruct(DataType):
