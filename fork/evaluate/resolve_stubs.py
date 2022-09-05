@@ -205,7 +205,7 @@ class DataTypeArrayStub(DataTypeStub):
             self.size = self._compute_size(self.dimensions, basetype.size)
 
         record.obj.basetype = basetype
-        record.obj.dimensions = self.dimensions,
+        record.obj.dimensions = self.dimensions
         record.obj.size = self.size
         return record.obj
 

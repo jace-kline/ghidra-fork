@@ -65,7 +65,8 @@ def test_compare_unoptimized(progdir, rebuild=False):
 def main():
     args = sys.argv
     progdir = args[1] # path to program source directory is first arg
-    cmp_ghidra, cmp_dwarf = test_compare_unoptimized(progdir, rebuild=False)
+    rebuild = args[2] == "--rebuild" if len(args) > 2 else False
+    cmp_ghidra, cmp_dwarf = test_compare_unoptimized(progdir, rebuild=rebuild)
 
     print("----------GHIDRA DECOMPILER OUTPUT----------\n")
     cmp_ghidra.get_left().get_proginfo().print_summary()

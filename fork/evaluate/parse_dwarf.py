@@ -1,3 +1,4 @@
+import sys
 from elftools.dwarf.constants import *
 from resolve import *
 from resolve_stubs import *
@@ -365,3 +366,14 @@ def parse_from_objfile(objfilepath):
     elffile, dwarfinfo = get_elf_dwarf_info(objfilepath)
     return parse_from_dwarfinfo(dwarfinfo)
     
+def main():
+    if len(sys.argv) < 2:
+        print("Provide path to object / binary file to parse")
+        exit(0)
+
+    objfilepath = sys.argv[1]
+    proginfo = parse_from_objfile(objfilepath)
+    proginfo.print_summary()
+
+if __name__ == "__main__":
+    main()
