@@ -326,7 +326,7 @@ class ParseGhidra(object):
         offset = addr.getOffset()
 
         if addrtype == AddressType.STACK:
-            return StackAddress(offset)
+            return StackAddress(self.util.resolve_stack_frame_offset(offset))
         elif addrtype == AddressType.ABSOLUTE:
             return AbsoluteAddress(self.util.resolve_absolute_address(offset))
         elif addrtype == AddressType.EXTERNAL:

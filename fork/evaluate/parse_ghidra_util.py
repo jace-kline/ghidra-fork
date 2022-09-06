@@ -68,6 +68,12 @@ class GhidraUtil(object):
     def resolve_absolute_address(self, absaddr):
         return absaddr - self.image_base + self.orig_base
 
+    # we want stack frame offsets to be from the Canonical Frame Address (directly below saved RIP)
+    # instead of below the saved base pointer
+    # int -> int
+    def resolve_stack_frame_offset(self, offset):
+        return offset - self.curr.getDefaultPointerSize()
+
     # Function -> DecompileResults
     def decompile_function(self, func):
         return self.decompiler.decompileFunction(func, 0, self.monitor)

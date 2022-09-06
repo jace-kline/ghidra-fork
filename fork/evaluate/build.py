@@ -104,11 +104,12 @@ class PickleBuilder(object):
             targets.append(DWARFPickleTarget(self.progname, opt_lvl=opt_lvl))
             for decompiler in self.decompilers:
                 _make_target = lambda debug, strip: PickleTarget(self.progname, opt_lvl=opt_lvl, decompiler=decompiler, debug=debug, strip=strip)
-                targets.append(_make_target(False, False))
                 if self.strip:
                     targets.append(_make_target(False, True))
-                if self.debug:
+                elif self.debug:
                     targets.append(_make_target(True, False))
+                else:
+                    targets.append(_make_target(False, False))
         return targets
 
     def _copy_makefile(self):

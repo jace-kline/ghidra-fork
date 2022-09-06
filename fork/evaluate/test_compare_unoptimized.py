@@ -53,8 +53,8 @@ def test1():
 
     test_compare_dtypes(left, right, 16)
 
-def test_compare_unoptimized(progdir, rebuild=False):
-    dwarf_proginfo, ghidra_proginfo = build2(progdir, 0, rebuild=rebuild)
+def test_compare_unoptimized(progdir, debug=False, strip=False, rebuild=False):
+    dwarf_proginfo, ghidra_proginfo = build2(progdir, 0, debug=debug, strip=strip, rebuild=rebuild)
 
     dwarf = UnoptimizedProgramInfo(dwarf_proginfo)
     ghidra = UnoptimizedProgramInfo(ghidra_proginfo)
@@ -64,18 +64,28 @@ def test_compare_unoptimized(progdir, rebuild=False):
 
 def main():
     args = sys.argv
-    progdir = args[1] # path to program source directory is first arg
-    rebuild = args[2] == "--rebuild" if len(args) > 2 else False
-    cmp_ghidra, cmp_dwarf = test_compare_unoptimized(progdir, rebuild=rebuild)
+    if len(args) < 2:
+        print("USAGE: python3 {} [opts...] <path/to/progdir>".format(args[0]))
+        exit(0)
+    
+    # last arg: path to program source directory
+    progdir = args[-1]
 
-    print("----------GHIDRA DECOMPILER OUTPUT----------\n")
-    cmp_ghidra.get_left().get_proginfo().print_summary()
+    # opts
+    rebuild = "--rebuild" in args[1:-1] # force rebuild?
+    debug = "--debug" in args[1:-1] # provide debugging symbols to Ghidra?
+    strip = "--strip" in args[1:-1] # strip symbols in Ghidra binary?
+
+    cmp_ghidra, cmp_dwarf = test_compare_unoptimized(progdir, debug=debug, strip=strip, rebuild=rebuild)
+
+    # print("----------GHIDRA DECOMPILER OUTPUT----------\n")
+    # cmp_ghidra.get_left().get_proginfo().print_summary()
 
     print("\n----------DWARF OUTPUT (ground truth)----------\n")
     cmp_ghidra.get_right().get_proginfo().print_summary()
 
-    print("\n---------GHIDRA VS DWARF----------\n")
-    print(cmp_ghidra.show_summary())
+    # print("\n---------GHIDRA VS DWARF----------\n")
+    # print(cmp_ghidra.show_summary())
 
     print("\n---------DWARF VS GHIDRA----------\n")
     print(cmp_dwarf.show_summary())
