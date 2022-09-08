@@ -1,6 +1,6 @@
 from enum import Enum, auto, unique
-from typing import List, Union
-# from util import *
+from typing import List, Union, Tuple
+from lang_datatype import *
 
 # The interface to implement if you want to be the "item type" that is stored within a lattice
 # Each item must know how to construct its parent and its children
@@ -52,17 +52,27 @@ class LatticeNode(object):
     def path_to_root(self) -> List['LatticeNode']:
         return reversed(self.path_from_root())
 
-    def path_between(self, other: 'LatticeNode') -> List['LatticeNode']:
-        # try traversing upwards toward root, then reverse the path
-        # try iterating children
-        pass
-
-    def common_parent(self, other: 'LatticeNode') -> 'LatticeNode':
+    # the paths from the common ancestor node to self and other
+    # returns None if no common ancestor exists
+    def common_ancestor_paths(self, other: 'LatticeNode') -> Union[Tuple['LatticeNode', 'LatticeNode'], None]:
+        self_path = []
         for node in self.path_to_root():
+            self_path.append(node)
+
+            other_path = []
             for othernode in other.path_to_root():
+                other_path.append(othernode)
+
+                # found common ancestor?
                 if node == othernode:
-                    return node
+                    # reverse the paths such that the common ancestor is the 0th element
+                    return ( reversed(self_path), reversed(other_path) )
+        # fall through -> no common ancestor
         return None
+
+    def common_ancestor(self, other) -> Union['LatticeNode', None]:
+        common_paths = self.common_ancestor_paths(other)
+        return common_paths[0][0] if common_paths is not None else None
 
     def __eq__(self, other: 'LatticeNode') -> bool:
         return self.item == other.item
@@ -75,7 +85,7 @@ class LatticeNode(object):
 
 # Implements the LatticeItemType interface
 @unique
-class TIE_NodeType(Enum):
+class Ariste_NodeType(Enum):
     ROOT = auto()
     CODE = auto()
     DATA = auto()
@@ -86,8 +96,8 @@ class TIE_NodeType(Enum):
     UINT = auto()
 
     @staticmethod
-    def _children_map() -> 'dict[TIE_NodeType, List[TIE_NodeType]]':
-        _cls = TIE_NodeType
+    def _children_map() -> 'dict[Ariste_NodeType, List[Ariste_NodeType]]':
+        _cls = Ariste_NodeType
         return {
             _cls.ROOT: [_cls.CODE, _cls.DATA],
             _cls.DATA: [_cls.FLOAT, _cls.NUM],
@@ -95,71 +105,103 @@ class TIE_NodeType(Enum):
         }
 
     @staticmethod
-    def _parent_map() -> 'dict[TIE_NodeType, Union[TIE_NodeType, None]]':
+    def _parent_map() -> 'dict[Ariste_NodeType, Union[Ariste_NodeType, None]]':
         _map = {}
-        for k, vs in TIE_NodeType._children_map().items():
+        for k, vs in Ariste_NodeType._children_map().items():
             for v in vs:
                 _map[v] = k
         return _map
 
 
-    def parent(self) -> Union['TIE_NodeType', None]:
+    def parent(self) -> Union['Ariste_NodeType', None]:
         return self._parent_map().get(self, None)
 
-    def children(self) -> List['TIE_NodeType']:
+    def children(self) -> List['Ariste_NodeType']:
         return self._children_map().get(self, [])
+
+    # uses a type's metatype to determine which nodetype to map to
+    @staticmethod
+    def from_DataType(dtype: DataType) -> 'Ariste_NodeType':
+        _cls = Ariste_NodeType
+        _metatype = dtype.get_metatype()
+
+        if _metatype == MetaType.INT:
+            return _cls.INT if dtype.is_signed() else _cls.UINT
+
+        elif _metatype == MetaType.FLOAT:
+            return _cls.FLOAT
+
+        elif _metatype == MetaType.POINTER:
+            return _cls.PTR
+
+        elif _metatype == MetaType.UNDEFINED:
+            return _cls.DATA
+
+        else:
+            return _cls.ROOT
 
 
 # Implements the LatticeItemType interface
-class TIE_LatticeItem(object):
+class Ariste_LatticeItem(object):
 
     VALID_BIT_SIZES = [1, 8, 16, 32, 64, 80]
 
     def __init__(self,
-        nodetype: TIE_NodeType, # also implements the LatticeItemType interface
+        nodetype: Ariste_NodeType, # also implements the LatticeItemType interface
         bits: Union[int, None] = None # the number of bits this primitive type is
     ):
         self.nodetype = nodetype
         self.bits = bits # number of bits
 
-    def parent(self) -> Union['TIE_LatticeItem', None]:
+    def parent(self) -> Union['Ariste_LatticeItem', None]:
         # if we are "sized" data, our parent is unsized data
-        if self.nodetype == TIE_NodeType.DATA and self.bits is not None:
-            return __class__(TIE_NodeType.DATA, bits=None)
+        if self.nodetype == Ariste_NodeType.DATA and self.bits is not None:
+            return __class__(Ariste_NodeType.DATA, bits=None)
 
         # if we are "sized" code, our parent is unsized code
-        elif self.nodetype == TIE_NodeType.CODE and self.bits is not None:
-            return __class__(TIE_NodeType.CODE, bits=None)
+        elif self.nodetype == Ariste_NodeType.CODE and self.bits is not None:
+            return __class__(Ariste_NodeType.CODE, bits=None)
 
-        # otherwise, the structure follows the TIE_NodeType structure with the bits the same
+        # otherwise, the structure follows the Ariste_NodeType structure with the bits the same
         else:
             nodetype_parent = self.nodetype.parent()
             return __class__(nodetype_parent, bits=self.bits) if nodetype_parent is not None else None
 
-    def children(self) -> List['TIE_LatticeItem']:
-        if self.nodetype == TIE_NodeType.DATA:
+    def children(self) -> List['Ariste_LatticeItem']:
+        if self.nodetype == Ariste_NodeType.DATA:
             if self.bits is None:
-                return [ __class__(TIE_NodeType.DATA, bits=bits) for bits in TIE_LatticeItem.VALID_BIT_SIZES ]
+                return [ __class__(Ariste_NodeType.DATA, bits=bits) for bits in Ariste_LatticeItem.VALID_BIT_SIZES ]
             elif self.bits == 1:
                 return []
             elif self.bits == 80:
-                return [ __class__(TIE_NodeType.FLOAT, bits=self.bits) ]
+                return [ __class__(Ariste_NodeType.FLOAT, bits=self.bits) ]
         
         return [ __class__(nodetype, size=self.bits) for nodetype in self.nodetype.children() ]
 
-    def __eq__(self, other: 'TIE_LatticeItem') -> bool:
+    def __eq__(self, other: 'Ariste_LatticeItem') -> bool:
         return self.nodetype == other.nodetype and self.bits == other.bits
 
     def __str__(self) -> str:
-        return "<TIE_LatticeItem nodetype={} bits={}>".format(self.nodetype, self.bits)
+        return "<Ariste_LatticeItem nodetype={} bits={}>".format(self.nodetype, self.bits)
 
     def __repr__(self) -> str:
         return self.__str__()
 
+    # construct a lattice item from a DataType object
+    @staticmethod
+    def from_DataType(dtype: DataType) -> Union['Ariste_LatticeItem', None]:
+        _nodetype = Ariste_NodeType.from_DataType(dtype)
+        if _nodetype is None:
+            return None
+        
+        _bytes = dtype.get_size()
+        bits = None if _bytes is None or _bytes == 0 else _bytes * 8
+        return Ariste_LatticeItem(_nodetype, bits=bits)
+
 
 if __name__ == "__main__":
-    float80 = LatticeNode(TIE_LatticeItem(TIE_NodeType.FLOAT, bits=80))
-    uint16 = LatticeNode(TIE_LatticeItem(TIE_NodeType.UINT, bits=16))
+    float80 = LatticeNode(Ariste_LatticeItem(Ariste_NodeType.FLOAT, bits=80))
+    uint16 = LatticeNode(Ariste_LatticeItem(Ariste_NodeType.UINT, bits=16))
 
     print(float80.common_parent(uint16))
 

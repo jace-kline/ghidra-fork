@@ -1,5 +1,4 @@
 from collections import OrderedDict
-from types import FunctionType
 from typing import Any, Iterator, List, Union
 
 # _map: the original unordered dict
