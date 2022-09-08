@@ -31,14 +31,6 @@ class DataTypeCompositionCompareCode(object):
         return _map[code]
 
 
-class TypeLattice(object):
-
-    def __init__(self, tree: Tree[Any]) -> None:
-        self.tree = tree
-
-
-
-
 # DataType object comparison between 2 objects
 class DataTypeCompare2(object):
     def __init__(

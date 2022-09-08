@@ -244,7 +244,7 @@ class Tree(object):
         # recursively search for the first node containing the given item which matches a condition
         # self.item: A
         # condition: A -> bool
-        def find_first(self, condition: FunctionType[Any, bool]) -> Union['Tree.Node', None]:
+        def find_first(self, condition: function) -> Union['Tree.Node', None]:
             for node in iter(self):
                 if condition(node.item):
                     return node
