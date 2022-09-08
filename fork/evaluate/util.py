@@ -1,4 +1,6 @@
 from collections import OrderedDict
+from types import FunctionType
+from typing import Any, Iterator, List, Union
 
 # _map: the original unordered dict
 # transform: the transformation to apply to the key before ordering
@@ -176,3 +178,126 @@ class OrderedZipper(object):
 
     def __iter__(self):
         return self
+
+class Tree(object):
+
+    class Node(object):
+        def __init__(self,
+            item: Any,
+            parent: 'Union[Tree.Node, None]' = None,
+            children: 'List[Tree.Node]' = []
+        ):
+            self.item = item
+            self.parent = parent
+            self.children = children
+
+            for child in self.children:
+                child.set_parent(self)
+
+        def get_item(self) -> Any:
+            return self.item
+
+        def get_parent(self) -> 'Union[Tree.Node, None]':
+            return self.parent
+
+        def get_children(self) -> 'List[Tree.Node]':
+            return self.children
+
+        def set_parent(self, parent: 'Tree.Node') -> 'Tree.Node':
+            self.parent = parent
+            return self
+
+        def add_child(self, child: 'Tree.Node') -> 'Tree.Node':
+            self.children.append(child)
+            child.set_parent(self)
+            return self
+
+        def is_root(self) -> bool:
+            return self.parent is None
+
+        def is_leaf(self) -> bool:
+            return not self.children
+
+        def is_inner(self) -> bool:
+            return not self.is_root() and not self.is_leaf()
+
+        def height(self, min_height: bool = False) -> int:
+            return 0 if self.is_leaf() else 1 + (max if not min_height else min)([child.height(min_height=min_height) for child in self.children])
+
+        def depth(self) -> int:
+            return 0 if self.is_root() else 1 + self.parent.depth()
+
+        def path_from_root(self) -> List['Tree.Node']:
+            path = [] if self.is_root() else self.parent.path_from_root()
+            path.append(self)
+            return path
+
+        # finds the most immediate common root of this node and another
+        # if not in same tree, return None
+        def common_root(self, other: 'Tree.Node') -> Union['Tree.Node', None]:
+            for l in reversed(self.path_from_root()):
+                for r in reversed(other.path_from_root()):
+                    if l is r:
+                        return l
+            return None
+
+        # recursively search for the first node containing the given item which matches a condition
+        # self.item: A
+        # condition: A -> bool
+        def find_first(self, condition: FunctionType[Any, bool]) -> Union['Tree.Node', None]:
+            for node in iter(self):
+                if condition(node.item):
+                    return node
+
+        # preorder traversal
+        def __iter__(self) -> Iterator['Tree.Node']:
+            traverse = [self]
+            for child in self.children:
+                traverse += list(iter(child))
+            return iter(traverse)
+
+        def __str__(self) -> str:
+            def _status_str() -> str:
+                if self.is_leaf():
+                    return "LEAF"
+                elif self.is_root():
+                    return "ROOT"
+                else:
+                    return "INNER"
+            return "<Tree.Node {} item={} id={} parent_id={} children={}>".format(
+                _status_str(),
+                self.item,
+                id(self),
+                None if self.is_root() else id(self.parent),
+                len(self.children)
+            )
+
+        def __repr__(self):
+            return self.__str__()
+
+
+    def __init__(self, root: 'Union[Tree.Node, None]'):
+        self.root = root
+
+    def is_empty(self) -> bool:
+        return self.root is None
+
+    def get_root(self) -> 'Union[Tree.Node, None]':
+        return None
+
+    def set_root(self, root: 'Tree.Node'):
+        self.root = root
+
+    def height(self, min_height: bool = False) -> int:
+        return -1 if self.is_empty() else self.root.height(min_height=min_height)
+
+    def __iter__(self) -> Iterator['Tree.Node']:
+        return iter([]) if self.is_empty() else iter(self.root)
+
+    def __str__(self) -> str:
+        return "<Tree root_id={}>".format(
+            None if self.is_empty() else id(self.root)
+        )
+
+    def __repr__(self) -> str:
+        return self.__str__()

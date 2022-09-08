@@ -51,7 +51,7 @@ class MetaType(object):
         return metatypes[metatype_code]
 
 
-# Tracks a path into a recursive data type
+# Tracks a path into a composite data type
 # Provides methods for querying information about the path
 class DataTypeRecursiveDescent(object):
 
@@ -130,7 +130,7 @@ class DataTypeRecursiveDescent(object):
         return self.path[-1]
 
     def get_total_offset(self):
-        return sum(( record.offset for record in self.path ))
+        return sum([ record.offset for record in self.path ])
 
     def get_depth(self):
         return len(self.path)
@@ -182,6 +182,12 @@ class DataType(object):
     # override in children
     def is_complex(self):
         return False
+
+    # how many layers of "composition" does this type contain?
+    # 0 for primitive
+    # for composite types, 1 + max composition level of subtypes
+    def composition_level(self):
+        return 0
 
     # get the component type that starts at a given offset, possibly restricting size
     # int -> DescentRecord | None
@@ -467,6 +473,9 @@ class DataTypeArray(DataType):
     def is_complex(self):
         return True
 
+    def composition_level(self):
+        return 1 + self.basetype.composition_level()
+
     # get the component type that starts at a given offset, possibly restricting size
     # int -> DescentRecord | None
     def get_component_type_at_offset(self, offset, size=None):
@@ -550,6 +559,9 @@ class DataTypeStruct(DataType):
     def is_complex(self):
         return True
 
+    def composition_level(self):
+        return 1 + max([ memtype.composition_level() for memtype in self.membertypes ])
+
     # get the component type that starts at a given offset, possibly restricting size
     # int -> DescentRecord | None
     def get_component_type_at_offset(self, offset, size=None):
@@ -628,6 +640,9 @@ class DataTypeUnion(DataType):
     # override in children
     def is_complex(self):
         return True
+
+    def composition_level(self):
+        return 1 + max([ memtype.composition_level() for memtype in self.membertypes ])
 
     # offset = the offset into this datatype to find match for
     # offset_to_subtype = the actual offset of the direct subtype in recursion

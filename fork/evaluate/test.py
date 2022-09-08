@@ -2,7 +2,7 @@ from resolve import *
 from resolve_stubs import *
 from parse_dwarf_util import *
 from parse_dwarf import *
-from util import OrderedZipper
+from util import *
 
 def modify(record):
     record.obj = "Hello World"
@@ -135,5 +135,30 @@ class A(object):
 def test_nested():
     print(A.Nested.to_string(A.Nested.FIELD0))
 
+def test_tree():
+    root = Tree.Node(0, children=[
+        Tree.Node(1, children=[
+            Tree.Node(2)
+        ]),
+        Tree.Node(3, children=[
+            Tree.Node(4)
+        ]),
+        Tree.Node(5, children=[
+            Tree.Node(6, children=[
+                Tree.Node(7)
+            ]),
+            Tree.Node(8)
+        ])
+    ])
+    
+    tree = Tree(root=root)
+    print("Height: {}".format(tree.height()))
+    leaf = tree.root.children[2].children[0].children[0]
+    other = tree.root.children[0]
+    assert(leaf.common_root(other) is root)
+
+    other = tree.root.children[2].children[1]
+    assert(leaf.common_root(other) is tree.root.children[2])
+
 if __name__ == "__main__":
-    test_nested()
+    test_tree()

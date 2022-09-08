@@ -78,8 +78,8 @@ def main():
 
     cmp_ghidra, cmp_dwarf = test_compare_unoptimized(progdir, debug=debug, strip=strip, rebuild=rebuild)
 
-    # print("----------GHIDRA DECOMPILER OUTPUT----------\n")
-    # cmp_ghidra.get_left().get_proginfo().print_summary()
+    print("----------GHIDRA DECOMPILER OUTPUT----------\n")
+    cmp_ghidra.get_left().get_proginfo().print_summary()
 
     print("\n----------DWARF OUTPUT (ground truth)----------\n")
     cmp_ghidra.get_right().get_proginfo().print_summary()

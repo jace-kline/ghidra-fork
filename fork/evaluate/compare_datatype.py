@@ -7,7 +7,7 @@ from util import *
 # should comparison between primitive types use '==' (True) or 'rough_equal' (False)?
 EXACT_MATCH: bool = False
 
-class DataTypeCompareCode(object):
+class DataTypeCompositionCompareCode(object):
     # no valid comparison could be made
     NO_MATCH = 0
 
@@ -31,6 +31,14 @@ class DataTypeCompareCode(object):
         return _map[code]
 
 
+class TypeLattice(object):
+
+    def __init__(self, tree: Tree[Any]) -> None:
+        self.tree = tree
+
+
+
+
 # DataType object comparison between 2 objects
 class DataTypeCompare2(object):
     def __init__(
@@ -49,16 +57,16 @@ class DataTypeCompare2(object):
 
         # initialize the descent and compare_code members to None
         self.left_descent = self.right_descent = None
-        self.compare_code = DataTypeCompareCode.NO_MATCH
+        self.compare_code = DataTypeCompositionCompareCode.NO_MATCH
 
         # perform the comparison logic & compute the compare_code
         self._compare()
 
     # sets self.left_descent, self.right_descent, self.compare_code
-    def _compare(self):
+    def _compare_composition(self):
         # base case: offset == 0 and the types "match" at the top level
         if self.offset == 0 and self._match():
-            self.compare_code = DataTypeCompareCode.MATCH
+            self.compare_code = DataTypeCompositionCompareCode.MATCH
             return
 
         # compute left descent?
@@ -72,7 +80,7 @@ class DataTypeCompare2(object):
 
             # if there is a descent found, the right is a subset type of the left type
             if self.left_descent:
-                self.compare_code = DataTypeCompareCode.RIGHT_SUBSET_LEFT
+                self.compare_code = DataTypeCompositionCompareCode.RIGHT_SUBSET_LEFT
                 return
 
         # compute right descent?
@@ -86,29 +94,29 @@ class DataTypeCompare2(object):
 
             # if there is a descent found, the right is a subset type of the left type
             if self.right_descent:
-                self.compare_code = DataTypeCompareCode.LEFT_SUBSET_RIGHT
+                self.compare_code = DataTypeCompositionCompareCode.LEFT_SUBSET_RIGHT
                 return
 
         # default: no match
-        self.compare_code = DataTypeCompareCode.NO_MATCH
+        self.compare_code = DataTypeCompositionCompareCode.NO_MATCH
 
     def _match(self):
         return self.left == self.right if EXACT_MATCH else self.left.rough_match(self.right)
 
     def top_level_match(self):
-        return self.compare_code == DataTypeCompareCode.MATCH
+        return self.compare_code == DataTypeCompositionCompareCode.MATCH
 
     def left_subset_right(self):
-        return self.compare_code == DataTypeCompareCode.LEFT_SUBSET_RIGHT
+        return self.compare_code == DataTypeCompositionCompareCode.LEFT_SUBSET_RIGHT
 
     def right_subset_left(self):
-        return self.compare_code == DataTypeCompareCode.RIGHT_SUBSET_LEFT
+        return self.compare_code == DataTypeCompositionCompareCode.RIGHT_SUBSET_LEFT
 
     def any_match(self):
         return self.top_level_match() or self.left_subset_right() or self.right_subset_left()
 
     def no_match(self):
-        return self.compare_code == DataTypeCompareCode.NO_MATCH or not self.any_match()
+        return self.compare_code == DataTypeCompositionCompareCode.NO_MATCH or not self.any_match()
 
     def get_left(self) -> DataType:
         return self.left
@@ -157,8 +165,8 @@ class DataTypeCompare2(object):
         return __class__(self.right, self.left, -1 * self.offset)
 
     def __str__(self):
-        return "<DataTypeCompare2 left={} right={} offset={} compare_code={}>".format(
-            DataTypeCompareCode.to_string(self.compare_code),
+        return "<DataTypeCompare2 left={} right={} offset={} composition_comparison={}>".format(
+            DataTypeCompositionCompareCode.to_string(self.compare_code),
             self.left,
             self.right,
             self.offset
