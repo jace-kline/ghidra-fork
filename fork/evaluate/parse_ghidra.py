@@ -90,6 +90,7 @@ class ParseGhidra(object):
 
         for globalref in globalrefs:
             self.parse_var_highsymbol(globalref, param=False, functionref=None)
+            # filter out globals that actually correspond to functions
 
 
     # ref :: key to HighFunction object
@@ -233,15 +234,15 @@ class ParseGhidra(object):
 
         elif metatype == MetaType.STRUCT:
             name = dtype.getName()
-            membertypes = ( mem.getDataType() for mem in dtype.getComponents() )
-            membertyperefs = [ self.register_obj(memtype) for memtype in membertypes ]
+            membertype_offsets = ( (mem.getOffset(), mem.getDataType()) for mem in dtype.getComponents() )
+            membertyperef_offsets = [ (offset, self.register_obj(memtype)) for offset, memtype in membertype_offsets ]
 
             stub = DataTypeStructStub(
                 name=name,
-                membertyperefs=membertyperefs,
+                membertyperef_offsets=membertyperef_offsets,
                 size=size
             )
-            subtyperefs += membertyperefs
+            subtyperefs += [ ref for _, ref in membertyperef_offsets ]
 
         elif metatype == MetaType.UNION:
             name = dtype.getName()

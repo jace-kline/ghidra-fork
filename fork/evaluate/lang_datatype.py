@@ -183,6 +183,14 @@ class DataType(object):
     def is_complex(self):
         return False
 
+    # Flatten this datatype into an iterator of (offset, primitive type) pairs
+    # May return None if doesn't make sense for the datatype (e.g. function prototype)
+    def flatten(self):
+        if self.is_primitive():
+            yield (0, self)
+        else:
+            raise NotImplementedError()
+
     # how many layers of "composition" does this type contain?
     # 0 for primitive
     # for composite types, 1 + max composition level of subtypes
@@ -282,6 +290,11 @@ class DataTypeFunctionPrototype(DataType):
     # override in children
     def is_complex(self):
         return True
+
+    # this operation doesn't really make sense for a function prototype
+    # since this doesn't occupy any space in memory
+    def flatten(self):
+        return None
 
     def __eq__(self, other):
         return self.rough_match(other) \
@@ -400,15 +413,11 @@ class DataTypePointer(DataType):
         )
         self.basetype = basetype
 
-    # by default, assume a primitive type (doesn't reference any other types)
-    # override in children
     def is_primitive(self):
-        return False
-
-    # Is this type a complex type? -> References "sub-components"?
-    # override in children
-    def is_complex(self):
         return True
+
+    def is_complex(self):
+        return False
 
     def __eq__(self, other):
         return self.rough_match(other) and self.basetype.rough_match(other.basetype)
@@ -440,19 +449,30 @@ class DataTypeArray(DataType):
         self.basetype = basetype
         self.dimensions = dimensions
 
-    def _compute_size(self, dims, basetype_size):
-        agg = 1
+    @staticmethod
+    def compute_flat_length(dims):
+        length = 1
         for dim in dims:
-            agg *= dim
-        agg *= basetype_size
-        return agg
+            length *= dim
+        return length
 
-    def _resolve_size(self):
+    @staticmethod
+    def compute_size(dims, basetype_size):
+        return DataTypeArray.compute_flat_length(dims) * basetype_size
+
+    def _resolve(self):
         if self.size is None:
             if self.dimensions is not None and self.basetype is not None:
-                self.size = self._compute_size(self.dimensions, self.basetype.get_size())
+                self.size = DataTypeArray.compute_size(self.dimensions, self.basetype.get_size())
             else:
                 self.size = 0
+
+        elif self.dimensions is None:
+            if self.size is not None and self.basetype is not None:
+                self.dimensions = (self.size // self.basetype.get_size(),)
+
+    def get_num_elements(self):
+        return DataTypeArray.compute_flat_length(self.dimensions)
 
     def num_dimensions(self):
         return len(self.dimensions)
@@ -475,6 +495,28 @@ class DataTypeArray(DataType):
 
     def composition_level(self):
         return 1 + self.basetype.composition_level()
+
+    # if this array has greater than 1 dimension, flatten it down to 1 dimension
+    def to_1d(self):
+        if self.num_dimensions() == 1:
+            return self
+        else:
+            dims = (DataTypeArray.compute_flat_length(self.dimensions),)
+            
+            return DataTypeArray(
+                basetype=self.basetype,
+                dimensions=dims,
+                size=DataTypeArray.compute_size(dims, self.basetype.get_size())
+            )
+
+    def flatten(self):
+        # iterate over each element offset from the base of the array
+        for i in range(0, self.get_num_elements()):
+            offset = i * self.basetype.get_size()
+            # for each element offset, we flatten the basetype into its primitives
+            # and return them 1 at a time
+            for (off, primitive) in self.basetype.flatten():
+                yield (offset + off, primitive)
 
     # get the component type that starts at a given offset, possibly restricting size
     # int -> DescentRecord | None
@@ -537,17 +579,29 @@ class DataTypeStruct(DataType):
     """
     Datatype representing a C struct.
     """
-    def __init__(self, name=None, membertypes=None, size=None):
+    ALIGN_SIZE = 4 # assume we are aligning on 4-byte boundaries
+
+    def __init__(self, name=None, membertype_offsets=None, size=None):
         self.name = name
-        self.membertypes = membertypes
+        self.membertype_offsets = membertype_offsets
         super(DataTypeStruct, self).__init__(
             metatype=MetaType.STRUCT,
             size=size
         )
 
+    def get_membertypes(self):
+        return [ memtype for _, memtype in self.membertype_offsets ]
+
+    def get_member_offsets(self):
+        return [ offset for offset, _ in self.membertype_offsets ]
+
+    def get_number_members(self):
+        return len(self.membertype_offsets)
+
     def _resolve_size(self):
-        if self.size is None and self.membertypes is not None: # if explicit size not provided, calculate on our own
-            self.size = sum([ mem.get_size() for mem in self.membertypes ])
+        if self.size is None and self.membertype_offsets is not None: # if explicit size not provided, calculate on our own
+            offset, memtype = self.membertype_offsets[-1]
+            self.size = offset + memtype.get_size()
 
     # by default, assume a primitive type (doesn't reference any other types)
     # override in children
@@ -560,13 +614,43 @@ class DataTypeStruct(DataType):
         return True
 
     def composition_level(self):
-        return 1 + max([ memtype.composition_level() for memtype in self.membertypes ])
+        return 1 + max([ memtype.composition_level() for _, memtype in self.membertype_offsets ])
+
+    def get_membertype_offsets_with_padding(self):
+        membertype_offsets = []
+        n = self.get_number_members()
+        for i in range(0, n):
+            padding = 0
+            offset, memtype = self.membertype_offsets[i]
+            membertype_offsets.append((offset, memtype))
+
+            # if this is the last member, check to see that offset + memtype.size == size
+            if i == n - 1:
+                padding = self.size - (offset + memtype.size)
+            
+            # otherwise...
+            else:
+                _offset, _ = self.membertype_offsets[i + 1]
+                padding = _offset - (offset + memtype.size)
+
+            if padding > 0:
+                padding_offset = offset + memtype.size
+                padding_dtype = DataTypeUndefined(size=padding)
+                membertype_offsets.append((padding_offset, padding_dtype))
+
+        return membertype_offsets
+
+
+    def flatten(self):
+        for (offset, memtype) in self.membertype_offsets:
+            for (off, primitive) in memtype.flatten():
+                yield (offset + off, primitive)
 
     # get the component type that starts at a given offset, possibly restricting size
+    # the component could be padding (undefined type)
     # int -> DescentRecord | None
     def get_component_type_at_offset(self, offset, size=None):
-        _offset = 0 # the offset to the start of the current member
-        for memtype in self.membertypes:
+        for _offset, memtype in self.get_membertype_offsets_with_padding():
             if _offset == offset:
                 return DataTypeRecursiveDescent.DescentRecord(
                     DataTypeRecursiveDescent.Relationship.STRUCT_MEMBER,
@@ -574,42 +658,39 @@ class DataTypeStruct(DataType):
                     memtype
                 ) if size is None or size <= memtype.size else None
             
-            _offset += memtype.size
             if _offset > offset:
                 break
         return None
 
-    # get the component type that includes a given offset
+    # get the component type that includes a given offset (could be padding)
     # return the actual offset the component type was found at
     # actual offset <= offset
     # int -> (int, DataType) | None
     def get_component_type_containing_offset(self, offset):
-        _offset = 0 # the offset to the start of the current member in focus
-        for memtype in self.membertypes:
+        for _offset, memtype in self.get_membertype_offsets_with_padding():
             if _offset <= offset < _offset + memtype.size:
                 return DataTypeRecursiveDescent.DescentRecord(
                     DataTypeRecursiveDescent.Relationship.STRUCT_MEMBER,
                     _offset,
                     memtype
                 )
-            _offset += memtype.size
         return None
 
     def __eq__(self, other):
-        return self.rough_match(other) and self.membertypes == other.membertypes
+        return self.rough_match(other) and self.membertype_offsets == other.membertype_offsets
 
     def __str__(self):
         s = "<STRUCT "
         if self.name is not None:
             s += self.name + " "
 
-        s += "membertypes={} ".format(len(self.membertypes))
+        s += "membertypes={} ".format(len(self.get_membertypes()))
         s += "size={}>".format(self.size)
 
         return s
 
     def __hash__(self):
-        return hash((self.metatype, self.size, tuple(self.membertypes)))
+        return hash((self.metatype, self.size, tuple(self.membertype_offsets)))
 
 class DataTypeUnion(DataType):
     """
@@ -643,6 +724,11 @@ class DataTypeUnion(DataType):
 
     def composition_level(self):
         return 1 + max([ memtype.composition_level() for memtype in self.membertypes ])
+
+    # union contains non-deterministic primitive decomposition
+    # just return an "undefined" type equal to the size of the union
+    def flatten(self):
+        yield (0, DataTypeUndefined(size=self.size))
 
     # offset = the offset into this datatype to find match for
     # offset_to_subtype = the actual offset of the direct subtype in recursion

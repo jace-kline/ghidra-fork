@@ -110,6 +110,9 @@ class VarnodeCompare2(object):
 
         self.compare_code: int = self._compute_compare_code()
 
+        # if both left and right types are primitive, perform type lattice comparison
+        # TODO: implement this
+
     def _compute_compare_code(self) -> int:
         code = VarnodeCompare2Code.NO_OVERLAP
         

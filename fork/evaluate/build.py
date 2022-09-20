@@ -208,6 +208,10 @@ def build2(progdir, opt_lvl, debug=False, strip=False, decompiler="ghidra", rebu
     decomp_proginfo = targets[1].get_build_result()
     return (dwarf_proginfo, decomp_proginfo)
 
+def build_dwarf(progdir, rebuild=False):
+    targets = build(progdir, decompilers=[], rebuild=rebuild)
+    return targets[0].get_build_result()
+
 def test():
     picklepath_dwarf = "../progs/typecases_splitobjs/typecases_splitobjs_O0_debug.dwarf.pickle"
     picklepath_ghidra = "../progs/typecases_splitobjs/typecases_splitobjs_O0.ghidra.pickle"

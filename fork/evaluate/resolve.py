@@ -118,6 +118,11 @@ class ResolverDatabase(object):
     def try_add(self, key, record):
         return self.db.setdefault(key, record)
 
+    # if the key already exists, remove it. Otherwise, do nothing.
+    def remove(self, key):
+        if self.exists(key):
+            del self.db[key]
+
     def set_resolving(self, key):
         record = self.lookup(key)
         if record is not None:

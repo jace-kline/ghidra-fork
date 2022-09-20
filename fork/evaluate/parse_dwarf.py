@@ -233,18 +233,26 @@ class ParseDWARF:
 
         # struct type
         elif die.tag == "DW_TAG_structure_type":
+            memberdies = [ die for die in die.iter_children() if die.tag == "DW_TAG_member" ]
 
-            membertyperefs = [ self.get_DIE_key(get_DIE_attr_ref_DIE(die, "DW_AT_type")) for die in die.iter_children() if die.tag == "DW_TAG_member" ]
+            # returns (offset, membertype ref) for each struct member
+            membertyperef_offsets = [
+                (
+                    get_DIE_attr_value(die, "DW_AT_data_member_location"),
+                    self.get_DIE_key(get_DIE_attr_ref_DIE(die, "DW_AT_type"))
+                )
+                for die in memberdies
+            ]
             name = get_DIE_name(die)
             size = get_DIE_attr_value(die, "DW_AT_byte_size")
 
             stub = DataTypeStructStub(
                     name=name,
-                    membertyperefs=membertyperefs,
+                    membertyperef_offsets=membertyperef_offsets,
                     size=size
                 )
 
-            subrefs += membertyperefs
+            subrefs += [ ref for _, ref in membertyperef_offsets ]
 
         # union type
         elif die.tag == "DW_TAG_union_type":

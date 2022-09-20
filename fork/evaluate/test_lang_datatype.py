@@ -234,7 +234,22 @@ def test_recursive_eq():
     print(hash(dtype0))
     print(hash(dtype1))
     print(dtype0)
-    
+
+def test_flatten():
+    from build import build_dwarf
+    proginfo: ProgramInfo = build_dwarf("../progs/typecases", rebuild=True)
+
+    def print_flattened_vars(vars):
+        for var in vars:
+            dtype = var.get_datatype()
+            print(dtype)
+            # if dtype.get_metatype() == MetaType.STRUCT:
+            #     print(dtype.membertype_offsets)
+            for (off, primitive) in dtype.flatten():
+                print("\t{} -> {}".format(off, primitive))
+
+    for fn in proginfo.get_functions():
+        print_flattened_vars(fn.get_params() + fn.get_vars())
 
 if __name__ == "__main__":
-    test_recursive_eq()
+    test_flatten()

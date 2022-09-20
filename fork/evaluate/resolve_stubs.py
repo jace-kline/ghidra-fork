@@ -187,13 +187,6 @@ class DataTypeArrayStub(DataTypeStub):
         self.basetyperef = basetyperef
         self.dimensions = dimensions
 
-    def _compute_size(self, dims, basetype_size):
-        agg = 1
-        for dim in dims:
-            agg *= dim
-        agg *= basetype_size
-        return agg
-
     def resolve(self, record):
         assert_not_none(self, "basetyperef")
         assert_not_none(self, "dimensions")
@@ -202,7 +195,7 @@ class DataTypeArrayStub(DataTypeStub):
 
         basetype = record.db.resolve(self.basetyperef)
         if self.size is None:
-            self.size = self._compute_size(self.dimensions, basetype.size)
+            self.size = DataTypeArray.compute_size(self.dimensions, basetype.size)
 
         record.obj.basetype = basetype
         record.obj.dimensions = self.dimensions
@@ -210,26 +203,33 @@ class DataTypeArrayStub(DataTypeStub):
         return record.obj
 
 class DataTypeStructStub(DataTypeStub):
-    def __init__(self, name="", membertyperefs=[], size=None):
+    def __init__(self, name="", membertyperef_offsets=[], size=None):
         super(DataTypeStructStub, self).__init__(
             metatype=MetaType.STRUCT,
             size=size
         )
         self.name = name
-        self.membertyperefs=membertyperefs
+        # list of (offset, membertype ref) pairs
+        self.membertyperef_offsets=membertyperef_offsets
 
     def resolve(self, record):
+        offsets = [ offset for offset, _ in self.membertyperef_offsets ]
+        membertyperefs = [ ref for _, ref in self.membertyperef_offsets ]
 
         record.obj = DataTypeStruct()
-
-        membertypes = record.db.resolve_many(self.membertyperefs)
+        membertypes = record.db.resolve_many(membertyperefs)
+        membertype_offsets = list(zip(offsets, membertypes))
 
         if self.size is None:
-            self.size = sum([ subtype.size for subtype in membertypes ])
+            # get last member's offset, then add then size of that member's type
+            offset, memtype = membertype_offsets[-1]
+            size = offset + memtype.get_size()
+            end_padding = size % DataTypeStruct.ALIGN_SIZE
+            self.size = size + end_padding
 
         # correct the fields after recursion occurs
         record.obj.name = self.name
-        record.obj.membertypes = membertypes
+        record.obj.membertype_offsets = membertype_offsets
         record.obj.size = self.size
         return record.obj
 

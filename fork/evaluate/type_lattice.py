@@ -4,6 +4,8 @@ from lang_datatype import *
 
 # The interface to implement if you want to be the "item type" that is stored within a lattice
 # Each item must know how to construct its parent and its children
+# Each item must be comparable to another
+# Each item must be constructable from a DataType object
 class LatticeItemType(object):
     def parent(self) -> Union['LatticeItemType', None]:
         pass
@@ -12,6 +14,10 @@ class LatticeItemType(object):
         pass
 
     def __eq__(self) -> bool:
+        pass
+
+    @staticmethod
+    def from_datatype(dtype: DataType) -> Union['LatticeItemType', None]:
         pass
 
 # Wraps the LatticeItemType object and exposes higher-level methods for traversal, etc.
@@ -54,7 +60,7 @@ class LatticeNode(object):
 
     # the paths from the common ancestor node to self and other
     # returns None if no common ancestor exists
-    def common_ancestor_paths(self, other: 'LatticeNode') -> Union[Tuple['LatticeNode', 'LatticeNode'], None]:
+    def common_ancestor_paths(self, other: 'LatticeNode') -> Union[Tuple[List['LatticeNode'], List['LatticeNode']], None]:
         self_path = []
         for node in self.path_to_root():
             self_path.append(node)
@@ -66,7 +72,7 @@ class LatticeNode(object):
                 # found common ancestor?
                 if node == othernode:
                     # reverse the paths such that the common ancestor is the 0th element
-                    return ( reversed(self_path), reversed(other_path) )
+                    return ( list(reversed(self_path)), list(reversed(other_path)) )
         # fall through -> no common ancestor
         return None
 
@@ -82,6 +88,11 @@ class LatticeNode(object):
 
     def __repr__(self) -> str:
         return self.__str__()
+
+    @staticmethod
+    def from_datatype(itemtype: type, dtype: DataType) -> Union['LatticeNode', None]:
+        item: Union[itemtype, None] = itemtype.from_datatype(dtype)
+        return None if item is None else LatticeNode(item)
 
 # Implements the LatticeItemType interface
 @unique
@@ -121,7 +132,7 @@ class Ariste_NodeType(Enum):
 
     # uses a type's metatype to determine which nodetype to map to
     @staticmethod
-    def from_DataType(dtype: DataType) -> 'Ariste_NodeType':
+    def from_datatype(dtype: DataType) -> Union['Ariste_NodeType', None]:
         _cls = Ariste_NodeType
         _metatype = dtype.get_metatype()
 
@@ -189,13 +200,17 @@ class Ariste_LatticeItem(object):
 
     # construct a lattice item from a DataType object
     @staticmethod
-    def from_DataType(dtype: DataType) -> Union['Ariste_LatticeItem', None]:
-        _nodetype = Ariste_NodeType.from_DataType(dtype)
+    def from_datatype(dtype: DataType) -> Union['Ariste_LatticeItem', None]:
+        _nodetype = Ariste_NodeType.from_datatype(dtype)
         if _nodetype is None:
             return None
         
         _bytes = dtype.get_size()
         bits = None if _bytes is None or _bytes == 0 else _bytes * 8
+
+        if bits is None:
+            return None
+        
         return Ariste_LatticeItem(_nodetype, bits=bits)
 
 
@@ -203,5 +218,5 @@ if __name__ == "__main__":
     float80 = LatticeNode(Ariste_LatticeItem(Ariste_NodeType.FLOAT, bits=80))
     uint16 = LatticeNode(Ariste_LatticeItem(Ariste_NodeType.UINT, bits=16))
 
-    print(float80.common_parent(uint16))
+    print(float80.common_ancestor_paths(uint16))
 
