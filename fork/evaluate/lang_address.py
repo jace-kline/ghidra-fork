@@ -269,12 +269,16 @@ class AbsoluteAddress(Address):
         return hash((self.addrtype, self.addr))
 
 class RegisterAddress(Address):
-    def __init__(self, register):
+    def __init__(self, register, byte_offset=0):
         super(RegisterAddress, self).__init__(addrtype=AddressType.REGISTER)
         self.register = register
+        self.byte_offset = byte_offset # the byte offset "within" the register storage
 
     def get_region(self):
         return AddressRegionRegister(self)
+
+    def add_const(self, n):
+        return RegisterAddress(self.register, byte_offset=self.byte_offset + n)
 
     def __eq__(self, addr):
         return self.register == addr.register
@@ -283,7 +287,7 @@ class RegisterAddress(Address):
         return "<{}:{}>".format(AddressType.to_string(self.addrtype), self.register)
 
     def __hash__(self):
-        return hash((self.addrtype, self.register))
+        return hash((self.addrtype, self.register, self.byte_offset))
 
 class RegisterOffsetAddress(Address):
     def __init__(self, register, offset):

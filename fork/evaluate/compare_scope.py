@@ -39,6 +39,9 @@ class ConstPCVariableSetSnapshot(object):
     def get_address_space(self, region: AddressRegion) -> 'Union[ConstPCAddressSpace, None]':
         return self.spaces.get(region, None)
 
+    def get_bytes(self) -> int:
+        return sum([ varnode.get_size() for varnode in self.varnodes ])
+
     def __hash__(self) -> int:
         return hash(tuple(self.varnodes))
 
@@ -92,6 +95,9 @@ class ConstPCVariableSetSnapshotCompare2(object):
     def bytes_overlapped(self) -> int:
         return sum([ cmp.bytes_overlapped() for cmp in self.space_comparison_map.values() ])
 
+    def get_bytes(self) -> int:
+        return self.left.get_bytes()
+
     def get_space_comparison(self, region: AddressRegion) -> 'Union[ConstPCAddressSpaceCompare2, None]':
         return self.space_comparison_map.get(region, None)
 
@@ -108,7 +114,11 @@ class ConstPCVariableSetSnapshotCompare2(object):
         return hash((self.left, self.right))
 
     def show_summary(self, indent=0) -> str:
-        s = ""
+        s = "BYTES OVERLAPPED = {}\nTOTAL BYTES = {}\nBYTE RECOVERY % = {}%\n".format(
+            self.bytes_overlapped(),
+            self.get_bytes(),
+            0 if self.get_bytes() == 0 else 100.0 * (self.bytes_overlapped() / self.get_bytes())
+        )
         for record in self.varnode_compare_record_map.values():
             s += record.show_summary(indent=0)
         s += "\n"

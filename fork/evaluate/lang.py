@@ -1,6 +1,7 @@
 ## Common variable, function, and datatype representations for DWARF/Ghidra
 from lang_address import *
 from lang_datatype import *
+from lang_variable import *
 
 # hold the results of a translation into this common language
 # from either DWARF info or Ghidra decompilation
@@ -103,84 +104,3 @@ class Function(object):
 
     def __hash__(self):
         return hash((self.startaddr, self.endaddr, self.rettype, tuple(self.params), tuple(self.vars), self.variadic))
-
-class Variable(object):
-    def __init__(self, name=None, dtype=None, liveranges=None, param=False, function=None):
-        """
-        name: str
-            The variable's name
-        dtype: DataType
-            The data type of the variable
-        liveranges: [AddressLiveRange]
-            The location this variable occupies throughout its lifetime.
-            In unoptimized compilation, this usually will include only one address.
-            However, live ranges and register splitting could be used in optimized compilation.
-        param: bool
-            Is this variable a parameter?
-        function: Function | None
-            The parent function, or None if global.
-        """
-        self.name = name
-        self.dtype = dtype
-        self.liveranges = sorted(liveranges) if bool(liveranges) else []
-        self.param = param
-        self.function = function
-
-        if self.liveranges:
-            self._verify_no_pc_overlaps()
-
-    # No overlaps in PC ranges should be permitted
-    def _verify_no_pc_overlaps(self):
-        for i in range(0, len(self.liveranges) - 1):
-            assert(self.liveranges[i].endpc <= self.liveranges[i + 1].startpc)
-
-    def is_param(self):
-        """ Is this variable a parameter? """
-        return self.param
-
-    def is_global(self):
-        """ Is this variable a global variable? """
-        return self.function is None
-
-    def get_name(self):
-        return self.name
-
-    def get_datatype(self):
-        return self.dtype
-
-    # returns AddressLiveRangeSet
-    def get_liveranges(self):
-        return self.liveranges
-
-    def get_parent_function(self):
-        return self.function
-
-    def get_liverange_at_pc(self, pc):
-        for liverange in self.liveranges:
-            if liverange.get_pc_range().contains(pc):
-                return liverange
-        return None
-
-    # Given a PC Address, find the Address of the AddressLiveRange associated with the containing PC range (or None).
-    def get_address_at_pc(self, pc):
-        liverange = self.get_liverange_at_pc(pc)
-        return liverange.get_addr() if liverange else None
-
-    # for the given PC, find the Address where this Variable resides (or None).
-    def get_address_at_pc(self, pc):
-        if self.is_global():
-            return self.liveranges[0].get_addr()
-        
-        for liverange in self.liveranges:
-            if liverange.get_pc_range().contains(pc):
-                return liverange.get_addr()
-
-        return None
-
-    def __str__(self):
-        lbl = "PARAM" if self.is_param() else "VAR"
-        return "<{} {} :: {} @ {}>".format(lbl, self.name, self.dtype, self.liveranges)
-
-    def __hash__(self):
-        return hash((self.dtype, tuple(self.liveranges), self.param))
-

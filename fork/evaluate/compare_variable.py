@@ -2,63 +2,9 @@ from typing import List, Tuple, Union
 from lang import *
 from lang_address import *
 from lang_datatype import *
+from lang_variable import *
 from compare_datatype import *
 from util import *
-
-# a Variable associated with a particular Address
-# could be useful to work with a Variable as it is instantiated
-# at a given PC, or an unoptimized variable with a single location
-class Varnode(object):
-    def __init__(self, var: Variable, addr: Address):
-        self.var = var
-        self.addr = addr
-
-    def get_var(self) -> Variable:
-        return self.var
-
-    def get_addr(self) -> Address:
-        return self.addr
-
-    def get_addr_range(self) -> AddressRange:
-        return AddressRange(self.addr, size=self.get_size())
-
-    def get_datatype(self) -> DataType:
-        return self.var.get_datatype()
-
-    def get_size(self) -> int:
-        return self.get_datatype().get_size()
-
-    # builds a VarnodeCompareRecord|None from the infomation contained in the
-    # given variable. Only builds if the variable is associated with exactly one address.
-    @staticmethod
-    def from_single_location_variable(var: Variable) -> 'Union[Varnode, None]':
-        liveranges = var.get_liveranges()
-        return Varnode(var, liveranges[0].get_addr()) if liveranges and len(liveranges) == 1 else None
-
-    @staticmethod
-    def from_variable_at_pc(var: Variable, pc: AbsoluteAddress) -> 'Union[Varnode, None]':
-        addr = var.get_address_at_pc(pc)
-        return Varnode(var, addr) if addr is not None else None
-
-    @staticmethod
-    def from_unoptimized_variable(var: Variable) -> 'Union[Varnode, None]':
-        varnode = Varnode.from_single_location_variable(var)
-        return varnode if varnode is not None \
-            else Varnode.from_variable_at_pc(var, var.get_parent_function().get_start_pc())
-
-    def __hash__(self) -> int:
-        return hash((self.var, self.addr))
-
-    def __str__(self) -> str:
-        return "<Varnode name={} address={} datatype={}>".format(
-            self.var.get_name() if self.var.get_name() else "?",
-            self.addr,
-            self.get_datatype()
-        )
-
-    def __repr__(self) -> str:
-        return str(self)
-
 
 class VarnodeCompare2Code(object):
     NO_OVERLAP = 0 # variables do not overlap at all

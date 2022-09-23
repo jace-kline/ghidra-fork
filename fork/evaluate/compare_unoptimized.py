@@ -4,6 +4,7 @@ from collections import OrderedDict
 from lang import *
 from lang_address import *
 from lang_datatype import *
+from lang_variable import *
 from util import *
 
 from compare_variable import *
@@ -18,7 +19,7 @@ class UnoptimizedProgramInfo(object):
             = self._make_unoptimized_functions()
 
         # the set of global variables (converted to Varnodes)
-        self.globals_set: ConstPCVariableSetSnapshot = self._make_unoptimized_globals_set()
+        self.globals: List[Varnode] = self._make_unoptimized_globals()
 
     def _make_unoptimized_functions(self) -> 'OrderedDict[AbsoluteAddress, UnoptimizedFunction]':
         _map = {}
@@ -28,13 +29,19 @@ class UnoptimizedProgramInfo(object):
         # sort the dict by key (Address) & return
         return ordered_dict_by_key(_map)
 
-    def _make_unoptimized_globals_set(self) -> ConstPCVariableSetSnapshot:
-        varnodes = [ 
-            varnode for varnode in 
-            [ Varnode.from_single_location_variable(var) for var in self.proginfo.get_globals() ]
-            if varnode is not None
-        ]
-        return ConstPCVariableSetSnapshot(varnodes)
+    def _make_unoptimized_globals(self) -> List[Varnode]:
+        # varnodes = [ 
+        #     varnode for varnode in 
+        #     [ Varnode.from_single_location_variable(var) for var in self.proginfo.get_globals() ]
+        #     if varnode is not None
+        # ]
+        varnodes = []
+        for var in self.get_proginfo().get_globals():
+            vnodes = var.get_varnodes()
+            if(len(vnodes) == 1):
+                varnodes.append(vnodes[0])
+        
+        return varnodes
 
     def get_proginfo(self) -> ProgramInfo:
         return self.proginfo
@@ -42,8 +49,8 @@ class UnoptimizedProgramInfo(object):
     def get_unoptimized_functions(self) -> 'OrderedDict[AbsoluteAddress, UnoptimizedFunction]':
         return self.unoptimized_functions
 
-    def get_unoptimized_globals_set(self) -> ConstPCVariableSetSnapshot:
-        return self.globals_set
+    def get_unoptimized_globals(self) -> List[Varnode]:
+        return self.globals
 
     def __hash__(self) -> int:
         return hash(self.proginfo)
@@ -58,8 +65,8 @@ class UnoptimizedProgramInfoCompare2(object):
 
         # compare global variable sets
         self.globals_comparison = ConstPCVariableSetSnapshotCompare2(
-            self.left.get_unoptimized_globals_set(),
-            self.right.get_unoptimized_globals_set()
+            ConstPCVariableSetSnapshot(self.left.get_unoptimized_globals()),
+            ConstPCVariableSetSnapshot(self.right.get_unoptimized_globals())
         )
 
         # store dict of UnoptimizedFunction -> UnoptimizedFunctionCompareRecord
@@ -148,21 +155,21 @@ class UnoptimizedFunction(object):
     def get_start_pc(self) -> Address:
         return self.function.get_start_pc()
 
+    def _get_vars_varnodes(self, vars: List[Variable]) -> List[Varnode]:
+        varnodes = []
+        for var in vars:
+            vnodes = var.get_varnodes()
+            if(len(vnodes) >= 1):
+                varnodes.append(vnodes[0])
+        return varnodes
+
     # get the varnodes representing parameters
     def get_param_varnodes(self) -> List[Varnode]:
-        return [
-            varnode for varnode in 
-            [ Varnode.from_unoptimized_variable(var) for var in self.function.get_params() ]
-            if varnode is not None 
-        ]
+        return self._get_vars_varnodes(self.function.get_params())
 
     # get the varnodes representing local variables within function
     def get_variable_varnodes(self) -> List[Varnode]:
-        return [
-            varnode for varnode in
-            [ Varnode.from_unoptimized_variable(var) for var in self.function.get_vars() ]
-            if varnode is not None
-        ]
+        return self._get_vars_varnodes(self.function.get_vars())
 
     def get_param_varnodes_set(self) -> ConstPCVariableSetSnapshot:
         return ConstPCVariableSetSnapshot(self.get_param_varnodes())
@@ -173,6 +180,12 @@ class UnoptimizedFunction(object):
     # get all varnodes tied to the function (params + locals)
     def get_varnodes(self) -> List[Varnode]:
         return self.get_param_varnodes() + self.get_variable_varnodes()
+
+    def get_flattened_varnodes(self) -> List[Varnode]:
+        flattened = []
+        for varnode in self.get_varnodes():
+            flattened += varnode.flatten()
+        return flattened
 
     def __hash__(self) -> int:
         return hash(self.function)
@@ -199,6 +212,7 @@ class UnoptimizedFunctionCompare2(object):
         self.rettype_compare2: Union[DataTypeCompare2, None] = None
         self.param_set_compare2: Union[ConstPCVariableSetSnapshotCompare2, None] = None
         self.variable_set_compare2: Union[ConstPCVariableSetSnapshotCompare2, None] = None
+        self.primitives_set_compare2: Union[ConstPCVariableSetSnapshotCompare2, None] = None
 
         # only if start PC of functions is equal do we compare the return types & variables/params
         if self.pc_range_start_aligned():
@@ -209,15 +223,19 @@ class UnoptimizedFunctionCompare2(object):
         self.rettype_compare2 = DataTypeCompare2(self.left.get_function().get_return_type(), self.right.get_function().get_return_type(), 0)
 
         # fetch the left & right param/variable sets
-        left_param_set = self.left.get_param_varnodes_set()
-        left_variable_set = self.left.get_variable_varnodes_set()
+        left_param_set = ConstPCVariableSetSnapshot(self.left.get_param_varnodes())
+        left_variable_set = ConstPCVariableSetSnapshot(self.left.get_variable_varnodes())
 
-        right_param_set = self.right.get_param_varnodes_set()
-        right_variable_set = self.right.get_variable_varnodes_set()
+        right_param_set = ConstPCVariableSetSnapshot(self.right.get_param_varnodes())
+        right_variable_set = ConstPCVariableSetSnapshot(self.right.get_variable_varnodes())
+
+        left_primitives_set = ConstPCVariableSetSnapshot(self.left.get_flattened_varnodes())
+        right_primitives_set = ConstPCVariableSetSnapshot(self.right.get_flattened_varnodes())
 
         # compare the parameter/variable sets and store
         self.param_set_compare2 = ConstPCVariableSetSnapshotCompare2(left_param_set, right_param_set)
         self.variable_set_compare2 = ConstPCVariableSetSnapshotCompare2(left_variable_set, right_variable_set)
+        self.primitives_set_compare2 = ConstPCVariableSetSnapshotCompare2(left_primitives_set, right_primitives_set)
 
 
     def get_left(self) -> UnoptimizedFunction:
@@ -241,6 +259,12 @@ class UnoptimizedFunctionCompare2(object):
     def pc_range_bytes_overlapped(self) -> int:
         return self.pc_range_overlap.bytes_overlapped()
 
+    def get_varnode_bytes_overlapped(self) -> int:
+        return self.primitives_set_compare2.bytes_overlapped()
+
+    def get_varnode_bytes(self) -> int:
+        return self.primitives_set_compare2.get_left().get_bytes()
+
     def return_type_match(self) -> bool:
         return self.rettype_compare2.top_level_match() if self.rettype_compare2 is not None else False
 
@@ -252,6 +276,9 @@ class UnoptimizedFunctionCompare2(object):
 
     def get_variable_set_comparison(self) -> Union[ConstPCVariableSetSnapshotCompare2, None]:
         return self.variable_set_compare2
+
+    def get_primitive_flattened_comparison(self) -> Union[ConstPCVariableSetSnapshotCompare2, None]:
+        return self.primitives_set_compare2
 
     def flip(self) -> 'UnoptimizedFunctionCompare2':
         return __class__(self.right, self.left)
@@ -275,6 +302,9 @@ class UnoptimizedFunctionCompare2(object):
 
             s += "Local Variables:\n"
             s += self.variable_set_compare2.show_summary(indent=1)
+
+            s += "Flattened (Primitive) Parameters & Variables:\n"
+            s += self.primitives_set_compare2.show_summary(indent=1)
         else:
             s = "NO FUNCTION MATCH\n"
         
