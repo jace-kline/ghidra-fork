@@ -30,6 +30,9 @@ class ProgramInfoStub(ResolverDatabase.ResolverStub):
     def __repr__(self):
         return str(self)
 
+    def __hash__(self):
+        return hash((tuple(self.globalrefs), tuple(self.functionrefs)))
+
 class FunctionStub(ResolverDatabase.ResolverStub):
     def __init__(self, name=None, startaddr=None, endaddr=None, rettyperef=None, paramrefs=[], varrefs=[], variadic=False):
         self.name = name
@@ -66,6 +69,9 @@ class FunctionStub(ResolverDatabase.ResolverStub):
     def __repr__(self):
         return str(self)
 
+    def __hash__(self):
+        return hash((self.name, self.startaddr, self.endaddr, self.rettyperef, tuple(self.paramrefs), tuple(self.varrefs), self.variadic))
+
 class VariableStub(ResolverDatabase.ResolverStub):
     def __init__(self, name=None, dtyperef=None, liveranges=[], param=False, functionref=None):
         self.name = name
@@ -99,10 +105,16 @@ class VariableStub(ResolverDatabase.ResolverStub):
     def __repr__(self):
         return str(self)
 
+    def __hash__(self):
+        return hash((self.name, self.dtyperef, tuple(self.liveranges), self.param))
+
 class DataTypeStub(ResolverDatabase.ResolverStub):
     def __init__(self, metatype=MetaType.VOID, size=None):
         self.metatype = metatype
         self.size = size
+
+    def __hash__(self):
+        return hash((self.metatype, self.size))
 
 class DataTypeFunctionPrototypeStub(DataTypeStub):
     def __init__(self, rettyperef=None, paramtyperefs=[], variadic=False):
@@ -133,6 +145,9 @@ class DataTypeFunctionPrototypeStub(DataTypeStub):
     def __repr__(self):
         return str(self)
 
+    def __hash__(self):
+        return hash((self.metatype, self.size, self.rettyperef, tuple(self.paramtyperefs), self.variadic))
+
 class DataTypeIntStub(DataTypeStub):
     def __init__(self, size=None, signed=True):
         super(DataTypeIntStub, self).__init__(
@@ -145,6 +160,9 @@ class DataTypeIntStub(DataTypeStub):
         assert_not_none(self, "size")
 
         return DataTypeInt(size=self.size, signed=self.signed)
+
+    def __hash__(self):
+        return hash((self.metatype, self.size, self.signed))
 
 class DataTypeFloatStub(DataTypeStub):
     def __init__(self, size=None):
@@ -208,6 +226,9 @@ class DataTypePointerStub(DataTypeStub):
     def __repr__(self):
         return str(self)
 
+    def __hash__(self):
+        return hash((self.metatype, self.size, self.basetyperef))
+
 class DataTypeArrayStub(DataTypeStub):
     def __init__(self, basetyperef=None, dimensions=None):
         super(DataTypeArrayStub, self).__init__(
@@ -237,6 +258,9 @@ class DataTypeArrayStub(DataTypeStub):
 
     def __repr__(self):
         return str(self)
+
+    def __hash__(self):
+        return hash((self.metatype, self.size, self.basetyperef, self.dimensions))
 
 class DataTypeStructStub(DataTypeStub):
     def __init__(self, name="", membertyperef_offsets=[], size=None):
@@ -275,6 +299,9 @@ class DataTypeStructStub(DataTypeStub):
     def __repr__(self):
         return str(self)
 
+    def __hash__(self):
+        return hash((self.metatype, self.size, tuple(self.membertyperef_offsets)))
+
 class DataTypeUnionStub(DataTypeStub):
     def __init__(self, name="", membertyperefs=[], size=None):
         super(DataTypeUnionStub, self).__init__(
@@ -303,6 +330,9 @@ class DataTypeUnionStub(DataTypeStub):
     def __repr__(self):
         return str(self)
 
+    def __hash__(self):
+        return hash((self.metatype, self.size, tuple(self.membertyperefs)))
+
 class DataTypeTypedefStub(DataTypeStub):
     def __init__(self, name="", basetyperef=None):
         super(DataTypeTypedefStub, self).__init__(
@@ -321,6 +351,9 @@ class DataTypeTypedefStub(DataTypeStub):
 
     def __repr__(self):
         return str(self)
+
+    def __hash__(self):
+        return hash((self.metatype, self.size, self.basetyperef))
         
 class DataTypeEnumStub(DataTypeStub):
     def __init__(self, basetyperef):
@@ -342,6 +375,9 @@ class DataTypeEnumStub(DataTypeStub):
     def __repr__(self):
         return str(self)
 
+    def __hash__(self):
+        return hash((self.metatype, self.size, self.basetyperef))
+
 
 class DataTypeQualifierStub(DataTypeStub):
     def __init__(self, basetyperef=None):
@@ -362,4 +398,7 @@ class DataTypeQualifierStub(DataTypeStub):
 
     def __repr__(self):
         return str(self)
+
+    def __hash__(self):
+        return hash((self.metatype, self.size, self.basetyperef))
 

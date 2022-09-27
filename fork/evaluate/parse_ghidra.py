@@ -17,6 +17,7 @@ class ParseGhidra(object):
     def __init__(self):
         self.curr = getCurrentProgram()
         self.monitor = getMonitor()
+        self.dtype_manager = self.curr.getDataTypeManager()
 
         # utility class instantiation
         self.util = GhidraUtil(self.curr, self.monitor)
@@ -30,7 +31,7 @@ class ParseGhidra(object):
     # This maps an object to a unique identifier for it.
     # We are using the address of the object, obtained via the id() function.
     def to_key(self, obj):
-        return id(obj)
+        return hash(obj)
 
     # place a ghidra object in the objmap
     # referenced by its Python object address
@@ -235,27 +236,73 @@ class ParseGhidra(object):
 
         elif metatype == MetaType.STRUCT:
             name = dtype.getName()
-            membertype_offsets = ( (mem.getOffset(), mem.getDataType()) for mem in dtype.getComponents() )
-            membertyperef_offsets = [ (offset, self.register_obj(memtype)) for offset, memtype in membertype_offsets ]
+            # membertype_offsets = ( (mem.getOffset(), mem.getDataType()) for mem in dtype.getComponents() )
+            # membertyperef_offsets = [ (offset, self.register_obj(memtype)) for offset, memtype in membertype_offsets ]
+            membertyperef_offsets = []
+            for mem in dtype.getComponents():
+                offset = mem.getOffset()
+                _dtype = mem.getDataType()
+                _dtype_size = _dtype.getLength()
+                _dtype_metatype = ParseGhidra.datatype2metatype(_dtype)
+                key = self.to_key(_dtype)
+
+                # if the member points back to same struct type...
+                if key == ref:
+                    ptrstub = DataTypePointerStub(
+                        basetyperef=ref,
+                        size=_dtype_size
+                    )
+                    key = self.make_stub(ptrstub)
+                    self.objmap[key] = 1
+                    membertyperef_offsets.append((offset, key))
+
+                # if undefined member of size 1, assume a padding byte -> skip
+                elif _dtype_metatype == MetaType.UNDEFINED and _dtype_size == 1:
+                    pass
+                
+                # otherwise, register the member datatype
+                else:
+                    key = self.register_obj(_dtype)
+                    subtyperefs.append(key)
+                    membertyperef_offsets.append((offset, key))
 
             stub = DataTypeStructStub(
                 name=name,
                 membertyperef_offsets=membertyperef_offsets,
                 size=size
             )
-            subtyperefs += [ ref for _, ref in membertyperef_offsets ]
+            # subtyperefs += [ ref for _, ref in membertyperef_offsets ]
 
         elif metatype == MetaType.UNION:
             name = dtype.getName()
-            membertypes = ( mem.getDataType() for mem in dtype.getComponents() )
-            membertyperefs = [ self.register_obj(memtype) for memtype in membertypes ]
+            # membertypes = ( mem.getDataType() for mem in dtype.getComponents() )
+            # membertyperefs = [ self.register_obj(memtype) for memtype in membertypes ]
+
+            membertyperefs = []
+            for mem in dtype.getComponents():
+                _dtype = mem.getDataType()
+                key = self.to_key(_dtype)
+
+                # if the member points back to same struct type...
+                if key == ref:
+                    ptrstub = DataTypePointerStub(
+                        basetyperef=ref,
+                        size=_dtype.getLength()
+                    )
+                    key = self.make_stub(ptrstub)
+                    self.objmap[key] = 1
+                else:
+                    key = self.register_obj(_dtype)
+                    subtyperefs.append(key)
+                
+                membertyperefs.append((offset, key))
 
             stub = DataTypeUnionStub(
                 name=name,
                 membertyperefs=membertyperefs,
                 size=size
             )
-            subtyperefs += membertyperefs
+            # subtyperefs += membertyperefs
 
         elif metatype == MetaType.UNDEFINED:
             stub = DataTypeUndefinedStub(size=size)
