@@ -114,14 +114,42 @@ class UnoptimizedProgramInfoCompare2(object):
     def get_function_compare_record_map(self) -> 'dict[UnoptimizedFunction, UnoptimizedFunctionCompareRecord]':
         return self.unoptimized_function_compare_map
 
+    def get_function_compare_records(self) -> List['UnoptimizedFunctionCompareRecord']:
+        return self.unoptimized_function_compare_map.values()
+
+    def get_varnode_compare_records(self) -> List[VarnodeCompareRecord]:
+        gbl_records = self.globals_comparison.get_varnode_compare_records()
+        fn_varnode_records = sum( [ fn_cmp.get_varnode_compare_records() for fn_cmp in self.get_function_compare_records() ], [])
+        return gbl_records + fn_varnode_records
+
+    def get_primitive_varnode_compare_records(self) -> List[VarnodeCompareRecord]:
+        gbl_records = self.globals_comparison.get_flattened_comparison().get_varnode_compare_records()
+        fn_varnode_records = sum( [ fn_cmp.get_primitive_varnode_compare_records() for fn_cmp in self.get_function_compare_records() ], [])
+        return gbl_records + fn_varnode_records
+
     def get_globals_comparison(self) -> ConstPCVariableSetSnapshotCompare2:
         return self.globals_comparison
+
+    def get_primitive_globals_comparison(self) -> ConstPCVariableSetSnapshotCompare2:
+        return self.globals_comparison.get_flattened_comparison()
 
     def get_global_compare_record(self, global_varnode: Varnode) -> 'Union[VarnodeCompareRecord, None]':
         return self.globals_comparison.get_varnode_compare_record(global_varnode)
 
     def get_global_compare_record_map(self) -> 'dict[Varnode, VarnodeCompareRecord]':
         return self.globals_comparison.get_varnode_compare_record_map()
+
+    def get_bytes(self) -> int:
+        return sum([ varnode_record.get_varnode().get_size() for varnode_record in self.get_varnode_compare_records() ])
+
+    def bytes_overlapped(self) -> int:
+        return self.globals_comparison.bytes_overlapped() + sum([ cmp.varnode_bytes_overlapped() for cmp in self.get_function_compare_records() ])
+
+    def get_varnode_records_matched_level(self, level: int) -> List[VarnodeCompareRecord]:
+        return [ record for record in self.get_varnode_compare_records() if record.get_compare_level() >= level ]
+
+    def get_primitive_varnode_records_matched_level(self, level: int) -> List[VarnodeCompareRecord]:
+        return [ record for record in self.get_primitive_varnode_compare_records() if record.get_compare_level() >= level ]
 
     # at the top level, we may want to "flip" the comparison
     def flip(self) -> 'UnoptimizedProgramInfoCompare2':
@@ -131,8 +159,53 @@ class UnoptimizedProgramInfoCompare2(object):
         return hash((self.left, self.right))
 
     def show_summary(self, indent=0) -> str:
-        s = "----------GLOBAL COMPARISONS----------\n"
+        s = "--------------STATS-----------------\n"
+
+        s += "total bytes = {}\n".format(self.get_bytes())
+        s += "bytes recovered = {}\n".format(self.bytes_overlapped())
+        # s += "byte recovery % = {}%\n\n".format(self.byte_recovery_fraction())
+
+        s += "number of variables = {}\n".format(len(self.get_varnode_compare_records()))
+        level = VarnodeCompareLevel.SUBSET
+        s += "variables matched @ or above {} = {}\n".format(
+            VarnodeCompareLevel.to_string(level),
+            len(self.get_varnode_records_matched_level(level))
+        )
+        level = VarnodeCompareLevel.ALIGNED
+        s += "variables matched @ or above {} = {}\n".format(
+            VarnodeCompareLevel.to_string(level),
+            len(self.get_varnode_records_matched_level(level))
+        )
+        level = VarnodeCompareLevel.MATCH
+        s += "variables matched @ or above {} = {}\n".format(
+            VarnodeCompareLevel.to_string(level),
+            len(self.get_varnode_records_matched_level(level))
+        )
+        # s += "variable recovery % = {}%\n\n".format(0)
+
+        s += "number of primitive variables = {}\n".format(len(self.get_primitive_varnode_compare_records()))
+        level = VarnodeCompareLevel.ALIGNED
+        s += "primitive variables matched @ or above {} = {}\n".format(
+            VarnodeCompareLevel.to_string(level),
+            len(self.get_primitive_varnode_records_matched_level(level))
+        )
+        level = VarnodeCompareLevel.MATCH
+        s += "primitive variables matched @ or above {} = {}\n".format(
+            VarnodeCompareLevel.to_string(level),
+            len(self.get_primitive_varnode_records_matched_level(level))
+        )
+        # s += "primitive recovery % = {}%\n\n".format(0)
+
+        s += "total functions = {}\n".format(len(self.unoptimized_function_compare_map))
+        s += "functions found = {}\n".format(len([ fn for fn in self.unoptimized_function_compare_map.values() if fn is not None ]))
+        # s += "function recovery % = {}%\n".format(0)
+
+        s += "\n----------GLOBAL COMPARISONS----------\n"
+        s += "Globals:\n"
         s += self.globals_comparison.show_summary(indent=0)
+
+        s += "Globals (flattened to primitives):\n"
+        s += self.get_primitive_globals_comparison().show_summary(indent=0)
 
         s += "\n----------FUNCTION COMPARISONS----------\n"
         for record in self.unoptimized_function_compare_map.values():
@@ -182,10 +255,7 @@ class UnoptimizedFunction(object):
         return self.get_param_varnodes() + self.get_variable_varnodes()
 
     def get_flattened_varnodes(self) -> List[Varnode]:
-        flattened = []
-        for varnode in self.get_varnodes():
-            flattened += varnode.flatten()
-        return flattened
+        return sum([ varnode.flatten() for varnode in self.get_varnodes() ], [])
 
     def __hash__(self) -> int:
         return hash(self.function)
@@ -229,13 +299,9 @@ class UnoptimizedFunctionCompare2(object):
         right_param_set = ConstPCVariableSetSnapshot(self.right.get_param_varnodes())
         right_variable_set = ConstPCVariableSetSnapshot(self.right.get_variable_varnodes())
 
-        left_primitives_set = ConstPCVariableSetSnapshot(self.left.get_flattened_varnodes())
-        right_primitives_set = ConstPCVariableSetSnapshot(self.right.get_flattened_varnodes())
-
         # compare the parameter/variable sets and store
         self.param_set_compare2 = ConstPCVariableSetSnapshotCompare2(left_param_set, right_param_set)
         self.variable_set_compare2 = ConstPCVariableSetSnapshotCompare2(left_variable_set, right_variable_set)
-        self.primitives_set_compare2 = ConstPCVariableSetSnapshotCompare2(left_primitives_set, right_primitives_set)
 
 
     def get_left(self) -> UnoptimizedFunction:
@@ -260,10 +326,30 @@ class UnoptimizedFunctionCompare2(object):
         return self.pc_range_overlap.bytes_overlapped()
 
     def get_varnode_bytes_overlapped(self) -> int:
-        return self.primitives_set_compare2.bytes_overlapped()
+        return self.get_primitive_variable_varnode_set_comparison().bytes_overlapped()
 
     def get_varnode_bytes(self) -> int:
-        return self.primitives_set_compare2.get_left().get_bytes()
+        return self.get_primitive_variable_varnode_set_comparison().get_bytes()
+
+    def get_varnode_compare_records(self) -> List[VarnodeCompareRecord]:
+        return self.param_set_compare2.get_varnode_compare_records() + self.variable_set_compare2.get_varnode_compare_records()
+
+    def get_primitive_params_varnode_set_comparison(self) -> ConstPCVariableSetSnapshotCompare2:
+        return self.param_set_compare2.get_flattened_comparison()
+
+    def get_primitive_variable_varnode_set_comparison(self) -> ConstPCVariableSetSnapshotCompare2:
+        return self.variable_set_compare2.get_flattened_comparison()
+
+    # includes params + locals
+    def get_varnode_set_comparison(self) -> ConstPCVariableSetSnapshotCompare2:
+        return ConstPCVariableSetSnapshotCompare2(ConstPCVariableSetSnapshot(self.left.get_varnodes()), ConstPCVariableSetSnapshot(self.right.get_varnodes()))
+
+    # includes params + locals (flattened to primitives)
+    def get_primitive_varnode_set_comparison(self) -> ConstPCVariableSetSnapshotCompare2:
+        return self.get_varnode_set_comparison().get_flattened_comparison()
+
+    def get_primitive_varnode_compare_records(self) -> List[VarnodeCompareRecord]:
+        return self.get_primitive_varnode_set_comparison().get_varnode_compare_records()
 
     def return_type_match(self) -> bool:
         return self.rettype_compare2.top_level_match() if self.rettype_compare2 is not None else False
@@ -276,9 +362,6 @@ class UnoptimizedFunctionCompare2(object):
 
     def get_variable_set_comparison(self) -> Union[ConstPCVariableSetSnapshotCompare2, None]:
         return self.variable_set_compare2
-
-    def get_primitive_flattened_comparison(self) -> Union[ConstPCVariableSetSnapshotCompare2, None]:
-        return self.primitives_set_compare2
 
     def flip(self) -> 'UnoptimizedFunctionCompare2':
         return __class__(self.right, self.left)
@@ -304,7 +387,7 @@ class UnoptimizedFunctionCompare2(object):
             s += self.variable_set_compare2.show_summary(indent=1)
 
             s += "Flattened (Primitive) Parameters & Variables:\n"
-            s += self.primitives_set_compare2.show_summary(indent=1)
+            s += self.get_primitive_varnode_set_comparison().show_summary(indent=1)
         else:
             s = "NO FUNCTION MATCH\n"
         
@@ -329,6 +412,15 @@ class UnoptimizedFunctionCompareRecord(object):
 
     def get_comparison(self) -> Union[UnoptimizedFunctionCompare2, None]:
         return self.comparison
+
+    def varnode_bytes_overlapped(self) -> int:
+        return 0 if not self.is_comparison() else self.comparison.get_varnode_bytes_overlapped()
+
+    def get_varnode_compare_records(self) -> List[VarnodeCompareRecord]:
+        return [] if not self.is_comparison() else self.comparison.get_varnode_compare_records()
+
+    def get_primitive_varnode_compare_records(self) -> List[VarnodeCompareRecord]:
+        return [] if not self.is_comparison() else self.comparison.get_primitive_varnode_compare_records()
 
     def __hash__(self) -> int:
         return hash((self.unoptimized_function, self.comparison))

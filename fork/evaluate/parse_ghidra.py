@@ -133,6 +133,7 @@ class ParseGhidra(object):
 
         # insert this record
         self.db.make_record(ref, stub)
+        # self.make_stub(stub)
 
         # recurse on child components of this function
         for paramref in paramrefs:

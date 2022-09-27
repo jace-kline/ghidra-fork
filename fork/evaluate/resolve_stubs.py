@@ -24,6 +24,12 @@ class ProgramInfoStub(ResolverDatabase.ResolverStub):
         record.obj.functions = functions
         return record.obj
 
+    def __str__(self):
+        return "<ProgramInfoStub globalrefs={} functionrefs={}>".format(self.globalrefs, self.functionrefs)
+
+    def __repr__(self):
+        return str(self)
+
 class FunctionStub(ResolverDatabase.ResolverStub):
     def __init__(self, name=None, startaddr=None, endaddr=None, rettyperef=None, paramrefs=[], varrefs=[], variadic=False):
         self.name = name
@@ -54,6 +60,12 @@ class FunctionStub(ResolverDatabase.ResolverStub):
         record.obj.variadic = self.variadic
         return record.obj
 
+    def __str__(self):
+        return "<FunctionStub paramrefs={} varrefs={}>".format(self.paramrefs, self.varrefs)
+
+    def __repr__(self):
+        return str(self)
+
 class VariableStub(ResolverDatabase.ResolverStub):
     def __init__(self, name=None, dtyperef=None, liveranges=[], param=False, functionref=None):
         self.name = name
@@ -80,6 +92,12 @@ class VariableStub(ResolverDatabase.ResolverStub):
         record.obj.param = self.param
         record.obj.function = function
         return record.obj
+
+    def __str__(self):
+        return "<VariableStub dtyperef={} functionref={}>".format(self.dtyperef, self.functionref)
+
+    def __repr__(self):
+        return str(self)
 
 class DataTypeStub(ResolverDatabase.ResolverStub):
     def __init__(self, metatype=MetaType.VOID, size=None):
@@ -108,6 +126,12 @@ class DataTypeFunctionPrototypeStub(DataTypeStub):
         record.obj.paramtypes = paramtypes
         record.obj.variadic = self.variadic
         return record.obj
+
+    def __str__(self):
+        return "<DataTypeFunctionPrototypeStub rettyperef={} paramtyperefs={}>".format(self.rettyperef, self.paramtyperefs)
+
+    def __repr__(self):
+        return str(self)
 
 class DataTypeIntStub(DataTypeStub):
     def __init__(self, size=None, signed=True):
@@ -178,6 +202,12 @@ class DataTypePointerStub(DataTypeStub):
         record.obj.basetype = basetype
         return record.obj
 
+    def __str__(self):
+        return "<DataTypePointerStub basetyperef={}>".format(self.basetyperef)
+
+    def __repr__(self):
+        return str(self)
+
 class DataTypeArrayStub(DataTypeStub):
     def __init__(self, basetyperef=None, dimensions=None):
         super(DataTypeArrayStub, self).__init__(
@@ -201,6 +231,12 @@ class DataTypeArrayStub(DataTypeStub):
         record.obj.dimensions = self.dimensions
         record.obj.size = self.size
         return record.obj
+
+    def __str__(self):
+        return "<DataTypeArrayStub basetyperef={}>".format(self.basetyperef)
+
+    def __repr__(self):
+        return str(self)
 
 class DataTypeStructStub(DataTypeStub):
     def __init__(self, name="", membertyperef_offsets=[], size=None):
@@ -233,6 +269,12 @@ class DataTypeStructStub(DataTypeStub):
         record.obj.size = self.size
         return record.obj
 
+    def __str__(self):
+        return "<DataTypeStructStub membertyperefs={}>".format([ ref for _, ref in self.membertyperef_offsets ])
+
+    def __repr__(self):
+        return str(self)
+
 class DataTypeUnionStub(DataTypeStub):
     def __init__(self, name="", membertyperefs=[], size=None):
         super(DataTypeUnionStub, self).__init__(
@@ -255,6 +297,12 @@ class DataTypeUnionStub(DataTypeStub):
         record.obj.size = self.size
         return record.obj
 
+    def __str__(self):
+        return "<DataTypeUnionStub membertyperefs={}>".format(self.membertyperefs)
+
+    def __repr__(self):
+        return str(self)
+
 class DataTypeTypedefStub(DataTypeStub):
     def __init__(self, name="", basetyperef=None):
         super(DataTypeTypedefStub, self).__init__(
@@ -267,6 +315,12 @@ class DataTypeTypedefStub(DataTypeStub):
         # for typedefs, no reference => void alias
         record.obj = DataTypeVoid() if self.basetyperef is None else record.db.resolve(self.basetyperef)
         return record.obj
+
+    def __str__(self):
+        return "<DataTypeTypedefStub basetyperef={}>".format(self.basetyperef)
+
+    def __repr__(self):
+        return str(self)
         
 class DataTypeEnumStub(DataTypeStub):
     def __init__(self, basetyperef):
@@ -282,6 +336,12 @@ class DataTypeEnumStub(DataTypeStub):
         record.obj = record.db.resolve(self.basetyperef)
         return record.obj
 
+    def __str__(self):
+        return "<DataTypeEnumStub basetyperef={}>".format(self.basetyperef)
+
+    def __repr__(self):
+        return str(self)
+
 
 class DataTypeQualifierStub(DataTypeStub):
     def __init__(self, basetyperef=None):
@@ -296,4 +356,10 @@ class DataTypeQualifierStub(DataTypeStub):
         # directly return the aliased type
         record.obj = record.db.resolve(self.basetyperef)
         return record.obj
+
+    def __str__(self):
+        return "<DataTypeQualifierStub basetyperef={}>".format(self.basetyperef)
+
+    def __repr__(self):
+        return str(self)
 

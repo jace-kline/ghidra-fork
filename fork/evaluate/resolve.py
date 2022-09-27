@@ -84,6 +84,12 @@ class ResolverDatabase(object):
             
             return self.obj
 
+        def __str__(self):
+            return "<ResolverRecord key={} tag={} stub={}>".format(self.key, self.tag, self.stub)
+
+        def __repr__(self):
+            return str(self)
+
     def __init__(self, db={}, rootkey=None):
         self.db = db
         # the key that marks the "root" node of the flattened structure
@@ -101,9 +107,13 @@ class ResolverDatabase(object):
     def set_root_key(self, key):
         self.rootkey = key
 
-    def make_record(self, key, stub):
-        if self.exists(key):
-            raise KeyError("Key already exists in ResolverDatabase")
+    def make_record(self, key, stub, overwrite=False):
+        # if not overwrite and self.exists(key):
+        #     raise KeyError("Key already exists in ResolverDatabase: key={}, record={}, provided={}".format(
+        #         key,
+        #         self.lookup(key),
+        #         stub
+        #     ))
 
         return self.add(
             key,
@@ -149,7 +159,7 @@ class ResolverDatabase(object):
             return record.resolve(self)
         else:
             raise KeyError(
-                "Attempted to resolve non-existent key within 'resolve'"
+                "Attempted to resolve non-existent key within 'resolve': key={}".format(key)
             )
 
     def resolve_many(self, keys):
@@ -157,7 +167,7 @@ class ResolverDatabase(object):
             return [ self.resolve(key) for key in keys ]
         except KeyError as e:
             raise ResolverException(
-                "Attempted to resolve non-existent key within 'resolve_many'"
+                str(e) + ". Attempted to resolve non-existent key within 'resolve_many'\n" + str(self.db)
             )
 
     def resolve_root(self):

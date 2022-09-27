@@ -3,8 +3,8 @@ from lang import *
 from lang_address import *
 from lang_datatype import *
 from util import *
-
 from compare_variable import *
+from filter import FilterVarnode, FilterVarnodeCompareRecord
 
 # represents a "snapshot"/set of variables at a given PC during the program
 # allows us to compare memory regions, etc. for variables at a given PC
@@ -31,6 +31,9 @@ class ConstPCVariableSetSnapshot(object):
 
     def get_varnodes(self) -> List[Varnode]:
         return self.varnodes
+
+    def flatten(self) -> 'ConstPCVariableSetSnapshot':
+        return ConstPCVariableSetSnapshot(sum([ varnode.flatten() for varnode in self.varnodes ], []))
 
     def get_address_spaces(self) -> 'dict[AddressRegion, ConstPCAddressSpace]':
         return self.spaces
@@ -98,6 +101,9 @@ class ConstPCVariableSetSnapshotCompare2(object):
     def get_bytes(self) -> int:
         return self.left.get_bytes()
 
+    def get_varnode_compare_records(self) -> List[VarnodeCompareRecord]:
+        return sum([ list(space.get_varnode_compare_records()) for space in self.space_comparison_map.values() ], [])
+
     def get_space_comparison(self, region: AddressRegion) -> 'Union[ConstPCAddressSpaceCompare2, None]':
         return self.space_comparison_map.get(region, None)
 
@@ -110,15 +116,20 @@ class ConstPCVariableSetSnapshotCompare2(object):
     def get_varnode_compare_record_map(self) -> 'dict[Varnode, VarnodeCompareRecord]':
         return self.varnode_compare_record_map
 
+    # flatten all varnodes in left & right, then create new comparison & return
+    def get_flattened_comparison(self) -> 'ConstPCVariableSetSnapshotCompare2':
+        return ConstPCVariableSetSnapshotCompare2(self.left.flatten(), self.right.flatten())
+
     def __hash__(self) -> int:
         return hash((self.left, self.right))
 
     def show_summary(self, indent=0) -> str:
-        s = "BYTES OVERLAPPED = {}\nTOTAL BYTES = {}\nBYTE RECOVERY % = {}%\n".format(
-            self.bytes_overlapped(),
-            self.get_bytes(),
-            0 if self.get_bytes() == 0 else 100.0 * (self.bytes_overlapped() / self.get_bytes())
-        )
+        # s = "BYTES OVERLAPPED = {}\nTOTAL BYTES = {}\nBYTE RECOVERY % = {}%\n".format(
+        #     self.bytes_overlapped(),
+        #     self.get_bytes(),
+        #     0 if self.get_bytes() == 0 else 100.0 * (self.bytes_overlapped() / self.get_bytes())
+        # )
+        s = ""
         for record in self.varnode_compare_record_map.values():
             s += record.show_summary(indent=0)
         s += "\n"
@@ -259,6 +270,9 @@ class ConstPCAddressSpaceCompare2(object):
     
     def get_varnode_compare_record_map(self) -> 'dict[Varnode, VarnodeCompareRecord]':
         return self.varnode_compare_record_map
+
+    def get_varnode_compare_records(self) -> List[VarnodeCompareRecord]:
+        return self.varnode_compare_record_map.values()
 
     def bytes_overlapped(self) -> int:
         return sum([ cmp.bytes_overlapped() for cmp in self.varnode_comparisons ])

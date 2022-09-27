@@ -139,8 +139,8 @@ class Varnode(object):
         for off, primtype in dtype_flattened:
             addr = self.get_addr().add_const(off)
             pc_range = self.get_pc_range()
-            startpc = pc_range.get_start()
-            endpc = pc_range.get_end()
+            startpc = pc_range.get_start() if pc_range is not None else None
+            endpc = pc_range.get_end() if pc_range is not None else None
             liverange = AddressLiveRange(addr=addr, startpc=startpc, endpc=endpc)
             varnodes.append(Varnode(primtype, liverange))
 
