@@ -1,0 +1,1196 @@
+make: Entering directory '/home/jacekline/dev/research/ghidra-fork/fork/progs/typecases'
+rm -rf *.bin *.o *.dwarfdump *.objdump *.pickle *.gpr *.rep
+make: Leaving directory '/home/jacekline/dev/research/ghidra-fork/fork/progs/typecases'
+make: Entering directory '/home/jacekline/dev/research/ghidra-fork/fork/progs/typecases'
+gcc  -g -O0 -c -o typecases_O0_debug.o typecases.c
+gcc  -g -O0 -o typecases_O0_debug.bin typecases_O0_debug.o
+python3 /home/jacekline/dev/research/ghidra-fork/fork/progs/typecases//../../evaluate/parse_dwarf_exec.py typecases_O0_debug.bin pickle typecases_O0_debug.dwarf.pickle
+gcc  -O0 -c -o typecases_O0.o typecases.c
+gcc  -O0 -o typecases_O0.bin typecases_O0.o
+/home/jacekline/dev/research/ghidra-build/support/analyzeHeadless \
+	/home/jacekline/dev/research/ghidra-fork/fork/progs/typecases/ \
+	tempproject \
+	-import typecases_O0.bin \
+	-scriptpath "/home/jacekline/dev/research/ghidra-fork/fork/progs/typecases//../../evaluate" \
+	-postscript parse_ghidra_exec.py pickle typecases_O0.ghidra.pickle \
+	-deleteproject
+INFO  Using log config file: jar:file:/home/jacekline/dev/research/ghidra-build/Ghidra/Framework/Generic/lib/Generic.jar!/generic.log4j.xml (LoggingInitialization)  
+INFO  Using log file: /home/jacekline/.ghidra/.ghidra_10.2_DEV/application.log (LoggingInitialization)  
+INFO  Loading user preferences: /home/jacekline/.ghidra/.ghidra_10.2_DEV/preferences (Preferences)  
+INFO  Class search complete (1229 ms) (ClassSearcher)  
+INFO  Initializing SSL Context (SSLContextInitializer)  
+INFO  Initializing Random Number Generator... (SecureRandomFactory)  
+INFO  Random Number Generator initialization complete: NativePRNGNonBlocking (SecureRandomFactory)  
+INFO  Trust manager disabled, cacerts have not been set (ApplicationTrustManagerFactory)  
+INFO  HEADLESS Script Paths:
+    /home/jacekline/dev/research/ghidra-build/Ghidra/Features/BytePatterns/ghidra_scripts
+    /home/jacekline/dev/research/ghidra-build/Ghidra/Features/FunctionID/ghidra_scripts
+    /home/jacekline/dev/research/ghidra-build/Ghidra/Processors/8051/ghidra_scripts
+    /home/jacekline/dev/research/ghidra-build/Ghidra/Features/PDB/ghidra_scripts
+    /home/jacekline/dev/research/ghidra-build/Ghidra/Processors/DATA/ghidra_scripts
+    /home/jacekline/dev/research/ghidra-build/Ghidra/Features/Python/ghidra_scripts
+    /home/jacekline/dev/research/ghidra-build/Ghidra/Features/MicrosoftCodeAnalyzer/ghidra_scripts
+    /home/jacekline/dev/research/ghidra-fork/fork/progs/typecases/../../evaluate
+    /home/jacekline/dev/research/ghidra-build/Ghidra/Debug/Debugger/ghidra_scripts
+    /home/jacekline/dev/research/ghidra-build/Ghidra/Features/VersionTracking/ghidra_scripts
+    /home/jacekline/dev/research/ghidra-build/Ghidra/Debug/Debugger-agent-dbgmodel-traceloader/ghidra_scripts
+    /home/jacekline/dev/research/ghidra-build/Ghidra/Features/FileFormats/ghidra_scripts
+    /home/jacekline/dev/research/ghidra-build/Ghidra/Processors/PIC/ghidra_scripts
+    /home/jacekline/dev/research/ghidra-build/Ghidra/Debug/Debugger-agent-frida/ghidra_scripts
+    /home/jacekline/dev/research/ghidra-build/Ghidra/Features/Decompiler/ghidra_scripts
+    /home/jacekline/dev/research/ghidra-build/Ghidra/Features/Base/ghidra_scripts
+    /home/jacekline/dev/research/ghidra-build/Ghidra/Features/GnuDemangler/ghidra_scripts (HeadlessAnalyzer)  
+INFO  HEADLESS: execution starts (HeadlessAnalyzer)  
+INFO  Creating temporary project: /home/jacekline/dev/research/ghidra-fork/fork/progs/typecases/tempproject (HeadlessAnalyzer)  
+INFO  Creating project: /home/jacekline/dev/research/ghidra-fork/fork/progs/typecases/tempproject (DefaultProject)  
+INFO  REPORT: Processing input files:  (HeadlessAnalyzer)  
+INFO       project: /home/jacekline/dev/research/ghidra-fork/fork/progs/typecases/tempproject (HeadlessAnalyzer)  
+INFO  IMPORTING: /home/jacekline/dev/research/ghidra-fork/fork/progs/typecases/typecases_O0.bin (HeadlessAnalyzer)  
+INFO  Starting cache cleanup: /tmp/jacekline-Ghidra/fscache2 (FileCacheMaintenanceDaemon)  
+INFO  Finished cache cleanup, estimated storage used: 0 (FileCacheMaintenanceDaemon)  
+INFO  REPORT: Import succeeded with language "x86:LE:64:default" and cspec "gcc" for file: /home/jacekline/dev/research/ghidra-fork/fork/progs/typecases/typecases_O0.bin (HeadlessAnalyzer)  
+INFO  ANALYZING all memory and code: /home/jacekline/dev/research/ghidra-fork/fork/progs/typecases/typecases_O0.bin (HeadlessAnalyzer)  
+INFO  DWARF external debug information found: ExternalDebugInfo [filename=null, crc=0, hash=d4e3bc75efbbca4e454d94c3d11ac6e49591ca80] (ExternalDebugFilesService)  
+INFO  Unable to find DWARF information, skipping DWARF analysis (DWARFAnalyzer)  
+INFO  hit non-returning function, restarting decompiler switch analyzer later (DecompilerSwitchAnalyzer)  
+INFO  Packed database cache: /tmp/jacekline-Ghidra/packed-db-cache (PackedDatabaseCache)  
+INFO  -----------------------------------------------------
+    ASCII Strings                              0.261 secs
+    Apply Data Archives                        0.243 secs
+    Call Convention ID                         0.063 secs
+    Call-Fixup Installer                       0.006 secs
+    Create Address Tables                      0.005 secs
+    Create Function                            0.004 secs
+    DWARF                                      0.007 secs
+    Data Reference                             0.005 secs
+    Decompiler Switch Analysis                 0.036 secs
+    Decompiler Switch Analysis - One Time      0.252 secs
+    Demangler GNU                              0.009 secs
+    Disassemble Entry Points                   0.067 secs
+    ELF Scalar Operand References              0.004 secs
+    Embedded Media                             0.010 secs
+    External Entry References                  0.000 secs
+    Function ID                                0.060 secs
+    Function Start Search                      0.018 secs
+    Function Start Search After Code           0.000 secs
+    Function Start Search After Data           0.001 secs
+    GCC Exception Handlers                     0.039 secs
+    Non-Returning Functions - Discovered       0.002 secs
+    Non-Returning Functions - Known            0.004 secs
+    Reference                                  0.011 secs
+    Shared Return Calls                        0.002 secs
+    Stack                                      0.032 secs
+    Subroutine References                      0.004 secs
+    Subroutine References - One Time           0.000 secs
+    x86 Constant Reference Analyzer            0.084 secs
+-----------------------------------------------------
+     Total Time   1 secs
+-----------------------------------------------------
+ (AutoAnalysisManager)  
+INFO  REPORT: Analysis succeeded for file: /home/jacekline/dev/research/ghidra-fork/fork/progs/typecases/typecases_O0.bin (HeadlessAnalyzer)  
+INFO  SCRIPT: /home/jacekline/dev/research/ghidra-fork/fork/progs/typecases/../../evaluate/parse_ghidra_exec.py (HeadlessAnalyzer)  
+[u'pickle', u'typecases_O0.ghidra.pickle']
+WARN  Decompiling 00105000, pcode error at 00105000: Unable to disassemble EXTERNAL block location: 00105000 (DecompileCallback)  
+WARN  Decompiling 00105008, pcode error at 00105008: Unable to disassemble EXTERNAL block location: 00105008 (DecompileCallback)  
+WARN  Decompiling 00105010, pcode error at 00105010: Unable to disassemble EXTERNAL block location: 00105010 (DecompileCallback)  
+WARN  Decompiling 00105018, pcode error at 00105018: Unable to disassemble EXTERNAL block location: 00105018 (DecompileCallback)  
+WARN  Decompiling 00105020, pcode error at 00105020: Unable to disassemble EXTERNAL block location: 00105020 (DecompileCallback)  
+WARN  Decompiling 00105028, pcode error at 00105028: Unable to disassemble EXTERNAL block location: 00105028 (DecompileCallback)  
+WARN  Decompiling 00105030, pcode error at 00105030: Unable to disassemble EXTERNAL block location: 00105030 (DecompileCallback)  
+WARN  Decompiling 00105038, pcode error at 00105038: Unable to disassemble EXTERNAL block location: 00105038 (DecompileCallback)  
+WARN  Decompiling 00105040, pcode error at 00105040: Unable to disassemble EXTERNAL block location: 00105040 (DecompileCallback)  
+WARN  Decompiling 00105048, pcode error at 00105048: Unable to disassemble EXTERNAL block location: 00105048 (DecompileCallback)  
+WARN  Decompiling 00105050, pcode error at 00105050: Unable to disassemble EXTERNAL block location: 00105050 (DecompileCallback)  
+WARN  Decompiling 00105058, pcode error at 00105058: Unable to disassemble EXTERNAL block location: 00105058 (DecompileCallback)  
+WARN  Decompiling 00105060, pcode error at 00105060: Unable to disassemble EXTERNAL block location: 00105060 (DecompileCallback)  
+WARN  Decompiling 00105000, pcode error at 00105000: Unable to disassemble EXTERNAL block location: 00105000 (DecompileCallback)  
+WARN  Decompiling 00105008, pcode error at 00105008: Unable to disassemble EXTERNAL block location: 00105008 (DecompileCallback)  
+WARN  Decompiling 00105010, pcode error at 00105010: Unable to disassemble EXTERNAL block location: 00105010 (DecompileCallback)  
+WARN  Decompiling 00105018, pcode error at 00105018: Unable to disassemble EXTERNAL block location: 00105018 (DecompileCallback)  
+WARN  Decompiling 00105020, pcode error at 00105020: Unable to disassemble EXTERNAL block location: 00105020 (DecompileCallback)  
+WARN  Decompiling 00105028, pcode error at 00105028: Unable to disassemble EXTERNAL block location: 00105028 (DecompileCallback)  
+WARN  Decompiling 00105030, pcode error at 00105030: Unable to disassemble EXTERNAL block location: 00105030 (DecompileCallback)  
+WARN  Decompiling 00105038, pcode error at 00105038: Unable to disassemble EXTERNAL block location: 00105038 (DecompileCallback)  
+WARN  Decompiling 00105040, pcode error at 00105040: Unable to disassemble EXTERNAL block location: 00105040 (DecompileCallback)  
+WARN  Decompiling 00105048, pcode error at 00105048: Unable to disassemble EXTERNAL block location: 00105048 (DecompileCallback)  
+WARN  Decompiling 00105050, pcode error at 00105050: Unable to disassemble EXTERNAL block location: 00105050 (DecompileCallback)  
+WARN  Decompiling 00105058, pcode error at 00105058: Unable to disassemble EXTERNAL block location: 00105058 (DecompileCallback)  
+WARN  Decompiling 00105060, pcode error at 00105060: Unable to disassemble EXTERNAL block location: 00105060 (DecompileCallback)  
+INFO  ANALYZING changes made by post scripts: /home/jacekline/dev/research/ghidra-fork/fork/progs/typecases/typecases_O0.bin (HeadlessAnalyzer)  
+INFO  REPORT: Post-analysis succeeded for file: /home/jacekline/dev/research/ghidra-fork/fork/progs/typecases/typecases_O0.bin (HeadlessAnalyzer)  
+INFO  REPORT: Save succeeded for file: /typecases_O0.bin (HeadlessAnalyzer)  
+make: Leaving directory '/home/jacekline/dev/research/ghidra-fork/fork/progs/typecases'
+Building Makefile targets in directory '/home/jacekline/dev/research/ghidra-fork/fork/progs/typecases':
+	typecases_O0_debug.dwarf.pickle
+	typecases_O0.ghidra.pickle
+Verifying targets...
+Success!
+----------GHIDRA DECOMPILER OUTPUT----------
+
+----------------GLOBALS----------------------
+<VAR __libc_csu_init :: undefined1 @ [<AddressLiveRange addr=<ABSOLUTE:0x15d0> startpc=None endpc=None>]>
+<VAR __libc_csu_fini :: undefined1 @ [<AddressLiveRange addr=<ABSOLUTE:0x1640> startpc=None endpc=None>]>
+<VAR main :: undefined1 @ [<AddressLiveRange addr=<ABSOLUTE:0x12d2> startpc=None endpc=None>]>
+<VAR completed.0 :: char @ [<AddressLiveRange addr=<ABSOLUTE:0x4010> startpc=None endpc=None>]>
+<VAR __dso_handle :: undefined1 * @ [<AddressLiveRange addr=<ABSOLUTE:0x4008> startpc=None endpc=None>]>
+<VAR globalvar_uninit :: unsigned int4 @ [<AddressLiveRange addr=<ABSOLUTE:0x4014> startpc=None endpc=None>]>
+<VAR globalvar_init :: unsigned int4 @ [<AddressLiveRange addr=<ABSOLUTE:0x4018> startpc=None endpc=None>]>
+<VAR __frame_dummy_init_array_entry :: unsigned int8 @ [<AddressLiveRange addr=<ABSOLUTE:0x3d80> startpc=None endpc=None>]>
+----------------FUNCTIONS--------------------
+_init :: (<STRUCT evp_pkey_ctx_st membertypes=0 size=0> *) -> int4 @ PC range=(<ABSOLUTE:0x1000>, <ABSOLUTE:0x101c>)
+	<PARAM ctx :: <STRUCT evp_pkey_ctx_st membertypes=0 size=0> * @ [<AddressLiveRange addr=<REGISTER:5> startpc=<ABSOLUTE:0x1000> endpc=<ABSOLUTE:0x101c>>]>
+	<VAR iVar1 :: int4 @ [<AddressLiveRange addr=<REGISTER:0> startpc=<ABSOLUTE:0x1000> endpc=<ABSOLUTE:0x101c>>]>
+FUN_00101020 :: () -> void @ PC range=(<ABSOLUTE:0x1020>, <ABSOLUTE:0x102e>)
+__cxa_finalize :: () -> void @ PC range=(<ABSOLUTE:0x10b0>, <ABSOLUTE:0x10bc>)
+free :: (void *) -> void @ PC range=(<ABSOLUTE:0x10c0>, <ABSOLUTE:0x10cc>)
+	<PARAM __ptr :: void * @ [<AddressLiveRange addr=<REGISTER:5> startpc=<ABSOLUTE:0x10c0> endpc=<ABSOLUTE:0x10cc>>]>
+strcpy :: (char *, char *) -> char * @ PC range=(<ABSOLUTE:0x10d0>, <ABSOLUTE:0x10dc>)
+	<PARAM __dest :: char * @ [<AddressLiveRange addr=<REGISTER:5> startpc=<ABSOLUTE:0x10d0> endpc=<ABSOLUTE:0x10dc>>]>
+	<PARAM __src :: char * @ [<AddressLiveRange addr=<REGISTER:4> startpc=<ABSOLUTE:0x10d0> endpc=<ABSOLUTE:0x10dc>>]>
+	<VAR pcVar1 :: char * @ [<AddressLiveRange addr=<REGISTER:0> startpc=<ABSOLUTE:0x10d0> endpc=<ABSOLUTE:0x10dc>>]>
+strlen :: (char *) -> unsigned int8 @ PC range=(<ABSOLUTE:0x10e0>, <ABSOLUTE:0x10ec>)
+	<PARAM __s :: char * @ [<AddressLiveRange addr=<REGISTER:5> startpc=<ABSOLUTE:0x10e0> endpc=<ABSOLUTE:0x10ec>>]>
+	<VAR sVar1 :: unsigned int8 @ [<AddressLiveRange addr=<REGISTER:0> startpc=<ABSOLUTE:0x10e0> endpc=<ABSOLUTE:0x10ec>>]>
+__stack_chk_fail :: () -> void @ PC range=(<ABSOLUTE:0x10f0>, <ABSOLUTE:0x10fc>)
+printf :: (char *[...]) -> int4 @ PC range=(<ABSOLUTE:0x1100>, <ABSOLUTE:0x110c>)
+	<PARAM __format :: char * @ [<AddressLiveRange addr=<REGISTER:5> startpc=<ABSOLUTE:0x1100> endpc=<ABSOLUTE:0x110c>>]>
+	<VAR iVar1 :: int4 @ [<AddressLiveRange addr=<REGISTER:0> startpc=<ABSOLUTE:0x1100> endpc=<ABSOLUTE:0x110c>>]>
+malloc :: (unsigned int8) -> void * @ PC range=(<ABSOLUTE:0x1110>, <ABSOLUTE:0x111c>)
+	<PARAM __size :: unsigned int8 @ [<AddressLiveRange addr=<REGISTER:5> startpc=<ABSOLUTE:0x1110> endpc=<ABSOLUTE:0x111c>>]>
+	<VAR pvVar1 :: void * @ [<AddressLiveRange addr=<REGISTER:0> startpc=<ABSOLUTE:0x1110> endpc=<ABSOLUTE:0x111c>>]>
+atoi :: (char *) -> int4 @ PC range=(<ABSOLUTE:0x1120>, <ABSOLUTE:0x112c>)
+	<PARAM __nptr :: char * @ [<AddressLiveRange addr=<REGISTER:5> startpc=<ABSOLUTE:0x1120> endpc=<ABSOLUTE:0x112c>>]>
+	<VAR iVar1 :: int4 @ [<AddressLiveRange addr=<REGISTER:0> startpc=<ABSOLUTE:0x1120> endpc=<ABSOLUTE:0x112c>>]>
+exit :: (int4) -> void @ PC range=(<ABSOLUTE:0x1130>, <ABSOLUTE:0x113c>)
+	<PARAM __status :: int4 @ [<AddressLiveRange addr=<REGISTER:5> startpc=<ABSOLUTE:0x1130> endpc=<ABSOLUTE:0x113c>>]>
+_start :: (undefined8) -> void @ PC range=(<ABSOLUTE:0x1140>, <ABSOLUTE:0x1170>)
+	<PARAM param_3 :: undefined8 @ [<AddressLiveRange addr=<REGISTER:1> startpc=<ABSOLUTE:0x1140> endpc=<ABSOLUTE:0x1170>>]>
+	<VAR auStack8 :: <ARRAY subtype=undefined1 dimensions=(8,) size=8> @ [<AddressLiveRange addr=<STACK:-0x10> startpc=<ABSOLUTE:0x1140> endpc=<ABSOLUTE:0x1170>>]>
+	<VAR unaff_retaddr :: undefined8 @ [<AddressLiveRange addr=<STACK:-0x8> startpc=<ABSOLUTE:0x1140> endpc=<ABSOLUTE:0x1170>>]>
+deregister_tm_clones :: () -> void @ PC range=(<ABSOLUTE:0x1170>, <ABSOLUTE:0x119a>)
+register_tm_clones :: () -> void @ PC range=(<ABSOLUTE:0x11a0>, <ABSOLUTE:0x11da>)
+__do_global_dtors_aux :: () -> void @ PC range=(<ABSOLUTE:0x11e0>, <ABSOLUTE:0x121a>)
+frame_dummy :: () -> void @ PC range=(<ABSOLUTE:0x1220>, <ABSOLUTE:0x122a>)
+hello :: (unsigned int4) -> void @ PC range=(<ABSOLUTE:0x1229>, <ABSOLUTE:0x1255>)
+	<PARAM param_1 :: unsigned int4 @ [<AddressLiveRange addr=<REGISTER:5> startpc=<ABSOLUTE:0x1229> endpc=<ABSOLUTE:0x1255>>]>
+hello2 :: (unsigned int4) -> void @ PC range=(<ABSOLUTE:0x1254>, <ABSOLUTE:0x1280>)
+	<PARAM param_1 :: unsigned int4 @ [<AddressLiveRange addr=<REGISTER:5> startpc=<ABSOLUTE:0x1254> endpc=<ABSOLUTE:0x1280>>]>
+myrecfunc :: (int4 *) -> int4 @ PC range=(<ABSOLUTE:0x127f>, <ABSOLUTE:0x12d3>)
+	<PARAM param_1 :: int4 * @ [<AddressLiveRange addr=<REGISTER:5> startpc=<ABSOLUTE:0x127f> endpc=<ABSOLUTE:0x12d3>>]>
+	<VAR iVar1 :: int4 @ []>
+	<VAR iVar2 :: int4 @ []>
+	<VAR iVar3 :: int4 @ []>
+	<VAR iVar4 :: int4 @ [<AddressLiveRange addr=<REGISTER:0> startpc=<ABSOLUTE:0x127f> endpc=<ABSOLUTE:0x12d3>>]>
+main :: (int4, undefined8 *) -> undefined8 @ PC range=(<ABSOLUTE:0x12d2>, <ABSOLUTE:0x15c3>)
+	<PARAM param_1 :: int4 @ [<AddressLiveRange addr=<REGISTER:5> startpc=<ABSOLUTE:0x12d2> endpc=<ABSOLUTE:0x15c3>>]>
+	<PARAM param_2 :: undefined8 * @ [<AddressLiveRange addr=<REGISTER:4> startpc=<ABSOLUTE:0x12d2> endpc=<ABSOLUTE:0x15c3>>]>
+	<VAR local_274 :: int4 @ [<AddressLiveRange addr=<STACK:-0x27c> startpc=<ABSOLUTE:0x12d2> endpc=<ABSOLUTE:0x15c3>>]>
+	<VAR local_270 :: int4 @ [<AddressLiveRange addr=<STACK:-0x278> startpc=<ABSOLUTE:0x12d2> endpc=<ABSOLUTE:0x15c3>>]>
+	<VAR local_258 :: undefined4 @ [<AddressLiveRange addr=<STACK:-0x260> startpc=<ABSOLUTE:0x12d2> endpc=<ABSOLUTE:0x15c3>>]>
+	<VAR local_254 :: undefined4 @ [<AddressLiveRange addr=<STACK:-0x25c> startpc=<ABSOLUTE:0x12d2> endpc=<ABSOLUTE:0x15c3>>]>
+	<VAR local_250 :: undefined4 @ [<AddressLiveRange addr=<STACK:-0x258> startpc=<ABSOLUTE:0x12d2> endpc=<ABSOLUTE:0x15c3>>]>
+	<VAR local_248 :: undefined8 @ [<AddressLiveRange addr=<STACK:-0x250> startpc=<ABSOLUTE:0x12d2> endpc=<ABSOLUTE:0x15c3>>]>
+	<VAR local_238 :: undefined4 @ [<AddressLiveRange addr=<STACK:-0x240> startpc=<ABSOLUTE:0x12d2> endpc=<ABSOLUTE:0x15c3>>]>
+	<VAR local_234 :: undefined4 @ [<AddressLiveRange addr=<STACK:-0x23c> startpc=<ABSOLUTE:0x12d2> endpc=<ABSOLUTE:0x15c3>>]>
+	<VAR local_230 :: undefined4 @ [<AddressLiveRange addr=<STACK:-0x238> startpc=<ABSOLUTE:0x12d2> endpc=<ABSOLUTE:0x15c3>>]>
+	<VAR local_228 :: undefined4 * @ [<AddressLiveRange addr=<STACK:-0x230> startpc=<ABSOLUTE:0x12d2> endpc=<ABSOLUTE:0x15c3>>]>
+	<VAR local_218 :: unsigned int4 @ [<AddressLiveRange addr=<STACK:-0x220> startpc=<ABSOLUTE:0x12d2> endpc=<ABSOLUTE:0x15c3>>]>
+	<VAR local_214 :: unsigned int4 @ [<AddressLiveRange addr=<STACK:-0x21c> startpc=<ABSOLUTE:0x12d2> endpc=<ABSOLUTE:0x15c3>>]>
+	<VAR local_210 :: unsigned int4 @ [<AddressLiveRange addr=<STACK:-0x218> startpc=<ABSOLUTE:0x12d2> endpc=<ABSOLUTE:0x15c3>>]>
+	<VAR local_208 :: undefined4 * @ [<AddressLiveRange addr=<STACK:-0x210> startpc=<ABSOLUTE:0x12d2> endpc=<ABSOLUTE:0x15c3>>]>
+	<VAR local_1f8 :: <ARRAY subtype=char dimensions=(32,) size=32> @ [<AddressLiveRange addr=<STACK:-0x200> startpc=<ABSOLUTE:0x12d2> endpc=<ABSOLUTE:0x15c3>>]>
+	<VAR local_10 :: int8 @ [<AddressLiveRange addr=<STACK:-0x18> startpc=<ABSOLUTE:0x12d2> endpc=<ABSOLUTE:0x15c3>>]>
+	<VAR aiStack472 :: <ARRAY subtype=int4 dimensions=(12,) size=48> @ [<AddressLiveRange addr=<STACK:-0x1e0> startpc=<ABSOLUTE:0x12d2> endpc=<ABSOLUTE:0x15c3>>]>
+	<VAR aiStack424 :: <ARRAY subtype=int4 dimensions=(102,) size=408> @ [<AddressLiveRange addr=<STACK:-0x1b0> startpc=<ABSOLUTE:0x12d2> endpc=<ABSOLUTE:0x15c3>>]>
+	<VAR uVar1 :: unsigned int4 @ []>
+	<VAR uVar2 :: unsigned int4 @ [<AddressLiveRange addr=<REGISTER:0> startpc=<ABSOLUTE:0x12d2> endpc=<ABSOLUTE:0x15c3>>]>
+	<VAR sVar3 :: unsigned int8 @ [<AddressLiveRange addr=<REGISTER:0> startpc=<ABSOLUTE:0x12d2> endpc=<ABSOLUTE:0x15c3>>]>
+	<VAR __ptr :: unsigned int4 * @ [<AddressLiveRange addr=<REGISTER:0> startpc=<ABSOLUTE:0x12d2> endpc=<ABSOLUTE:0x15c3>>]>
+	<VAR in_FS_OFFSET :: int8 @ [<AddressLiveRange addr=<REGISTER:None> startpc=<ABSOLUTE:0x12d2> endpc=<ABSOLUTE:0x15c3>>]>
+__libc_csu_init :: (<STRUCT evp_pkey_ctx_st membertypes=0 size=0> *, undefined8, undefined8) -> void @ PC range=(<ABSOLUTE:0x15d0>, <ABSOLUTE:0x1636>)
+	<PARAM param_1 :: <STRUCT evp_pkey_ctx_st membertypes=0 size=0> * @ [<AddressLiveRange addr=<REGISTER:5> startpc=<ABSOLUTE:0x15d0> endpc=<ABSOLUTE:0x1636>>]>
+	<PARAM param_2 :: undefined8 @ [<AddressLiveRange addr=<REGISTER:4> startpc=<ABSOLUTE:0x15d0> endpc=<ABSOLUTE:0x1636>>]>
+	<PARAM param_3 :: undefined8 @ [<AddressLiveRange addr=<REGISTER:1> startpc=<ABSOLUTE:0x15d0> endpc=<ABSOLUTE:0x1636>>]>
+	<VAR lVar1 :: int8 @ [<AddressLiveRange addr=<REGISTER:3> startpc=<ABSOLUTE:0x15d0> endpc=<ABSOLUTE:0x1636>>]>
+__libc_csu_fini :: () -> void @ PC range=(<ABSOLUTE:0x1640>, <ABSOLUTE:0x1646>)
+_fini :: () -> void @ PC range=(<ABSOLUTE:0x1648>, <ABSOLUTE:0x1656>)
+free :: (void *) -> void @ PC range=(<ABSOLUTE:0x5000>, <ABSOLUTE:0x5002>)
+	<PARAM __ptr :: void * @ [<AddressLiveRange addr=<REGISTER:5> startpc=<ABSOLUTE:0x5000> endpc=<ABSOLUTE:0x5002>>]>
+_ITM_deregisterTMCloneTable :: () -> void @ PC range=(<ABSOLUTE:0x5008>, <ABSOLUTE:0x500a>)
+strcpy :: (char *, char *) -> char * @ PC range=(<ABSOLUTE:0x5010>, <ABSOLUTE:0x5012>)
+	<PARAM __dest :: char * @ [<AddressLiveRange addr=<REGISTER:5> startpc=<ABSOLUTE:0x5010> endpc=<ABSOLUTE:0x5012>>]>
+	<PARAM __src :: char * @ [<AddressLiveRange addr=<REGISTER:4> startpc=<ABSOLUTE:0x5010> endpc=<ABSOLUTE:0x5012>>]>
+strlen :: (char *) -> unsigned int8 @ PC range=(<ABSOLUTE:0x5018>, <ABSOLUTE:0x501a>)
+	<PARAM __s :: char * @ [<AddressLiveRange addr=<REGISTER:5> startpc=<ABSOLUTE:0x5018> endpc=<ABSOLUTE:0x501a>>]>
+__stack_chk_fail :: () -> void @ PC range=(<ABSOLUTE:0x5020>, <ABSOLUTE:0x5022>)
+printf :: (char *[...]) -> int4 @ PC range=(<ABSOLUTE:0x5028>, <ABSOLUTE:0x502a>)
+	<PARAM __format :: char * @ [<AddressLiveRange addr=<REGISTER:5> startpc=<ABSOLUTE:0x5028> endpc=<ABSOLUTE:0x502a>>]>
+__libc_start_main :: () -> void @ PC range=(<ABSOLUTE:0x5030>, <ABSOLUTE:0x5032>)
+__gmon_start__ :: () -> void @ PC range=(<ABSOLUTE:0x5038>, <ABSOLUTE:0x503a>)
+malloc :: (unsigned int8) -> void * @ PC range=(<ABSOLUTE:0x5040>, <ABSOLUTE:0x5042>)
+	<PARAM __size :: unsigned int8 @ [<AddressLiveRange addr=<REGISTER:5> startpc=<ABSOLUTE:0x5040> endpc=<ABSOLUTE:0x5042>>]>
+atoi :: (char *) -> int4 @ PC range=(<ABSOLUTE:0x5048>, <ABSOLUTE:0x504a>)
+	<PARAM __nptr :: char * @ [<AddressLiveRange addr=<REGISTER:5> startpc=<ABSOLUTE:0x5048> endpc=<ABSOLUTE:0x504a>>]>
+exit :: (int4) -> void @ PC range=(<ABSOLUTE:0x5050>, <ABSOLUTE:0x5052>)
+	<PARAM __status :: int4 @ [<AddressLiveRange addr=<REGISTER:5> startpc=<ABSOLUTE:0x5050> endpc=<ABSOLUTE:0x5052>>]>
+_ITM_registerTMCloneTable :: () -> void @ PC range=(<ABSOLUTE:0x5058>, <ABSOLUTE:0x505a>)
+__cxa_finalize :: () -> void @ PC range=(<ABSOLUTE:0x5060>, <ABSOLUTE:0x5062>)
+
+----------DWARF OUTPUT (ground truth)----------
+
+----------------GLOBALS----------------------
+<VAR globalvar_uninit :: int4 @ [<AddressLiveRange addr=<ABSOLUTE:0x4014> startpc=None endpc=None>]>
+<VAR globalvar_init :: int4 @ [<AddressLiveRange addr=<ABSOLUTE:0x4018> startpc=None endpc=None>]>
+----------------FUNCTIONS--------------------
+main :: (int4, char * *) -> int4 @ PC range=(<ABSOLUTE:0x12d2>, <ABSOLUTE:0x15c3>)
+	<PARAM argc :: int4 @ [<AddressLiveRange addr=<STACK:-0x284> startpc=<ABSOLUTE:0x12d2> endpc=<ABSOLUTE:0x15c3>>]>
+	<PARAM argv :: char * * @ [<AddressLiveRange addr=<STACK:-0x290> startpc=<ABSOLUTE:0x12d2> endpc=<ABSOLUTE:0x15c3>>]>
+	<VAR u :: <UNION myunion membertypes=4 size=32> @ [<AddressLiveRange addr=<STACK:-0x200> startpc=<ABSOLUTE:0x12d2> endpc=<ABSOLUTE:0x15c3>>]>
+	<VAR e :: unsigned int4 @ [<AddressLiveRange addr=<STACK:-0x274> startpc=<ABSOLUTE:0x12d2> endpc=<ABSOLUTE:0x15c3>>]>
+	<VAR s_next2 :: <STRUCT mystruct membertypes=4 size=24> @ [<AddressLiveRange addr=<STACK:-0x260> startpc=<ABSOLUTE:0x12d2> endpc=<ABSOLUTE:0x15c3>>]>
+	<VAR s_next :: <STRUCT mystruct membertypes=4 size=24> @ [<AddressLiveRange addr=<STACK:-0x240> startpc=<ABSOLUTE:0x12d2> endpc=<ABSOLUTE:0x15c3>>]>
+	<VAR s :: <STRUCT mystruct membertypes=4 size=24> @ [<AddressLiveRange addr=<STACK:-0x220> startpc=<ABSOLUTE:0x12d2> endpc=<ABSOLUTE:0x15c3>>]>
+	<VAR my1Darr :: <ARRAY subtype=int4 dimensions=(10,) size=40> @ [<AddressLiveRange addr=<STACK:-0x1e0> startpc=<ABSOLUTE:0x12d2> endpc=<ABSOLUTE:0x15c3>>]>
+	<VAR my2Darr :: <ARRAY subtype=int4 dimensions=(10, 10) size=400> @ [<AddressLiveRange addr=<STACK:-0x1b0> startpc=<ABSOLUTE:0x12d2> endpc=<ABSOLUTE:0x15c3>>]>
+	<VAR stackvar :: int4 @ [<AddressLiveRange addr=<STACK:-0x270> startpc=<ABSOLUTE:0x12d2> endpc=<ABSOLUTE:0x15c3>>]>
+	<VAR heapint :: int4 * @ [<AddressLiveRange addr=<STACK:-0x268> startpc=<ABSOLUTE:0x12d2> endpc=<ABSOLUTE:0x15c3>>]>
+	<VAR sum :: int4 @ [<AddressLiveRange addr=<STACK:-0x26c> startpc=<ABSOLUTE:0x12d2> endpc=<ABSOLUTE:0x15c3>>]>
+	<VAR i :: int4 @ [<AddressLiveRange addr=<STACK:-0x27c> startpc=<ABSOLUTE:0x12d2> endpc=<ABSOLUTE:0x15c3>>]>
+	<VAR j :: int4 @ [<AddressLiveRange addr=<STACK:-0x278> startpc=<ABSOLUTE:0x12d2> endpc=<ABSOLUTE:0x15c3>>]>
+myrecfunc :: (<STRUCT mystruct membertypes=4 size=24> *) -> int4 @ PC range=(<ABSOLUTE:0x127f>, <ABSOLUTE:0x12d3>)
+	<PARAM s :: <STRUCT mystruct membertypes=4 size=24> * @ [<AddressLiveRange addr=<STACK:-0x38> startpc=<ABSOLUTE:0x127f> endpc=<ABSOLUTE:0x12d3>>]>
+	<VAR sum :: int4 @ [<AddressLiveRange addr=<STACK:-0x24> startpc=<ABSOLUTE:0x127f> endpc=<ABSOLUTE:0x12d3>>]>
+hello2 :: (int4) -> void @ PC range=(<ABSOLUTE:0x1254>, <ABSOLUTE:0x1280>)
+	<PARAM v :: int4 @ [<AddressLiveRange addr=<STACK:-0x14> startpc=<ABSOLUTE:0x1254> endpc=<ABSOLUTE:0x1280>>]>
+hello :: (int4) -> void @ PC range=(<ABSOLUTE:0x1229>, <ABSOLUTE:0x1255>)
+	<PARAM v :: int4 @ [<AddressLiveRange addr=<STACK:-0x14> startpc=<ABSOLUTE:0x1229> endpc=<ABSOLUTE:0x1255>>]>
+
+---------DWARF VS GHIDRA----------
+
+----------GLOBAL COMPARISONS----------
+BYTES OVERLAPPED = 8
+TOTAL BYTES = 8
+BYTE RECOVERY % = 100.0%
+<VarnodeCompareRecord varnode=<Varnode address=<ABSOLUTE:0x4014> datatype=int4> status=MATCH>
+	Comparison:
+		other=<Varnode address=<ABSOLUTE:0x4014> datatype=unsigned int4>
+		compare_code=MATCH
+
+<VarnodeCompareRecord varnode=<Varnode address=<ABSOLUTE:0x4018> datatype=int4> status=MATCH>
+	Comparison:
+		other=<Varnode address=<ABSOLUTE:0x4018> datatype=unsigned int4>
+		compare_code=MATCH
+
+
+
+----------FUNCTION COMPARISONS----------
+<UnoptimizedFunctionCompareRecord name=hello startpc=<ABSOLUTE:0x1229> compared=True>
+	Parameters:
+		BYTES OVERLAPPED = 0
+		TOTAL BYTES = 4
+		BYTE RECOVERY % = 0.0%
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x14> datatype=int4> status=NO_MATCH>
+		
+	Local Variables:
+		BYTES OVERLAPPED = 0
+		TOTAL BYTES = 0
+		BYTE RECOVERY % = 0%
+		
+	Flattened (Primitive) Parameters & Variables:
+		BYTES OVERLAPPED = 0
+		TOTAL BYTES = 4
+		BYTE RECOVERY % = 0.0%
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x14> datatype=int4> status=NO_MATCH>
+		
+<UnoptimizedFunctionCompareRecord name=hello2 startpc=<ABSOLUTE:0x1254> compared=True>
+	Parameters:
+		BYTES OVERLAPPED = 0
+		TOTAL BYTES = 4
+		BYTE RECOVERY % = 0.0%
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x14> datatype=int4> status=NO_MATCH>
+		
+	Local Variables:
+		BYTES OVERLAPPED = 0
+		TOTAL BYTES = 0
+		BYTE RECOVERY % = 0%
+		
+	Flattened (Primitive) Parameters & Variables:
+		BYTES OVERLAPPED = 0
+		TOTAL BYTES = 4
+		BYTE RECOVERY % = 0.0%
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x14> datatype=int4> status=NO_MATCH>
+		
+<UnoptimizedFunctionCompareRecord name=myrecfunc startpc=<ABSOLUTE:0x127f> compared=True>
+	Parameters:
+		BYTES OVERLAPPED = 0
+		TOTAL BYTES = 8
+		BYTE RECOVERY % = 0.0%
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x38> datatype=<STRUCT mystruct membertypes=4 size=24> *> status=NO_MATCH>
+		
+	Local Variables:
+		BYTES OVERLAPPED = 0
+		TOTAL BYTES = 4
+		BYTE RECOVERY % = 0.0%
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x24> datatype=int4> status=NO_MATCH>
+		
+	Flattened (Primitive) Parameters & Variables:
+		BYTES OVERLAPPED = 0
+		TOTAL BYTES = 12
+		BYTE RECOVERY % = 0.0%
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x38> datatype=<STRUCT mystruct membertypes=4 size=24> *> status=NO_MATCH>
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x24> datatype=int4> status=NO_MATCH>
+		
+<UnoptimizedFunctionCompareRecord name=main startpc=<ABSOLUTE:0x12d2> compared=True>
+	Parameters:
+		BYTES OVERLAPPED = 0
+		TOTAL BYTES = 12
+		BYTE RECOVERY % = 0.0%
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x290> datatype=char * *> status=NO_MATCH>
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x284> datatype=int4> status=NO_MATCH>
+		
+	Local Variables:
+		BYTES OVERLAPPED = 540
+		TOTAL BYTES = 572
+		BYTE RECOVERY % = 94.4055944055944%
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x27c> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x27c> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x278> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x278> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x274> datatype=unsigned int4> status=NO_MATCH>
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x270> datatype=int4> status=NO_MATCH>
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x26c> datatype=int4> status=NO_MATCH>
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x268> datatype=int4 *> status=NO_MATCH>
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x260> datatype=<STRUCT mystruct membertypes=4 size=24>> status=OVERLAP_MANY>
+			Comparison:
+				other=<Varnode address=<STACK:-0x260> datatype=undefined4>
+				compare_code=OVERLAP
+		
+			Comparison:
+				other=<Varnode address=<STACK:-0x25c> datatype=undefined4>
+				compare_code=OVERLAP
+		
+			Comparison:
+				other=<Varnode address=<STACK:-0x258> datatype=undefined4>
+				compare_code=OVERLAP
+		
+			Comparison:
+				other=<Varnode address=<STACK:-0x250> datatype=undefined8>
+				compare_code=OVERLAP
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x240> datatype=<STRUCT mystruct membertypes=4 size=24>> status=OVERLAP_MANY>
+			Comparison:
+				other=<Varnode address=<STACK:-0x240> datatype=undefined4>
+				compare_code=OVERLAP
+		
+			Comparison:
+				other=<Varnode address=<STACK:-0x23c> datatype=undefined4>
+				compare_code=OVERLAP
+		
+			Comparison:
+				other=<Varnode address=<STACK:-0x238> datatype=undefined4>
+				compare_code=OVERLAP
+		
+			Comparison:
+				other=<Varnode address=<STACK:-0x230> datatype=undefined4 *>
+				compare_code=LEFT_CONTAINS_RIGHT
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x220> datatype=<STRUCT mystruct membertypes=4 size=24>> status=CONTAINS_MANY>
+			Comparison:
+				other=<Varnode address=<STACK:-0x220> datatype=unsigned int4>
+				compare_code=LEFT_CONTAINS_RIGHT
+		
+			Comparison:
+				other=<Varnode address=<STACK:-0x21c> datatype=unsigned int4>
+				compare_code=LEFT_CONTAINS_RIGHT
+		
+			Comparison:
+				other=<Varnode address=<STACK:-0x218> datatype=unsigned int4>
+				compare_code=LEFT_CONTAINS_RIGHT
+		
+			Comparison:
+				other=<Varnode address=<STACK:-0x210> datatype=undefined4 *>
+				compare_code=LEFT_CONTAINS_RIGHT
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x200> datatype=<UNION myunion membertypes=4 size=32>> status=ALIGNED>
+			Comparison:
+				other=<Varnode address=<STACK:-0x200> datatype=<ARRAY subtype=char dimensions=(32,) size=32>>
+				compare_code=ALIGNED
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x1e0> datatype=<ARRAY subtype=int4 dimensions=(10,) size=40>> status=CONTAINED>
+			Comparison:
+				other=<Varnode address=<STACK:-0x1e0> datatype=<ARRAY subtype=int4 dimensions=(12,) size=48>>
+				compare_code=RIGHT_CONTAINS_LEFT
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x1b0> datatype=<ARRAY subtype=int4 dimensions=(10, 10) size=400>> status=CONTAINED>
+			Comparison:
+				other=<Varnode address=<STACK:-0x1b0> datatype=<ARRAY subtype=int4 dimensions=(102,) size=408>>
+				compare_code=RIGHT_CONTAINS_LEFT
+		
+		
+	Flattened (Primitive) Parameters & Variables:
+		BYTES OVERLAPPED = 540
+		TOTAL BYTES = 572
+		BYTE RECOVERY % = 94.4055944055944%
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x290> datatype=char * *> status=NO_MATCH>
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x284> datatype=int4> status=NO_MATCH>
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x27c> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x27c> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x278> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x278> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x274> datatype=unsigned int4> status=NO_MATCH>
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x270> datatype=int4> status=NO_MATCH>
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x26c> datatype=int4> status=NO_MATCH>
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x268> datatype=int4 *> status=NO_MATCH>
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x260> datatype=int4> status=ALIGNED>
+			Comparison:
+				other=<Varnode address=<STACK:-0x260> datatype=undefined4>
+				compare_code=ALIGNED
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x25c> datatype=int4> status=ALIGNED>
+			Comparison:
+				other=<Varnode address=<STACK:-0x25c> datatype=undefined4>
+				compare_code=ALIGNED
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x258> datatype=int4> status=ALIGNED>
+			Comparison:
+				other=<Varnode address=<STACK:-0x258> datatype=undefined4>
+				compare_code=ALIGNED
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x250> datatype=<STRUCT mystruct membertypes=4 size=24> *> status=ALIGNED>
+			Comparison:
+				other=<Varnode address=<STACK:-0x250> datatype=undefined8>
+				compare_code=ALIGNED
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x240> datatype=int4> status=ALIGNED>
+			Comparison:
+				other=<Varnode address=<STACK:-0x240> datatype=undefined4>
+				compare_code=ALIGNED
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x23c> datatype=int4> status=ALIGNED>
+			Comparison:
+				other=<Varnode address=<STACK:-0x23c> datatype=undefined4>
+				compare_code=ALIGNED
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x238> datatype=int4> status=ALIGNED>
+			Comparison:
+				other=<Varnode address=<STACK:-0x238> datatype=undefined4>
+				compare_code=ALIGNED
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x230> datatype=<STRUCT mystruct membertypes=4 size=24> *> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x230> datatype=undefined4 *>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x220> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x220> datatype=unsigned int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x21c> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x21c> datatype=unsigned int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x218> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x218> datatype=unsigned int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x210> datatype=<STRUCT mystruct membertypes=4 size=24> *> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x210> datatype=undefined4 *>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x200> datatype=undefined32> status=OVERLAP_MANY>
+			Comparison:
+				other=<Varnode address=<STACK:-0x200> datatype=char>
+				compare_code=OVERLAP
+		
+			Comparison:
+				other=<Varnode address=<STACK:-0x1ff> datatype=char>
+				compare_code=OVERLAP
+		
+			Comparison:
+				other=<Varnode address=<STACK:-0x1fe> datatype=char>
+				compare_code=OVERLAP
+		
+			Comparison:
+				other=<Varnode address=<STACK:-0x1fd> datatype=char>
+				compare_code=OVERLAP
+		
+			Comparison:
+				other=<Varnode address=<STACK:-0x1fc> datatype=char>
+				compare_code=OVERLAP
+		
+			Comparison:
+				other=<Varnode address=<STACK:-0x1fb> datatype=char>
+				compare_code=OVERLAP
+		
+			Comparison:
+				other=<Varnode address=<STACK:-0x1fa> datatype=char>
+				compare_code=OVERLAP
+		
+			Comparison:
+				other=<Varnode address=<STACK:-0x1f9> datatype=char>
+				compare_code=OVERLAP
+		
+			Comparison:
+				other=<Varnode address=<STACK:-0x1f8> datatype=char>
+				compare_code=OVERLAP
+		
+			Comparison:
+				other=<Varnode address=<STACK:-0x1f7> datatype=char>
+				compare_code=OVERLAP
+		
+			Comparison:
+				other=<Varnode address=<STACK:-0x1f6> datatype=char>
+				compare_code=OVERLAP
+		
+			Comparison:
+				other=<Varnode address=<STACK:-0x1f5> datatype=char>
+				compare_code=OVERLAP
+		
+			Comparison:
+				other=<Varnode address=<STACK:-0x1f4> datatype=char>
+				compare_code=OVERLAP
+		
+			Comparison:
+				other=<Varnode address=<STACK:-0x1f3> datatype=char>
+				compare_code=OVERLAP
+		
+			Comparison:
+				other=<Varnode address=<STACK:-0x1f2> datatype=char>
+				compare_code=OVERLAP
+		
+			Comparison:
+				other=<Varnode address=<STACK:-0x1f1> datatype=char>
+				compare_code=OVERLAP
+		
+			Comparison:
+				other=<Varnode address=<STACK:-0x1f0> datatype=char>
+				compare_code=OVERLAP
+		
+			Comparison:
+				other=<Varnode address=<STACK:-0x1ef> datatype=char>
+				compare_code=OVERLAP
+		
+			Comparison:
+				other=<Varnode address=<STACK:-0x1ee> datatype=char>
+				compare_code=OVERLAP
+		
+			Comparison:
+				other=<Varnode address=<STACK:-0x1ed> datatype=char>
+				compare_code=OVERLAP
+		
+			Comparison:
+				other=<Varnode address=<STACK:-0x1ec> datatype=char>
+				compare_code=OVERLAP
+		
+			Comparison:
+				other=<Varnode address=<STACK:-0x1eb> datatype=char>
+				compare_code=OVERLAP
+		
+			Comparison:
+				other=<Varnode address=<STACK:-0x1ea> datatype=char>
+				compare_code=OVERLAP
+		
+			Comparison:
+				other=<Varnode address=<STACK:-0x1e9> datatype=char>
+				compare_code=OVERLAP
+		
+			Comparison:
+				other=<Varnode address=<STACK:-0x1e8> datatype=char>
+				compare_code=OVERLAP
+		
+			Comparison:
+				other=<Varnode address=<STACK:-0x1e7> datatype=char>
+				compare_code=OVERLAP
+		
+			Comparison:
+				other=<Varnode address=<STACK:-0x1e6> datatype=char>
+				compare_code=OVERLAP
+		
+			Comparison:
+				other=<Varnode address=<STACK:-0x1e5> datatype=char>
+				compare_code=OVERLAP
+		
+			Comparison:
+				other=<Varnode address=<STACK:-0x1e4> datatype=char>
+				compare_code=OVERLAP
+		
+			Comparison:
+				other=<Varnode address=<STACK:-0x1e3> datatype=char>
+				compare_code=OVERLAP
+		
+			Comparison:
+				other=<Varnode address=<STACK:-0x1e2> datatype=char>
+				compare_code=OVERLAP
+		
+			Comparison:
+				other=<Varnode address=<STACK:-0x1e1> datatype=char>
+				compare_code=OVERLAP
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x1e0> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x1e0> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x1dc> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x1dc> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x1d8> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x1d8> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x1d4> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x1d4> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x1d0> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x1d0> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x1cc> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x1cc> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x1c8> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x1c8> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x1c4> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x1c4> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x1c0> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x1c0> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x1bc> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x1bc> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x1b0> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x1b0> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x1ac> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x1ac> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x1a8> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x1a8> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x1a4> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x1a4> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x1a0> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x1a0> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x19c> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x19c> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x198> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x198> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x194> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x194> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x190> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x190> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x18c> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x18c> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x188> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x188> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x184> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x184> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x180> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x180> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x17c> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x17c> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x178> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x178> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x174> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x174> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x170> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x170> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x16c> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x16c> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x168> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x168> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x164> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x164> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x160> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x160> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x15c> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x15c> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x158> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x158> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x154> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x154> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x150> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x150> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x14c> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x14c> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x148> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x148> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x144> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x144> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x140> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x140> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x13c> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x13c> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x138> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x138> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x134> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x134> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x130> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x130> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x12c> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x12c> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x128> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x128> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x124> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x124> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x120> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x120> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x11c> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x11c> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x118> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x118> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x114> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x114> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x110> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x110> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x10c> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x10c> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x108> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x108> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x104> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x104> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x100> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x100> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0xfc> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0xfc> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0xf8> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0xf8> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0xf4> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0xf4> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0xf0> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0xf0> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0xec> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0xec> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0xe8> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0xe8> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0xe4> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0xe4> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0xe0> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0xe0> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0xdc> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0xdc> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0xd8> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0xd8> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0xd4> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0xd4> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0xd0> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0xd0> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0xcc> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0xcc> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0xc8> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0xc8> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0xc4> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0xc4> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0xc0> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0xc0> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0xbc> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0xbc> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0xb8> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0xb8> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0xb4> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0xb4> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0xb0> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0xb0> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0xac> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0xac> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0xa8> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0xa8> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0xa4> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0xa4> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0xa0> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0xa0> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x9c> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x9c> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x98> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x98> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x94> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x94> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x90> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x90> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x8c> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x8c> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x88> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x88> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x84> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x84> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x80> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x80> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x7c> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x7c> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x78> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x78> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x74> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x74> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x70> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x70> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x6c> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x6c> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x68> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x68> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x64> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x64> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x60> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x60> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x5c> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x5c> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x58> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x58> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x54> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x54> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x50> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x50> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x4c> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x4c> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x48> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x48> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x44> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x44> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x40> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x40> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x3c> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x3c> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x38> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x38> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x34> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x34> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x30> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x30> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x2c> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x2c> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x28> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x28> datatype=int4>
+				compare_code=MATCH
+		
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x24> datatype=int4> status=MATCH>
+			Comparison:
+				other=<Varnode address=<STACK:-0x24> datatype=int4>
+				compare_code=MATCH
+		
+		
+

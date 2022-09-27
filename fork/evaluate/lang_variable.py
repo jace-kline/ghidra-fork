@@ -40,6 +40,12 @@ class Variable(object):
         """ Is this variable a global variable? """
         return self.function is None
 
+    def is_local(self):
+        return not self.is_global() and not self.is_param()
+
+    def has_location(self):
+        return len(self.liveranges) > 0
+
     # is this variable linked to a single Varnode? i.e. a single live range?
     def is_single_loc(self):
         return len(self.liveranges) == 1

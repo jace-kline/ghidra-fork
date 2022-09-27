@@ -6,6 +6,25 @@ from lang_variable import *
 from compare_datatype import *
 from util import *
 
+# represents a quanitification of the level/strength of a Varnode comparison
+class VarnodeCompareLevel(object):
+    NO_MATCH = 0 # not comparable or isn't compared with any others
+    OVERLAP = 1 # non-aligned, non-subset overlap
+    SUBSET = 2 # either left or right is a component/subset of the other
+    ALIGNED = 3 # addresses & size align, types don't
+    MATCH = 4 # varnodes are equal
+
+    @staticmethod
+    def to_string(code: int):
+        _map = [
+            "NO_MATCH",
+            "OVERLAP",
+            "SUBSET",
+            "ALIGNED",
+            "MATCH"
+        ]
+        return _map[code]
+
 class VarnodeCompare2Code(object):
     NO_OVERLAP = 0 # variables do not overlap at all
     OVERLAP = 1 # start not aligned, types not matched
@@ -26,7 +45,23 @@ class VarnodeCompare2Code(object):
         ]
         return _map[code]
 
-# the result of comparing 2 VarnodeCompareRecords
+    # VarnodeCompare2Code -> VarnodeCompareLevel
+    @staticmethod
+    def to_level(code: int):
+        _cls = VarnodeCompare2Code
+        _lvl_cls = VarnodeCompareLevel
+
+        _map = {
+            _cls.NO_OVERLAP: _lvl_cls.NO_MATCH,
+            _cls.OVERLAP: _lvl_cls.OVERLAP,
+            _cls.ALIGNED: _lvl_cls.ALIGNED,
+            _cls.MATCH: _lvl_cls.MATCH,
+            _cls.LEFT_CONTAINS_RIGHT: _lvl_cls.SUBSET,
+            _cls.RIGHT_CONTAINS_LEFT: _lvl_cls.SUBSET,
+        }
+        return _map[code]
+
+# the result of comparing 2 Varnodes
 # assume they are in the same address space (stack, absolute, etc.)
 class VarnodeCompare2(object):
     def __init__(self,
@@ -99,8 +134,14 @@ class VarnodeCompare2(object):
     def get_compare_code(self) -> int:
         return self.compare_code
 
+    def get_compare_level(self) -> int:
+        return VarnodeCompare2Code.to_level(self.compare_code)
+
     def get_compare_code_str(self) -> str:
         return VarnodeCompare2Code.to_string(self.compare_code)
+
+    def get_datatype_comparison(self) -> Union[DataTypeCompare2, None]:
+        return self.datatype_comparison
 
     # same start addr?
     def is_start_aligned(self) -> bool:
@@ -155,7 +196,7 @@ class VarnodeCompareStatus(object):
     OVERLAP_MANY = 8 # this varnode overlaps >1 varnodes from other set
 
     @staticmethod
-    def to_string(code):
+    def to_string(code: int):
         _map = [
             "NOT_COMPARABLE",
             "NO_MATCH",
@@ -168,6 +209,25 @@ class VarnodeCompareStatus(object):
             "OVERLAP_MANY"
         ]
         return _map[code]
+
+    # VarnodeCompareStatus -> VarnodeCompareLevel
+    @staticmethod
+    def to_level(status: int):
+        _cls = VarnodeCompareStatus
+        _lvl_cls = VarnodeCompareLevel
+
+        _map = {
+            _cls.NOT_COMPARABLE: _lvl_cls.NO_MATCH,
+            _cls.NO_MATCH: _lvl_cls.NO_MATCH,
+            _cls.OVERLAP: _lvl_cls.OVERLAP,
+            _cls.ALIGNED: _lvl_cls.ALIGNED,
+            _cls.MATCH: _lvl_cls.MATCH,
+            _cls.CONTAINS: _lvl_cls.SUBSET,
+            _cls.CONTAINS_MANY: _lvl_cls.SUBSET,
+            _cls.CONTAINED: _lvl_cls.SUBSET,
+            _cls.OVERLAP_MANY: _lvl_cls.OVERLAP
+        }
+        return _map[status]
 
 # wraps a Varnode object (Variable at a single Address)
 # collects comparisons made between this varnode and others, and exposes
@@ -227,6 +287,12 @@ class VarnodeCompareRecord(object):
 
     def get_status_str(self) -> str:
         return VarnodeCompareStatus.to_string(self.status)
+
+    def get_compare_level(self) -> int:
+        return VarnodeCompareStatus.to_level(self.status)
+
+    def compared_with(self) -> int:
+        return len(self.varnode_comparison_map)
 
     def is_comparable(self) -> bool:
         # does addr exist AND the region

@@ -11,6 +11,30 @@ EXACT_MATCH: bool = False
 # the LatticeItem class to use
 TYPE_LATTICE: type = Ariste_LatticeItem
 
+# represents the quantification of the level/strength of a DataType comparison
+class DataTypeCompareLevel(object):
+    # no valid comparison could be made
+    NO_MATCH = 0
+
+    # left is a subset / member of right (possibly recursively) or vice-versa at given offset
+    SUBSET = 1
+
+    # both are primitive types and share a common ancestor in a type lattice
+    PRIMITIVE_COMMON_ANCESTOR = 2
+
+    # a "top-level" match -> the types are exactly equal
+    MATCH = 3
+
+    @staticmethod
+    def to_string(code: int):
+        _map = [
+            "NO_MATCH",
+            "SUBSET",
+            "PRIMITIVE_COMMON_ANCESTOR",
+            "MATCH"
+        ]
+        return _map[code]
+
 class DataTypeCompareCode(object):
     # no valid comparison could be made
     NO_MATCH = 0
@@ -36,6 +60,21 @@ class DataTypeCompareCode(object):
             "RIGHT_SUBSET_LEFT",
             "PRIMITIVE_COMMON_ANCESTOR"
         ]
+        return _map[code]
+
+    # DataTypeCompareCode -> DataTypeCompareLevel
+    @staticmethod
+    def to_level(code: int):
+        _cls = DataTypeCompareCode
+        _lvl_cls = DataTypeCompareLevel
+
+        _map = {
+            _cls.NO_MATCH: _lvl_cls.NO_MATCH,
+            _cls.LEFT_SUBSET_RIGHT: _lvl_cls.SUBSET,
+            _cls.RIGHT_SUBSET_LEFT: _lvl_cls.SUBSET,
+            _cls.PRIMITIVE_COMMON_ANCESTOR: _lvl_cls.PRIMITIVE_COMMON_ANCESTOR,
+            _cls.MATCH: _lvl_cls.MATCH
+        }
         return _map[code]
 
 
@@ -142,6 +181,9 @@ class DataTypeCompare2(object):
     def get_offset(self) -> int:
         return self.offset
 
+    def get_primitive_comparison(self) -> Union['DataTypePrimitiveCompare2', None]:
+        return self.primitive_comparison
+
     def get_left_descent(self) -> Union[DataTypeRecursiveDescent, None]:
         return self.left_descent
 
@@ -176,6 +218,12 @@ class DataTypeCompare2(object):
     def bytes_overlapped(self) -> int:
         return 0 if self.no_match() else min(self.left.get_size(), self.right.get_size())
 
+    def get_compare_code(self) -> int:
+        return self.compare_code
+
+    def get_compare_level(self) -> int:
+        return DataTypeCompareCode.to_level(self.compare_code)
+
     def flip(self):
         return __class__(self.right, self.left, -1 * self.offset)
 
@@ -193,6 +241,31 @@ class DataTypeCompare2(object):
     def __hash__(self):
         return hash((self.left, self.right))
 
+class DataTypePrimitiveCompareLevel(object):
+    # no valid comparison could be made / no shared root node
+    NO_MATCH = 0
+
+    # the data types share a common ancestor node in the type lattice
+    # but neither is a direct ancestor of the other
+    COMMON_ANCESTOR = 1
+
+    # left is a more precise form of right or vice-versa, according to type lattice
+    # i.e., one is a direct ancestor of another
+    DESCENT = 2
+
+    # the primitive types are "equivalent" (same node in lattice)
+    MATCH = 3
+
+    @staticmethod
+    def to_string(code):
+        _map = [
+            "NO_MATCH",
+            "COMMON_ANCESTOR",
+            "DIRECT_DESCENT",
+            "MATCH"
+        ]
+        return _map[code]
+    
 class DataTypePrimitiveCompareCode(object):
     # no valid comparison could be made / no shared root node
     NO_MATCH = 0
@@ -218,6 +291,19 @@ class DataTypePrimitiveCompareCode(object):
             "RIGHT_DESCENDANT_LEFT",
             "COMMON_ANCESTOR"
         ]
+        return _map[code]
+
+    @staticmethod
+    def to_level(code):
+        _cls = DataTypePrimitiveCompareCode
+        _lvl_cls = DataTypePrimitiveCompareLevel
+        _map = {
+            _cls.NO_MATCH: _lvl_cls.NO_MATCH,
+            _cls.LEFT_DESCENDANT_RIGHT: _lvl_cls.DESCENT,
+            _cls.RIGHT_DESCENDANT_LEFT: _lvl_cls.DESCENT,
+            _cls.COMMON_ANCESTOR: _lvl_cls.COMMON_ANCESTOR,
+            _cls.MATCH: _lvl_cls.MATCH
+        }
         return _map[code]
 
 class DataTypePrimitiveCompare2(object):
@@ -288,6 +374,12 @@ class DataTypePrimitiveCompare2(object):
 
     def get_lattice_type(self) -> type:
         return TYPE_LATTICE
+
+    def get_compare_code(self) -> int:
+        return self.compare_code
+
+    def get_compare_level(self) -> int:
+        return DataTypePrimitiveCompareCode.to_level(self.compare_code)
 
     def __str__(self) -> str:
         return "<DataTypePrimitiveCompare2 left={} right={} compare_code={}>".format(

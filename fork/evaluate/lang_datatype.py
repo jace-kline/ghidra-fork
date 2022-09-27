@@ -183,6 +183,11 @@ class DataType(object):
     def is_complex(self):
         return False
 
+    # does this actually occupy a certain amount of address space?
+    # or is it an abstract type (e.g. function prototype)?
+    def is_sized(self):
+        return True
+
     # Flatten this datatype into an iterator of (offset, primitive type) pairs
     # May return None if doesn't make sense for the datatype (e.g. function prototype)
     def flatten(self):
@@ -290,6 +295,9 @@ class DataTypeFunctionPrototype(DataType):
     # override in children
     def is_complex(self):
         return True
+
+    def is_sized(self):
+        return False
 
     # this operation doesn't really make sense for a function prototype
     # since this doesn't occupy any space in memory
