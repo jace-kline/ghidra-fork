@@ -104,7 +104,7 @@ class GhidraUtil(object):
 
         # HighSymbol -> bool
         def is_global_var(sym):
-            return sym.isGlobal()
+            return sym.isGlobal() and sym.getSymbol().getSymbolType() in (SymbolType.GLOBAL_VAR, SymbolType.LABEL)
         
         symmap = highfn.getGlobalSymbolMap()
         return (sym for sym in symmap.getSymbols() if is_global_var(sym))
@@ -121,9 +121,16 @@ class GhidraUtil(object):
                     yield gblsym
     
     # () -> Iter<Function>
-    def get_functions(self):
+    def get_functions(self, filter=True):
+        # names that should be filtered out
+        BLACKLIST = [ "_init", "_start", "deregister_tm_clones", "register_tm_clones", "__do_global_dtors_aux", "__libc_csu_init", "__libc_csu_fini", "_fini"]
+
+        # Function -> bool
+        def valid_fn(fn):
+            return True if not filter else not fn.isExternal() and not fn.isThunk() and fn.getName() not in BLACKLIST
+        
         fm = self.curr.getFunctionManager()
-        funcs = fm.getFunctions(True)
+        funcs = ( fn for fn in fm.getFunctionsNoStubs(True) if valid_fn(fn) )
         return funcs
 
     # Get the absolute addresses where a Function starts and ends.
