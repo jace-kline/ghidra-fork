@@ -160,5 +160,71 @@ def test_tree():
     other = tree.root.children[2].children[1]
     assert(leaf.common_root(other) is tree.root.children[2])
 
+class Filter(object):
+    def __init__(self):
+        # store (attr name, attr val, method) when attr matches method name
+        self.triples = self._build_triples()
+
+    def _build_triples(self):
+        triples = []
+        instance_dict = self.__dict__
+        class_dict = self.__class__.__dict__
+        for attr, val in instance_dict.items():
+            if attr in class_dict:
+                triples.append((attr, val, class_dict[attr]))
+        return triples
+
+    def __call__(self, obj) -> bool:
+        return all(( (True if val is None else fn(self, obj)) for _, val, fn in self.triples ))
+
+class FilterDataType(Filter):
+    filter_cls: type = DataType
+
+    def __init__(
+        self,
+        primitive = None, # bool|None
+        complex = None, # bool|None
+        sized = None, # bool|None
+        metatype = None, # int|None
+        size_range = None, # (min: int, max: int)|None
+        composition_level = None # int|None
+    ):
+        self.primitive = primitive
+        self.complex = complex
+        self.sized = sized
+        self.metatype = metatype
+        self.size_range = size_range
+        self.composition_level = composition_level
+        super(FilterDataType, self).__init__()
+
+    def primitive(self, dtype: DataType) -> bool:
+        return self.primitive == dtype.is_primitive()
+
+    def complex(self, dtype: DataType) -> bool:
+        return self.complex == dtype.is_complex()
+
+    def sized(self, dtype: DataType) -> bool:
+        return self.sized == dtype.get_size() is not None and dtype.get_size() > 0
+
+    def metatype(self, dtype: DataType) -> bool:
+        return self.metatype == dtype.get_metatype()
+
+    def size_range(self, dtype: DataType) -> bool:
+        _min, _max = self.size_range
+        return dtype.get_size() >= _min and dtype.get_size() <= _max
+
+    def composition_level(self, dtype: DataType) -> bool:
+        return dtype.composition_level() == self.composition_level
+
+def test_class_attr_access():
+    dtype_filter: FilterDataType = FilterDataType(
+        primitive=False
+    )
+    # print(dtype_filter.__dict__)
+    # print(dtype_filter.__class__.__dict__)
+
+    obj = DataTypeInt(size=4)
+    print(dtype_filter(obj))
+
 if __name__ == "__main__":
-    test_tree()
+    test_class_attr_access()

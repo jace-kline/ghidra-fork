@@ -1,207 +1,358 @@
 
-from lang_variable import Variable, Varnode
-from lang_datatype import DataType
-from compare_variable import VarnodeCompare2, VarnodeCompareRecord, VarnodeCompareLevel
-from compare_datatype import DataTypePrimitiveCompare2, DataTypePrimitiveCompareLevel, DataTypeCompare2, DataTypeCompareLevel
+from lang_variable import *
+from lang_datatype import *
+from lang_address import *
+from compare_variable import *
+from compare_datatype import *
 
-class FilterDataType(object):
+class Filter(object):
+    def __call__(self, obj) -> bool:
+        # [(attr val, attr method)]
+        pairs = []
+        instance_dict = self.__dict__
+        class_dict = self.__class__.__dict__
+        for attr, val in instance_dict.items():
+            methodname = '_' + attr
+            if methodname in class_dict:
+                pairs.append((val, class_dict[methodname]))
+        return all(( (True if val is None else fn(self, obj)) for val, fn in pairs ))
+
+class FilterDataType(Filter):
+    filter_cls: type = DataType
+
     def __init__(
         self,
-        primitive: bool = False,
-        complex: bool = False,
-        sized: bool = False
+        primitive: bool = None, # bool|None
+        complex: bool = None, # bool|None
+        sized: bool = None, # bool|None
+        metatype: int = None, # int|None
+        min_size: int = None,
+        max_size: int = None,
+        size: int = None,
+        composition_level = None, # int|None
+        custom: function = None
     ):
         self.primitive = primitive
         self.complex = complex
         self.sized = sized
+        self.metatype = metatype
+        self.min_size = min_size
+        self.max_size = max_size
+        self.size = size
+        self.composition_level = composition_level
+        self.custom = custom
 
-    def __call__(self, dtype: DataType) -> bool:
-        ret = True
+    def _primitive(self, dtype: DataType) -> bool:
+        return self.primitive == dtype.is_primitive()
 
-        if self.primitive:
-            ret = ret and dtype.is_primitive()
+    def _complex(self, dtype: DataType) -> bool:
+        return self.complex == dtype.is_complex()
 
-        if self.complex:
-            ret = ret and dtype.is_complex()
+    def _sized(self, dtype: DataType) -> bool:
+        return self.sized == dtype.get_size() is not None and dtype.get_size() > 0
 
-        if self.sized:
-            ret = ret and dtype.is_sized()
+    def _metatype(self, dtype: DataType) -> bool:
+        return self.metatype == dtype.get_metatype()
 
-        return ret
+    def _min_size(self, dtype: DataType) -> bool:
+        return dtype.get_size() >= self.min_size
 
-class FilterDataTypePrimitiveCompare2(object):
+    def _max_size(self, dtype: DataType) -> bool:
+        return dtype.get_size() <= self.max_size
+
+    def _size(self, dtype: DataType) -> bool:
+        return dtype.get_size() == self.size
+
+    def _composition_level(self, dtype: DataType) -> bool:
+        return dtype.composition_level() == self.composition_level
+
+    def _custom(self, dtype: DataType) -> bool:
+        return self.custom(dtype)
+
+class FilterDataTypePrimitiveCompare2(Filter):
+    filter_cls = DataTypePrimitiveCompare2
+
     def __init__(
         self,
-        min_compare_level: int = DataTypePrimitiveCompareLevel.NO_MATCH,
-        max_compare_level: int = DataTypePrimitiveCompareLevel.MATCH
+        min_compare_level: int = None, # DataTypePrimitiveCompareLevel
+        max_compare_level: int = None, # DataTypePrimitiveCompareLevel
+        compare_levels: List[int] = None, # DataTypePrimitiveCompareLevel
+        compare_codes: List[int] = None, # DataTypePrimitiveCompareCode
+        custom: function = None # DataTypePrimitiveCompare2
     ):
         self.min_compare_level = min_compare_level
         self.max_compare_level = max_compare_level
+        self.compare_levels = compare_levels
+        self.compare_codes = compare_codes
+        self.custom = custom
 
-    def __call__(self, cmp: DataTypePrimitiveCompare2) -> bool:
-        ret = True
+    def _min_compare_level(self, cmp: DataTypePrimitiveCompare2) -> bool:
+        return cmp.get_compare_level() >= self.min_compare_level
+    
+    def _max_compare_level(self, cmp: DataTypePrimitiveCompare2) -> bool:
+        return cmp.get_compare_level() <= self.max_compare_level
 
-        ret = ret and cmp.get_compare_level() >= self.min_compare_level and cmp.get_compare_level() <= self.max_compare_level
+    def _compare_levels(self, cmp: DataTypePrimitiveCompare2) -> bool:
+        return cmp.get_compare_level() in self.compare_levels
 
-        return ret
+    def _compare_codes(self, cmp: DataTypePrimitiveCompare2) -> bool:
+        return cmp.get_compare_code() in self.compare_codes
 
-class FilterDataTypeCompare2(object):
+    def _custom(self, cmp: DataTypePrimitiveCompare2) -> bool:
+        return self.custom(cmp)
+
+class FilterDataTypeCompare2(Filter):
+    filter_cls = DataTypeCompare2
+
     def __init__(
         self,
-        min_compare_level: int = DataTypeCompareLevel.NO_MATCH,
-        max_compare_level: int = DataTypeCompareLevel.MATCH,
-        start_aligned: bool = False,
-        same_size: bool = False,
-        same_metatype: bool = False,
-        exact_match: bool = False,
-        dtype_filter: FilterDataType = FilterDataType(),
-        primitive_compare_filter: FilterDataTypePrimitiveCompare2 = FilterDataTypePrimitiveCompare2()
+        min_compare_level: int = None, # DataTypeCompareLevel
+        max_compare_level: int = None, # DataTypeCompareLevel
+        compare_levels: List[int] = None, # [DataTypeCompareLevel]
+        compare_codes: List[int] = None, # [DataTypeCompareCode]
+        start_aligned: bool = None,
+        same_size: bool = None,
+        same_metatype: bool = None,
+        exact_match: bool = None,
+        left_dtype_filter: FilterDataType = None,
+        right_dtype_filter: FilterDataType = None,
+        primitive_compare2_filter: FilterDataTypePrimitiveCompare2 = None,
+        custom: function = None # DataTypeCompare2 -> bool
     ):
         self.min_compare_level = min_compare_level
         self.max_compare_level = max_compare_level
+        self.compare_levels = compare_levels
+        self.compare_codes = compare_codes
         self.start_aligned = start_aligned
         self.same_size = same_size
         self.same_metatype = same_metatype
         self.exact_match = exact_match
-        self.dtype_filter = dtype_filter
-        self.primitive_compare_filter = primitive_compare_filter
+        self.left_dtype_filter = left_dtype_filter
+        self.right_dtype_filter = right_dtype_filter
+        self.primitive_compare2_filter = primitive_compare2_filter
+        self.custom = custom
 
-    def __call__(self, cmp: DataTypeCompare2) -> bool:
-        ret = True
+    def _min_compare_level(self, cmp: DataTypeCompare2) -> bool:
+        return cmp.get_compare_level() >= self.min_compare_level
 
-        ret = ret and cmp.get_compare_level() >= self.min_compare_level and cmp.get_compare_level() <= self.max_compare_level
+    def _max_compare_level(self, cmp: DataTypeCompare2) -> bool:
+        return cmp.get_compare_level() <= self.max_compare_level
 
-        if self.start_aligned:
-            ret = ret and cmp.start_aligned()
+    def _compare_levels(self, cmp: DataTypeCompare2) -> bool:
+        return cmp.get_compare_level() in self.compare_levels
 
-        if self.same_size:
-            ret = ret and cmp.same_size()
+    def _compare_codes(self, cmp: DataTypeCompare2) -> bool:
+        return cmp.get_compare_code() in self.compare_codes
 
-        if self.same_metatype:
-            ret = ret and cmp.same_metatype()
+    def _start_aligned(self, cmp: DataTypeCompare2) -> bool:
+        return self.start_aligned == cmp.start_aligned()
 
-        if self.exact_match:
-            ret = ret and cmp.exact_match()
+    def _same_size(self, cmp: DataTypeCompare2) -> bool:
+        return self.same_size == cmp.same_size()
 
-        if self.dtype_filter:
-            ret = ret and self.dtype_filter(cmp.get_left()) and self.dtype_filter(cmp.get_right())
+    def _same_metatype(self, cmp: DataTypeCompare2) -> bool:
+        return self.same_metatype == cmp.same_metatype()
 
-        if self.primitive_compare_filter and cmp.get_primitive_comparison() is not None:
-            ret = ret and self.primitive_compare_filter(cmp.get_primitive_comparison())
+    def _exact_match(self, cmp: DataTypeCompare2) -> bool:
+        return self.exact_match == cmp.exact_match()
 
-        return ret
+    def _left_dtype_filter(self, cmp: DataTypeCompare2) -> bool:
+        return self.left_dtype_filter(cmp.get_left())
 
-class FilterVariable(object):
+    def _right_dtype_filter(self, cmp: DataTypeCompare2) -> bool:
+        return self.right_dtype_filter(cmp.get_right())
+
+    def _primitive_compare2_filter(self, cmp: DataTypeCompare2) -> bool:
+        return cmp.get_primitive_comparison() is not None and self.primitive_compare_filter(cmp.get_primitive_comparison())
+
+    def _custom(self, cmp: DataTypeCompare2) -> bool:
+        return self.custom(cmp)
+
+class FilterAddress(Filter):
+    filter_cls = Address
+
     def __init__(
         self,
-        gbl: bool = False, # must be a global variable?
-        param: bool = False, # must be a param?
-        local: bool = False, # must be a local? (not global or param)
-        has_location: bool = False, # has 1+ associated liveranges
-        dtype_filter: FilterDataType = FilterDataType()
+        addrtypes: List[int] = None, # [AddressType] to allow
+        rangeable: bool = None, # is the address space a "range"?
+        known: bool = None, # is this a precise address? or is it unknown/external?
+        custom: function = None # Address -> bool
+    ):
+        self.addrtypes = addrtypes
+        self.rangeable = rangeable
+        self.known = known
+        self.custom = custom
+
+    def _addrtypes(self, addr: Address) -> bool:
+        return addr.get_addrtype() in self.addrtypes
+
+    def _rangeable(self, addr: Address) -> bool:
+        return self.rangeable == addr.rangeable()
+
+    def _known(self, addr: Address) -> bool:
+        return self.known == addr.get_region().is_known()
+
+    def _custom(self, addr: Address) -> bool:
+        return self.custom(addr)
+
+class FilterVariable(Filter):
+    filter_cls = Variable
+
+    def __init__(
+        self,
+        gbl: bool = None,
+        param: bool = None,
+        local: bool = None,
+        has_location: bool = None, # has 1+ associated liveranges
+        locations: int = None, # number of liveranges
+        dtype_filter: FilterDataType = None,
+        address_filter: FilterAddress = None, # apply to each Address in liveranges
+        custom: function = None # Variable -> bool
     ):
         self.gbl = gbl
         self.param = param
         self.local = local
         self.has_location = has_location
+        self.locations = locations
         self.dtype_filter = dtype_filter
+        self.address_filter = address_filter
+        self.custom = custom # Variable -> bool
 
-    def __call__(self, var: Variable) -> bool:
-        ret = True
-        
-        if self.gbl:
-            ret = ret and var.is_global()
+    def _gbl(self, var: Variable) -> bool:
+        return self.gbl == var.is_global()
 
-        if self.param:
-            ret = ret and var.is_param()
+    def _param(self, var: Variable) -> bool:
+        return self.param == var.is_param()
 
-        if self.local:
-            ret = ret and var.is_local()
+    def _local(self, var: Variable) -> bool:
+        return self.local == var.is_local()
 
-        if self.has_location:
-            ret = ret and var.has_location()
+    def _has_location(self, var: Variable) -> bool:
+        return self.has_location == var.has_location()
 
-        if self.dtype_filter:
-            ret = ret and self.dtype_filter(var.dtype)
+    def _dtype_filter(self, var: Variable) -> bool:
+        return self.dtype_filter(var.get_datatype())
 
-        return ret
+    def _address_filter(self, var: Variable) -> bool:
+        return all(( self.address_filter(liverange.get_addr()) for liverange in var.get_liveranges() ))
 
-class FilterVarnode(object):
+    def _custom(self, variable: Variable) -> bool:
+        return self.custom(variable)
+
+class FilterVarnode(Filter):
+    filter_cls = Varnode
+
     def __init__(
         self,
-        dtype_filter: FilterDataType = FilterDataType()
+        dtype_filter: FilterDataType = None,
+        address_filter: FilterAddress = None,
+        custom: function = None # Varnode -> bool
     ):
         self.dtype_filter = dtype_filter
+        self.address_filter = address_filter
+        self.custom = custom
 
-    def __call__(self, varnode: Varnode) -> bool:
-        ret = True
+    def _dtype_filter(self, varnode: Varnode) -> bool:
+        return self.dtype_filter(varnode.get_datatype())
 
-        if self.dtype_filter:
-            ret = ret and self.dtype_filter(varnode.get_datatype())
+    def _address_filter(self, varnode: Varnode) -> bool:
+        return self.address_filter(varnode.get_addr())
 
-        return ret
+    def _custom(self, varnode: Varnode) -> bool:
+        return self.custom(varnode)
 
-class FilterVarnodeCompare2(object):
+class FilterVarnodeCompare2(Filter):
+    filter_cls = VarnodeCompare2
+
     def __init__(
         self,
-        min_compare_level: int = VarnodeCompareLevel.NO_MATCH,
-        max_compare_level: int = VarnodeCompareLevel.MATCH,
-        start_aligned: bool = False,
-        same_size: bool = False,
-        varnode_filter: FilterVarnode = FilterVarnode(),
-        dtype_compare_filter: FilterDataTypeCompare2 = FilterDataTypeCompare2()
+        compare_levels: List[int] = None, # VarnodeCompareLevel
+        compare_codes: List[int] = None, # VarnodeCompare2Code
+        start_aligned: bool = None,
+        same_size: bool = None,
+        left_varnode_filter: FilterVarnode = None,
+        right_varnode_filter: FilterVarnode = None,
+        dtype_compare_filter: FilterDataTypeCompare2 = None,
+        custom: function = None # VarnodeCompare2 -> bool
     ):
-        self.min_compare_level = min_compare_level
-        self.max_compare_level = max_compare_level
+        self.compare_levels = compare_levels
+        self.compare_codes = compare_codes
         self.start_aligned = start_aligned
         self.same_size = same_size
-        self.varnode_filter = varnode_filter
+        self.left_varnode_filter = left_varnode_filter
+        self.right_varnode_filter = right_varnode_filter
         self.dtype_compare_filter = dtype_compare_filter
+        self.custom = custom # VarnodeCompare2 -> bool
 
-    def __call__(self, cmp: VarnodeCompare2) -> bool:
-        ret = True
+    def _compare_levels(self, cmp: VarnodeCompare2) -> bool:
+        pass
 
-        ret = ret and cmp.get_compare_level() >= self.min_compare_level and cmp.get_compare_level() <= self.max_compare_level
+    def _compare_codes(self, cmp: VarnodeCompare2) -> bool:
+        pass
 
-        if self.start_aligned:
-            ret = ret and cmp.is_start_aligned()
+    def _start_aligned(self, cmp: VarnodeCompare2) -> bool:
+        pass
 
-        if self.same_size:
-            ret = ret and cmp.is_same_size()
+    def _same_size(self, cmp: VarnodeCompare2) -> bool:
+        pass
 
-        if self.varnode_filter:
-            ret = ret and self.varnode_filter(cmp.get_left()) and self.varnode_filter(cmp.get_right())
+    def _left_varnode_filter(self, cmp: VarnodeCompare2) -> bool:
+        pass
 
-        if self.dtype_compare_filter and cmp.get_datatype_comparison() is not None:
-            ret = ret and self.dtype_compare_filter(cmp.get_datatype_comparison())
+    def _right_varnode_filter(self, cmp: VarnodeCompare2) -> bool:
+        pass
 
-        return ret
+    def _dtype_compare_filter(self, cmp: VarnodeCompare2) -> bool:
+        pass
 
+    def _custom(self, cmp: VarnodeCompare2) -> bool:
+        return self.custom(cmp)
 
-class FilterVarnodeCompareRecord(object):
+class FilterVarnodeCompareRecord(Filter):
+    filter_cls = VarnodeCompareRecord
+
     def __init__(
         self,
-        min_compare_level: int = VarnodeCompareLevel.NO_MATCH,
-        max_compare_level: int = VarnodeCompareLevel.MATCH,
-        min_compared_with: int = 0,
-        max_compared_with: int = 9999999,
-        varnode_compare2_filter: FilterVarnodeCompare2 = FilterVarnodeCompare2()
+        min_compare_level: int = None, # VarnodeCompareLevel
+        max_compare_level: int = None, # VarnodeCompareLevel
+        compare_level: int = None, # VarnodeCompareLevel
+        compare_status: int = None, # VarnodeCompareStatus
+        min_compared_with: int = None,
+        max_compared_with: int = None,
+        varnode_compare2_filter: FilterVarnodeCompare2 = None,
+        custom: function = None
     ):
         self.min_compare_level = min_compare_level
         self.max_compare_level = max_compare_level
+        self.compare_level = compare_level
+        self.compare_status = compare_status
         self.min_compared_with = min_compared_with
         self.max_compared_with = max_compared_with
         self.varnode_compare2_filter = varnode_compare2_filter
+        self.custom = custom # VarnodeCompareRecord -> bool
 
-    def __call__(self, record: VarnodeCompareRecord) -> bool:
-        ret = True
+    def _min_compare_level(self, cmp: VarnodeCompareRecord) -> bool:
+        pass
 
-        ret = ret and record.get_compare_level() >= self.min_compare_level \
-            and record.get_compare_level() <= self.max_compare_level \
-            and record.compared_with() >= self.min_compared_with \
-            and record.compared_with() <= self.max_compared_with
+    def _max_compare_level(self, cmp: VarnodeCompareRecord) -> bool:
+        pass
 
-        if self.varnode_compare2_filter:
-            ret = ret and all((self.varnode_compare2_filter(cmp) for cmp in record.get_varnode_comparison_map().values()))
+    def _compare_level(self, cmp: VarnodeCompareRecord) -> bool:
+        pass
 
-        return ret
+    def _compare_status(self, cmp: VarnodeCompareRecord) -> bool:
+        pass
+
+    def _min_compared_with(self, cmp: VarnodeCompareRecord) -> bool:
+        pass
+
+    def _max_compared_with(self, cmp: VarnodeCompareRecord) -> bool:
+        pass
+
+    def _varnode_compare2_filter(self, cmp: VarnodeCompareRecord) -> bool:
+        pass
+
+    def _custom(self, cmp: VarnodeCompareRecord) -> bool:
+        return self.custom(cmp)
+
+    

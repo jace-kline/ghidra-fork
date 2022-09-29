@@ -111,13 +111,17 @@ class DataTypeCompare2(object):
     # sets self.left_descent, self.right_descent, self.compare_code
     def _compare(self):
 
-        # base case: primitive comparison was made
-        if self.primitive_comparison:
-            if self.exact_match():
+        # if the types match exactly
+        if self.exact_match():
                 self.compare_code = DataTypeCompareCode.MATCH
+                return
+        
+        # if both are primitives
+        if self.primitive_comparison:
 
-            elif self.primitive_comparison.share_common_ancestor():
-                self.compare_code = DataTypeCompareCode.PRIMITIVE_COMMON_ANCESTOR   
+            if self.primitive_comparison.share_common_ancestor():
+                self.compare_code = DataTypeCompareCode.PRIMITIVE_COMMON_ANCESTOR
+                return
 
         # compute left descent?
         elif (self.left_before_right() or self.start_aligned()) and self.left_bigger_right() and self.left.is_complex():
@@ -148,8 +152,7 @@ class DataTypeCompare2(object):
                 return
 
         # default: no match
-        else:
-            self.compare_code = DataTypeCompareCode.NO_MATCH
+        self.compare_code = DataTypeCompareCode.NO_MATCH
 
     def exact_match(self) -> bool:
         return self.offset == 0 and (self.left == self.right if EXACT_MATCH else self.left.rough_match(self.right))

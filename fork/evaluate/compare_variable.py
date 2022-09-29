@@ -10,7 +10,7 @@ from util import *
 class VarnodeCompareLevel(object):
     NO_MATCH = 0 # not comparable or isn't compared with any others
     OVERLAP = 1 # non-aligned, non-subset overlap
-    SUBSET = 2 # either left or right is a component/subset of the other
+    SUBSET = 2 # right var is a subset (member, subarray, etc.) of left var
     ALIGNED = 3 # addresses & size align, types don't
     MATCH = 4 # varnodes are equal
 
@@ -57,7 +57,7 @@ class VarnodeCompare2Code(object):
             _cls.ALIGNED: _lvl_cls.ALIGNED,
             _cls.MATCH: _lvl_cls.MATCH,
             _cls.LEFT_CONTAINS_RIGHT: _lvl_cls.SUBSET,
-            _cls.RIGHT_CONTAINS_LEFT: _lvl_cls.SUBSET,
+            _cls.RIGHT_CONTAINS_LEFT: _lvl_cls.OVERLAP,
         }
         return _map[code]
 
@@ -106,7 +106,7 @@ class VarnodeCompare2(object):
 
 
         if self.does_overlap() and self.datatype_comparison is not None: # assume we performed a DataType comparison
-            if self.datatype_comparison.top_level_match():
+            if self.datatype_comparison.exact_match():
                 code = VarnodeCompare2Code.MATCH
             elif self.datatype_comparison.right_subset_left():
                 code = VarnodeCompare2Code.LEFT_CONTAINS_RIGHT
@@ -147,9 +147,13 @@ class VarnodeCompare2(object):
     def is_start_aligned(self) -> bool:
         return self.overlap.start_aligned()
 
-    # left size == right size
+    # left size == right size?
     def is_same_size(self) -> bool:
-        return self.left.get_size() == self.right.get_size()
+        return self.get_size_diff() == 0
+
+    # right size - left size
+    def get_size_diff(self) -> int:
+        return self.right.get_size() - self.left.get_size()
 
     # same start addr & same size
     def is_aligned(self) -> bool:

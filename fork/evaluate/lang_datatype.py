@@ -149,7 +149,6 @@ class DataTypeRecursiveDescent(object):
     def __repr__(self):
         return str(self)
 
-
 class DataType(object):
     """
     The base class for representing a data type.

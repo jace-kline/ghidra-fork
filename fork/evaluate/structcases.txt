@@ -15,7 +15,7 @@ python3 /home/jacekline/dev/research/ghidra-fork/fork/progs/structcases//../../e
 INFO  Using log config file: jar:file:/home/jacekline/dev/research/ghidra-build/Ghidra/Framework/Generic/lib/Generic.jar!/generic.log4j.xml (LoggingInitialization)  
 INFO  Using log file: /home/jacekline/.ghidra/.ghidra_10.2_DEV/application.log (LoggingInitialization)  
 INFO  Loading user preferences: /home/jacekline/.ghidra/.ghidra_10.2_DEV/preferences (Preferences)  
-INFO  Class search complete (1031 ms) (ClassSearcher)  
+INFO  Class search complete (888 ms) (ClassSearcher)  
 INFO  Initializing SSL Context (SSLContextInitializer)  
 INFO  Initializing Random Number Generator... (SecureRandomFactory)  
 INFO  Random Number Generator initialization complete: NativePRNGNonBlocking (SecureRandomFactory)  
@@ -46,42 +46,42 @@ INFO       project: /home/jacekline/dev/research/ghidra-fork/fork/progs/structca
 INFO  IMPORTING: /home/jacekline/dev/research/ghidra-fork/fork/progs/structcases/structcases_O0_debug.bin (HeadlessAnalyzer)  
 INFO  REPORT: Import succeeded with language "x86:LE:64:default" and cspec "gcc" for file: /home/jacekline/dev/research/ghidra-fork/fork/progs/structcases/structcases_O0_debug.bin (HeadlessAnalyzer)  
 INFO  ANALYZING all memory and code: /home/jacekline/dev/research/ghidra-fork/fork/progs/structcases/structcases_O0_debug.bin (HeadlessAnalyzer)  
-INFO  DWARF import - total elapsed: 40ms (DWARFImportSummary)  
-INFO  DWARF data type import - elapsed: 14ms (DWARFImportSummary)  
-INFO  DWARF func & symbol import - elapsed: 22ms (DWARFImportSummary)  
+INFO  DWARF import - total elapsed: 36ms (DWARFImportSummary)  
+INFO  DWARF data type import - elapsed: 13ms (DWARFImportSummary)  
+INFO  DWARF func & symbol import - elapsed: 19ms (DWARFImportSummary)  
 INFO  DWARF types imported: 12 (DWARFImportSummary)  
 INFO  DWARF function signatures added: 1 (DWARFImportSummary)  
 INFO  hit non-returning function, restarting decompiler switch analyzer later (DecompilerSwitchAnalyzer)  
 INFO  Packed database cache: /tmp/jacekline-Ghidra/packed-db-cache (PackedDatabaseCache)  
 INFO  -----------------------------------------------------
-    ASCII Strings                              0.403 secs
-    Apply Data Archives                        0.262 secs
-    Call Convention ID                         0.074 secs
-    Call-Fixup Installer                       0.003 secs
-    Create Address Tables                      0.005 secs
+    ASCII Strings                              0.241 secs
+    Apply Data Archives                        0.231 secs
+    Call Convention ID                         0.060 secs
+    Call-Fixup Installer                       0.004 secs
+    Create Address Tables                      0.004 secs
     Create Function                            0.001 secs
-    DWARF                                      0.073 secs
-    Data Reference                             0.004 secs
-    Decompiler Switch Analysis                 0.031 secs
-    Decompiler Switch Analysis - One Time      0.207 secs
-    Demangler GNU                              0.007 secs
-    Disassemble Entry Points                   0.045 secs
+    DWARF                                      0.065 secs
+    Data Reference                             0.003 secs
+    Decompiler Switch Analysis                 0.044 secs
+    Decompiler Switch Analysis - One Time      0.193 secs
+    Demangler GNU                              0.008 secs
+    Disassemble Entry Points                   0.047 secs
     ELF Scalar Operand References              0.006 secs
-    Embedded Media                             0.012 secs
+    Embedded Media                             0.023 secs
     External Entry References                  0.001 secs
-    Function ID                                0.016 secs
-    Function Start Search                      0.019 secs
-    Function Start Search After Code           0.001 secs
-    Function Start Search After Data           0.000 secs
-    GCC Exception Handlers                     0.033 secs
+    Function ID                                0.019 secs
+    Function Start Search                      0.016 secs
+    Function Start Search After Code           0.000 secs
+    Function Start Search After Data           0.001 secs
+    GCC Exception Handlers                     0.030 secs
     Non-Returning Functions - Discovered       0.001 secs
     Non-Returning Functions - Known            0.003 secs
-    Reference                                  0.011 secs
-    Shared Return Calls                        0.003 secs
-    Stack                                      0.038 secs
-    Subroutine References                      0.001 secs
+    Reference                                  0.012 secs
+    Shared Return Calls                        0.002 secs
+    Stack                                      0.022 secs
+    Subroutine References                      0.003 secs
     Subroutine References - One Time           0.000 secs
-    x86 Constant Reference Analyzer            0.049 secs
+    x86 Constant Reference Analyzer            0.048 secs
 -----------------------------------------------------
      Total Time   1 secs
 -----------------------------------------------------
@@ -89,18 +89,6 @@ INFO  -----------------------------------------------------
 INFO  REPORT: Analysis succeeded for file: /home/jacekline/dev/research/ghidra-fork/fork/progs/structcases/structcases_O0_debug.bin (HeadlessAnalyzer)  
 INFO  SCRIPT: /home/jacekline/dev/research/ghidra-fork/fork/progs/structcases/../../evaluate/parse_ghidra_exec.py (HeadlessAnalyzer)  
 [u'pickle', u'structcases_O0_debug.ghidra.pickle']
-WARN  Decompiling 00105000, pcode error at 00105000: Unable to disassemble EXTERNAL block location: 00105000 (DecompileCallback)  
-WARN  Decompiling 00105008, pcode error at 00105008: Unable to disassemble EXTERNAL block location: 00105008 (DecompileCallback)  
-WARN  Decompiling 00105010, pcode error at 00105010: Unable to disassemble EXTERNAL block location: 00105010 (DecompileCallback)  
-WARN  Decompiling 00105018, pcode error at 00105018: Unable to disassemble EXTERNAL block location: 00105018 (DecompileCallback)  
-WARN  Decompiling 00105020, pcode error at 00105020: Unable to disassemble EXTERNAL block location: 00105020 (DecompileCallback)  
-WARN  Decompiling 00105028, pcode error at 00105028: Unable to disassemble EXTERNAL block location: 00105028 (DecompileCallback)  
-WARN  Decompiling 00105000, pcode error at 00105000: Unable to disassemble EXTERNAL block location: 00105000 (DecompileCallback)  
-WARN  Decompiling 00105008, pcode error at 00105008: Unable to disassemble EXTERNAL block location: 00105008 (DecompileCallback)  
-WARN  Decompiling 00105010, pcode error at 00105010: Unable to disassemble EXTERNAL block location: 00105010 (DecompileCallback)  
-WARN  Decompiling 00105018, pcode error at 00105018: Unable to disassemble EXTERNAL block location: 00105018 (DecompileCallback)  
-WARN  Decompiling 00105020, pcode error at 00105020: Unable to disassemble EXTERNAL block location: 00105020 (DecompileCallback)  
-WARN  Decompiling 00105028, pcode error at 00105028: Unable to disassemble EXTERNAL block location: 00105028 (DecompileCallback)  
 INFO  ANALYZING changes made by post scripts: /home/jacekline/dev/research/ghidra-fork/fork/progs/structcases/structcases_O0_debug.bin (HeadlessAnalyzer)  
 INFO  REPORT: Post-analysis succeeded for file: /home/jacekline/dev/research/ghidra-fork/fork/progs/structcases/structcases_O0_debug.bin (HeadlessAnalyzer)  
 INFO  REPORT: Save succeeded for file: /structcases_O0_debug.bin (HeadlessAnalyzer)  
@@ -113,27 +101,8 @@ Success!
 ----------GHIDRA DECOMPILER OUTPUT----------
 
 ----------------GLOBALS----------------------
-<VAR __libc_csu_init :: undefined1 @ [<AddressLiveRange addr=<ABSOLUTE:0x11e0> startpc=None endpc=None>]>
-<VAR main :: undefined1 @ [<AddressLiveRange addr=<ABSOLUTE:0x1149> startpc=None endpc=None>]>
-<VAR __libc_csu_fini :: undefined1 @ [<AddressLiveRange addr=<ABSOLUTE:0x1250> startpc=None endpc=None>]>
-<VAR completed.0 :: char @ [<AddressLiveRange addr=<ABSOLUTE:0x4010> startpc=None endpc=None>]>
-<VAR __dso_handle :: undefined1 * @ [<AddressLiveRange addr=<ABSOLUTE:0x4008> startpc=None endpc=None>]>
-<VAR __frame_dummy_init_array_entry :: unsigned int8 @ [<AddressLiveRange addr=<ABSOLUTE:0x3db8> startpc=None endpc=None>]>
 ----------------FUNCTIONS--------------------
-_init :: (<STRUCT evp_pkey_ctx_st membertypes=0 size=0> *) -> int4 @ PC range=(<ABSOLUTE:0x1000>, <ABSOLUTE:0x101c>)
-	<PARAM ctx :: <STRUCT evp_pkey_ctx_st membertypes=0 size=0> * @ [<AddressLiveRange addr=<REGISTER:5> startpc=<ABSOLUTE:0x1000> endpc=<ABSOLUTE:0x101c>>]>
-	<VAR iVar1 :: int4 @ [<AddressLiveRange addr=<REGISTER:0> startpc=<ABSOLUTE:0x1000> endpc=<ABSOLUTE:0x101c>>]>
 FUN_00101020 :: () -> void @ PC range=(<ABSOLUTE:0x1020>, <ABSOLUTE:0x102e>)
-__cxa_finalize :: () -> void @ PC range=(<ABSOLUTE:0x1040>, <ABSOLUTE:0x104c>)
-__stack_chk_fail :: () -> void @ PC range=(<ABSOLUTE:0x1050>, <ABSOLUTE:0x105c>)
-_start :: (undefined8) -> void @ PC range=(<ABSOLUTE:0x1060>, <ABSOLUTE:0x1090>)
-	<PARAM param_3 :: undefined8 @ [<AddressLiveRange addr=<REGISTER:1> startpc=<ABSOLUTE:0x1060> endpc=<ABSOLUTE:0x1090>>]>
-	<VAR auStack8 :: <ARRAY subtype=undefined1 dimensions=(8,) size=8> @ [<AddressLiveRange addr=<STACK:-0x10> startpc=<ABSOLUTE:0x1060> endpc=<ABSOLUTE:0x1090>>]>
-	<VAR unaff_retaddr :: undefined8 @ [<AddressLiveRange addr=<STACK:-0x8> startpc=<ABSOLUTE:0x1060> endpc=<ABSOLUTE:0x1090>>]>
-deregister_tm_clones :: () -> void @ PC range=(<ABSOLUTE:0x1090>, <ABSOLUTE:0x10ba>)
-register_tm_clones :: () -> void @ PC range=(<ABSOLUTE:0x10c0>, <ABSOLUTE:0x10fa>)
-__do_global_dtors_aux :: () -> void @ PC range=(<ABSOLUTE:0x1100>, <ABSOLUTE:0x113a>)
-frame_dummy :: () -> void @ PC range=(<ABSOLUTE:0x1140>, <ABSOLUTE:0x114a>)
 main :: () -> int4 @ PC range=(<ABSOLUTE:0x1149>, <ABSOLUTE:0x11db>)
 	<VAR a :: <STRUCT A membertypes=4 size=24> @ [<AddressLiveRange addr=<STACK:-0x30> startpc=<ABSOLUTE:0x1149> endpc=<ABSOLUTE:0x11db>>]>
 	<VAR b :: <STRUCT B membertypes=4 size=16> @ [<AddressLiveRange addr=<STACK:-0x50> startpc=<ABSOLUTE:0x1149> endpc=<ABSOLUTE:0x11db>>]>
@@ -142,19 +111,6 @@ main :: () -> int4 @ PC range=(<ABSOLUTE:0x1149>, <ABSOLUTE:0x11db>)
 	<VAR u0 :: undefined8 @ [<AddressLiveRange addr=<STACK:-0x60> startpc=<ABSOLUTE:0x1149> endpc=<ABSOLUTE:0x11db>>]>
 	<VAR in_FS_OFFSET :: int8 @ [<AddressLiveRange addr=<REGISTER:None> startpc=<ABSOLUTE:0x1149> endpc=<ABSOLUTE:0x11db>>]>
 	<VAR u1 :: undefined8 @ [<AddressLiveRange addr=<STACK:-0x58> startpc=<ABSOLUTE:0x1149> endpc=<ABSOLUTE:0x11db>>]>
-__libc_csu_init :: (<STRUCT evp_pkey_ctx_st membertypes=0 size=0> *, undefined8, undefined8) -> void @ PC range=(<ABSOLUTE:0x11e0>, <ABSOLUTE:0x1246>)
-	<PARAM param_1 :: <STRUCT evp_pkey_ctx_st membertypes=0 size=0> * @ [<AddressLiveRange addr=<REGISTER:5> startpc=<ABSOLUTE:0x11e0> endpc=<ABSOLUTE:0x1246>>]>
-	<PARAM param_2 :: undefined8 @ [<AddressLiveRange addr=<REGISTER:4> startpc=<ABSOLUTE:0x11e0> endpc=<ABSOLUTE:0x1246>>]>
-	<PARAM param_3 :: undefined8 @ [<AddressLiveRange addr=<REGISTER:1> startpc=<ABSOLUTE:0x11e0> endpc=<ABSOLUTE:0x1246>>]>
-	<VAR lVar1 :: int8 @ [<AddressLiveRange addr=<REGISTER:3> startpc=<ABSOLUTE:0x11e0> endpc=<ABSOLUTE:0x1246>>]>
-__libc_csu_fini :: () -> void @ PC range=(<ABSOLUTE:0x1250>, <ABSOLUTE:0x1256>)
-_fini :: () -> void @ PC range=(<ABSOLUTE:0x1258>, <ABSOLUTE:0x1266>)
-_ITM_deregisterTMCloneTable :: () -> void @ PC range=(<ABSOLUTE:0x5000>, <ABSOLUTE:0x5002>)
-__stack_chk_fail :: () -> void @ PC range=(<ABSOLUTE:0x5008>, <ABSOLUTE:0x500a>)
-__libc_start_main :: () -> void @ PC range=(<ABSOLUTE:0x5010>, <ABSOLUTE:0x5012>)
-__gmon_start__ :: () -> void @ PC range=(<ABSOLUTE:0x5018>, <ABSOLUTE:0x501a>)
-_ITM_registerTMCloneTable :: () -> void @ PC range=(<ABSOLUTE:0x5020>, <ABSOLUTE:0x5022>)
-__cxa_finalize :: () -> void @ PC range=(<ABSOLUTE:0x5028>, <ABSOLUTE:0x502a>)
 
 ----------DWARF OUTPUT (ground truth)----------
 
@@ -176,7 +132,7 @@ bytes recovered = 67
 number of variables = 6
 variables matched @ or above SUBSET = 6
 variables matched @ or above ALIGNED = 6
-variables matched @ or above MATCH = 1
+variables matched @ or above MATCH = 4
 number of primitive variables = 13
 primitive variables matched @ or above ALIGNED = 13
 primitive variables matched @ or above MATCH = 13
@@ -209,20 +165,20 @@ Globals (flattened to primitives):
 				other=<Varnode address=<STACK:-0x58> datatype=undefined8>
 				compare_code=ALIGNED
 		
-		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x50> datatype=<STRUCT B membertypes=4 size=16>> status=ALIGNED>
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x50> datatype=<STRUCT B membertypes=4 size=16>> status=MATCH>
 			Comparison:
 				other=<Varnode address=<STACK:-0x50> datatype=<STRUCT B membertypes=4 size=16>>
-				compare_code=ALIGNED
+				compare_code=MATCH
 		
-		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x40> datatype=<STRUCT C membertypes=2 size=16>> status=ALIGNED>
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x40> datatype=<STRUCT C membertypes=2 size=16>> status=MATCH>
 			Comparison:
 				other=<Varnode address=<STACK:-0x40> datatype=<STRUCT C membertypes=2 size=16>>
-				compare_code=ALIGNED
+				compare_code=MATCH
 		
-		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x30> datatype=<STRUCT A membertypes=4 size=24>> status=ALIGNED>
+		<VarnodeCompareRecord varnode=<Varnode address=<STACK:-0x30> datatype=<STRUCT A membertypes=4 size=24>> status=MATCH>
 			Comparison:
 				other=<Varnode address=<STACK:-0x30> datatype=<STRUCT A membertypes=4 size=24>>
-				compare_code=ALIGNED
+				compare_code=MATCH
 		
 		
 	Flattened (Primitive) Parameters & Variables:
