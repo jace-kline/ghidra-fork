@@ -91,6 +91,12 @@ class Variable(object):
     def get_varnodes(self):
         return [ Varnode(self.dtype, liverange) for liverange in self.liveranges ]
 
+    def select_varnodes(self, varnode_cond=None):
+        return [ varnode for varnode in self.get_varnodes() if varnode_cond is None or varnode_cond(varnode) ]
+
+    def select_primitive_varnodes(self, varnode_cond=None):
+        return sum([ varnode.select_primitive_varnodes(varnode_cond=varnode_cond) for varnode in self.get_varnodes() ], [])
+
     def __str__(self):
         lbl = "PARAM" if self.is_param() else "VAR"
         return "<{} {} :: {} @ {}>".format(lbl, self.name, self.dtype, self.liveranges)
@@ -145,6 +151,9 @@ class Varnode(object):
             varnodes.append(Varnode(primtype, liverange))
 
         return varnodes
+
+    def select_primitive_varnodes(self, varnode_cond=None):
+        return [ varnode for varnode in self.flatten() if varnode_cond is None or varnode_cond(varnode) ]
             
 
     # # builds a VarnodeCompareRecord|None from the infomation contained in the

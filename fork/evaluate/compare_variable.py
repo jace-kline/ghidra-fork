@@ -338,13 +338,16 @@ class VarnodeCompareRecord(object):
             self.varnode_comparison_map[compare2.get_right()] = compare2
             self._update_status(compare2)
 
-    def get_compared_varnodes(self):
-        return self.varnode_comparison_map.keys()
+    def get_compared_varnodes(self) -> List[Varnode]:
+        return list(self.varnode_comparison_map.keys())
+
+    def get_comparisons(self) -> List[VarnodeCompare2]:
+        return list(self.varnode_comparison_map.values())
 
     def get_varnode_comparison_map(self) -> 'dict[Varnode, VarnodeCompare2]':
         return self.varnode_comparison_map
 
-    def bytes_overlapped(self):
+    def bytes_overlapped(self) -> int:
         return sum([ cmp.bytes_overlapped() for cmp in self.varnode_comparison_map.values() ])
 
     def show_summary(self, indent=0) -> str:

@@ -203,6 +203,7 @@ class FilterVariable(Filter):
         gbl: bool = None,
         param: bool = None,
         local: bool = None,
+        name: str = None,
         has_location: bool = None, # has 1+ associated liveranges
         locations: int = None, # number of liveranges
         dtype_filter: FilterDataType = None,
@@ -212,6 +213,7 @@ class FilterVariable(Filter):
         self.gbl = gbl
         self.param = param
         self.local = local
+        self.name = name
         self.has_location = has_location
         self.locations = locations
         self.dtype_filter = dtype_filter
@@ -226,6 +228,9 @@ class FilterVariable(Filter):
 
     def _local(self, var: Variable) -> bool:
         return self.local == var.is_local()
+
+    def _name(self, var: Variable) -> bool:
+        return self.name == var.get_name()
 
     def _has_location(self, var: Variable) -> bool:
         return self.has_location == var.has_location()
@@ -261,6 +266,31 @@ class FilterVarnode(Filter):
     def _custom(self, varnode: Varnode) -> bool:
         return self.custom(varnode)
 
+class FilterFunction(Filter):
+    filter_cls = Function
+
+    def __init__(
+        self,
+        names: List[str] = None,
+        params_filter: FilterVariable = None,
+        locals_filter: FilterVariable = None,
+        variadic: bool = None,
+        custom: function = None # Function -> bool
+    ):
+        self.names = names
+        self.params_filter = params_filter
+        self.locals_filter = locals_filter
+        self.variadic = variadic
+        self.custom = custom
+
+    def _names(self, fn: Function) -> bool:
+        return fn.get_name() in self.names
+
+    def _variadic(self, fn: Function) -> bool:
+        return fn.is_variadic() == self.variadic
+
+    
+
 class FilterVarnodeCompare2(Filter):
     filter_cls = VarnodeCompare2
 
@@ -272,7 +302,7 @@ class FilterVarnodeCompare2(Filter):
         same_size: bool = None,
         left_varnode_filter: FilterVarnode = None,
         right_varnode_filter: FilterVarnode = None,
-        dtype_compare_filter: FilterDataTypeCompare2 = None,
+        dtype_compare2_filter: FilterDataTypeCompare2 = None,
         custom: function = None # VarnodeCompare2 -> bool
     ):
         self.compare_levels = compare_levels
@@ -281,29 +311,29 @@ class FilterVarnodeCompare2(Filter):
         self.same_size = same_size
         self.left_varnode_filter = left_varnode_filter
         self.right_varnode_filter = right_varnode_filter
-        self.dtype_compare_filter = dtype_compare_filter
+        self.dtype_compare2_filter = dtype_compare2_filter
         self.custom = custom # VarnodeCompare2 -> bool
 
     def _compare_levels(self, cmp: VarnodeCompare2) -> bool:
-        pass
+        return cmp.get_compare_level() in self.compare_levels
 
     def _compare_codes(self, cmp: VarnodeCompare2) -> bool:
-        pass
+        return cmp.get_compare_code() in self.compare_codes
 
     def _start_aligned(self, cmp: VarnodeCompare2) -> bool:
-        pass
+        return cmp.is_start_aligned()
 
     def _same_size(self, cmp: VarnodeCompare2) -> bool:
-        pass
+        return cmp.is_same_size()
 
     def _left_varnode_filter(self, cmp: VarnodeCompare2) -> bool:
-        pass
+        return self.left_varnode_filter(cmp.get_left())
 
     def _right_varnode_filter(self, cmp: VarnodeCompare2) -> bool:
-        pass
+        return self.right_varnode_filter(cmp.get_right())
 
-    def _dtype_compare_filter(self, cmp: VarnodeCompare2) -> bool:
-        pass
+    def _dtype_compare2_filter(self, cmp: VarnodeCompare2) -> bool:
+        return self.dtype_compare2_filter(cmp.get_datatype_comparison())
 
     def _custom(self, cmp: VarnodeCompare2) -> bool:
         return self.custom(cmp)
@@ -315,8 +345,8 @@ class FilterVarnodeCompareRecord(Filter):
         self,
         min_compare_level: int = None, # VarnodeCompareLevel
         max_compare_level: int = None, # VarnodeCompareLevel
-        compare_level: int = None, # VarnodeCompareLevel
-        compare_status: int = None, # VarnodeCompareStatus
+        compare_levels: List[int] = None, # [VarnodeCompareLevel]
+        compare_codes: List[int] = None, # [VarnodeCompareStatus]
         min_compared_with: int = None,
         max_compared_with: int = None,
         varnode_compare2_filter: FilterVarnodeCompare2 = None,
@@ -324,33 +354,33 @@ class FilterVarnodeCompareRecord(Filter):
     ):
         self.min_compare_level = min_compare_level
         self.max_compare_level = max_compare_level
-        self.compare_level = compare_level
-        self.compare_status = compare_status
+        self.compare_levels = compare_levels
+        self.compare_codes = compare_codes
         self.min_compared_with = min_compared_with
         self.max_compared_with = max_compared_with
         self.varnode_compare2_filter = varnode_compare2_filter
         self.custom = custom # VarnodeCompareRecord -> bool
 
     def _min_compare_level(self, cmp: VarnodeCompareRecord) -> bool:
-        pass
+        return cmp.get_compare_level() >= self.min_compare_level
 
     def _max_compare_level(self, cmp: VarnodeCompareRecord) -> bool:
-        pass
+        return cmp.get_compare_level() <= self.max_compare_level
 
-    def _compare_level(self, cmp: VarnodeCompareRecord) -> bool:
-        pass
+    def _compare_levels(self, cmp: VarnodeCompareRecord) -> bool:
+        return cmp.get_compare_level() in self.compare_levels
 
-    def _compare_status(self, cmp: VarnodeCompareRecord) -> bool:
-        pass
+    def _compare_codes(self, cmp: VarnodeCompareRecord) -> bool:
+        return cmp.get_status() in self.compare_codes
 
     def _min_compared_with(self, cmp: VarnodeCompareRecord) -> bool:
-        pass
+        return len(cmp.get_varnode_comparison_map()) >= self.min_compared_with
 
     def _max_compared_with(self, cmp: VarnodeCompareRecord) -> bool:
-        pass
+        return len(cmp.get_varnode_comparison_map()) <= self.max_compared_with
 
     def _varnode_compare2_filter(self, cmp: VarnodeCompareRecord) -> bool:
-        pass
+        return all(( self.varnode_compare2_filter(cmp2) for cmp2 in cmp.get_comparisons() ))
 
     def _custom(self, cmp: VarnodeCompareRecord) -> bool:
         return self.custom(cmp)
