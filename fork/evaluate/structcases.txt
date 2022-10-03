@@ -15,7 +15,7 @@ python3 /home/jacekline/dev/research/ghidra-fork/fork/progs/structcases//../../e
 INFO  Using log config file: jar:file:/home/jacekline/dev/research/ghidra-build/Ghidra/Framework/Generic/lib/Generic.jar!/generic.log4j.xml (LoggingInitialization)  
 INFO  Using log file: /home/jacekline/.ghidra/.ghidra_10.2_DEV/application.log (LoggingInitialization)  
 INFO  Loading user preferences: /home/jacekline/.ghidra/.ghidra_10.2_DEV/preferences (Preferences)  
-INFO  Class search complete (888 ms) (ClassSearcher)  
+INFO  Class search complete (1312 ms) (ClassSearcher)  
 INFO  Initializing SSL Context (SSLContextInitializer)  
 INFO  Initializing Random Number Generator... (SecureRandomFactory)  
 INFO  Random Number Generator initialization complete: NativePRNGNonBlocking (SecureRandomFactory)  
@@ -44,42 +44,44 @@ INFO  Creating project: /home/jacekline/dev/research/ghidra-fork/fork/progs/stru
 INFO  REPORT: Processing input files:  (HeadlessAnalyzer)  
 INFO       project: /home/jacekline/dev/research/ghidra-fork/fork/progs/structcases/tempproject (HeadlessAnalyzer)  
 INFO  IMPORTING: /home/jacekline/dev/research/ghidra-fork/fork/progs/structcases/structcases_O0_debug.bin (HeadlessAnalyzer)  
+INFO  Starting cache cleanup: /tmp/jacekline-Ghidra/fscache2 (FileCacheMaintenanceDaemon)  
+INFO  Finished cache cleanup, estimated storage used: 0 (FileCacheMaintenanceDaemon)  
 INFO  REPORT: Import succeeded with language "x86:LE:64:default" and cspec "gcc" for file: /home/jacekline/dev/research/ghidra-fork/fork/progs/structcases/structcases_O0_debug.bin (HeadlessAnalyzer)  
 INFO  ANALYZING all memory and code: /home/jacekline/dev/research/ghidra-fork/fork/progs/structcases/structcases_O0_debug.bin (HeadlessAnalyzer)  
-INFO  DWARF import - total elapsed: 36ms (DWARFImportSummary)  
-INFO  DWARF data type import - elapsed: 13ms (DWARFImportSummary)  
-INFO  DWARF func & symbol import - elapsed: 19ms (DWARFImportSummary)  
+INFO  DWARF import - total elapsed: 35ms (DWARFImportSummary)  
+INFO  DWARF data type import - elapsed: 12ms (DWARFImportSummary)  
+INFO  DWARF func & symbol import - elapsed: 20ms (DWARFImportSummary)  
 INFO  DWARF types imported: 12 (DWARFImportSummary)  
 INFO  DWARF function signatures added: 1 (DWARFImportSummary)  
 INFO  hit non-returning function, restarting decompiler switch analyzer later (DecompilerSwitchAnalyzer)  
 INFO  Packed database cache: /tmp/jacekline-Ghidra/packed-db-cache (PackedDatabaseCache)  
 INFO  -----------------------------------------------------
-    ASCII Strings                              0.241 secs
-    Apply Data Archives                        0.231 secs
-    Call Convention ID                         0.060 secs
-    Call-Fixup Installer                       0.004 secs
+    ASCII Strings                              0.245 secs
+    Apply Data Archives                        0.272 secs
+    Call Convention ID                         0.088 secs
+    Call-Fixup Installer                       0.002 secs
     Create Address Tables                      0.004 secs
-    Create Function                            0.001 secs
-    DWARF                                      0.065 secs
-    Data Reference                             0.003 secs
-    Decompiler Switch Analysis                 0.044 secs
-    Decompiler Switch Analysis - One Time      0.193 secs
-    Demangler GNU                              0.008 secs
-    Disassemble Entry Points                   0.047 secs
-    ELF Scalar Operand References              0.006 secs
-    Embedded Media                             0.023 secs
-    External Entry References                  0.001 secs
-    Function ID                                0.019 secs
+    Create Function                            0.000 secs
+    DWARF                                      0.066 secs
+    Data Reference                             0.004 secs
+    Decompiler Switch Analysis                 0.033 secs
+    Decompiler Switch Analysis - One Time      0.305 secs
+    Demangler GNU                              0.012 secs
+    Disassemble Entry Points                   0.046 secs
+    ELF Scalar Operand References              0.007 secs
+    Embedded Media                             0.013 secs
+    External Entry References                  0.000 secs
+    Function ID                                0.061 secs
     Function Start Search                      0.016 secs
-    Function Start Search After Code           0.000 secs
-    Function Start Search After Data           0.001 secs
-    GCC Exception Handlers                     0.030 secs
-    Non-Returning Functions - Discovered       0.001 secs
+    Function Start Search After Code           0.001 secs
+    Function Start Search After Data           0.000 secs
+    GCC Exception Handlers                     0.029 secs
+    Non-Returning Functions - Discovered       0.006 secs
     Non-Returning Functions - Known            0.003 secs
-    Reference                                  0.012 secs
+    Reference                                  0.011 secs
     Shared Return Calls                        0.002 secs
-    Stack                                      0.022 secs
-    Subroutine References                      0.003 secs
+    Stack                                      0.019 secs
+    Subroutine References                      0.021 secs
     Subroutine References - One Time           0.000 secs
     x86 Constant Reference Analyzer            0.048 secs
 -----------------------------------------------------

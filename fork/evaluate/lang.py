@@ -26,10 +26,10 @@ class ProgramInfo(object):
         return self.select_globals(variable_cond=variable_cond) + sum([ fn.select_variables(variable_cond=variable_cond) for fn in self.functions if function_cond is None or function_cond(fn) ], [])
 
     def select_varnodes(self, function_cond=None, variable_cond=None, varnode_cond=None):
-        return sum([ gbl.select_varnodes(variable_cond=variable_cond) for gbl in self.globals ], []) + sum([fn.select_varnodes(variable_cond=variable_cond, varnode_cond=varnode_cond) for fn in self.functions if function_cond is None or function_cond(fn) ], [])
+        return sum([ gbl.select_varnodes(varnode_cond=varnode_cond) for gbl in self.globals if variable_cond is None or variable_cond(gbl) ], []) + sum([ fn.select_varnodes(variable_cond=variable_cond, varnode_cond=varnode_cond) for fn in self.functions if function_cond is None or function_cond(fn) ], [])
 
     def select_primitive_varnodes(self, function_cond=None, variable_cond=None, varnode_cond=None):
-        return sum([ gbl.select_primitive_varnodes(variable_cond=variable_cond) for gbl in self.globals ], []) + sum([fn.select_primitive_varnodes(variable_cond=variable_cond, varnode_cond=varnode_cond) for fn in self.functions if function_cond is None or function_cond(fn) ], [])
+        return sum([ gbl.select_primitive_varnodes(varnode_cond=varnode_cond) for gbl in self.globals if variable_cond is None or variable_cond(gbl) ], []) + sum([fn.select_primitive_varnodes(variable_cond=variable_cond, varnode_cond=varnode_cond) for fn in self.functions if function_cond is None or function_cond(fn) ], [])
 
     def print_summary(self):
         print("----------------GLOBALS----------------------")
@@ -122,10 +122,10 @@ class Function(object):
         return self.select_params(variable_cond=variable_cond) + self.select_locals(variable_cond=variable_cond)
 
     def select_varnodes(self, variable_cond=None, varnode_cond=None):
-        return [ var.select_varnodes(varnode_cond=varnode_cond) for var in self.select_variables(variable_cond=variable_cond) ]
+        return sum([ var.select_varnodes(varnode_cond=varnode_cond) for var in self.select_variables(variable_cond=variable_cond) ], [])
 
     def select_primitive_varnodes(self, variable_cond=None, varnode_cond=None):
-        return [ var.select_primitive_varnodes(varnode_cond=varnode_cond) for var in self.select_variables(variable_cond=variable_cond) ]
+        return sum([ var.select_primitive_varnodes(varnode_cond=varnode_cond) for var in self.select_variables(variable_cond=variable_cond) ], [])
 
     def print_summary(self):
         print("{} :: {} @ PC range=({}, {})".format(self.name, self.get_prototype(), self.startaddr, self.endaddr))

@@ -4,7 +4,6 @@ from lang_address import *
 from lang_datatype import *
 from util import *
 from compare_variable import *
-from filter import FilterVarnode, FilterVarnodeCompareRecord
 
 # represents a "snapshot"/set of variables at a given PC during the program
 # allows us to compare memory regions, etc. for variables at a given PC
@@ -101,8 +100,14 @@ class ConstPCVariableSetSnapshotCompare2(object):
     def get_bytes(self) -> int:
         return self.left.get_bytes()
 
+    def compare_primitives(self) -> 'ConstPCVariableSetSnapshotCompare2':
+        return ConstPCVariableSetSnapshotCompare2(self.left.flatten(), self.right.flatten())
+
     def get_varnode_compare_records(self) -> List[VarnodeCompareRecord]:
         return sum([ list(space.get_varnode_compare_records()) for space in self.space_comparison_map.values() ], [])
+
+    def get_primitive_varnode_compare_records(self) -> List[VarnodeCompareRecord]:
+        return self.compare_primitives().get_varnode_compare_records()
 
     def get_space_comparison(self, region: AddressRegion) -> 'Union[ConstPCAddressSpaceCompare2, None]':
         return self.space_comparison_map.get(region, None)
@@ -119,6 +124,20 @@ class ConstPCVariableSetSnapshotCompare2(object):
     # flatten all varnodes in left & right, then create new comparison & return
     def get_flattened_comparison(self) -> 'ConstPCVariableSetSnapshotCompare2':
         return ConstPCVariableSetSnapshotCompare2(self.left.flatten(), self.right.flatten())
+
+    def select_varnode_compare_records(self, varnode_cmp_record_cond=None) -> List['VarnodeCompareRecord']:
+        return [ record for record in self.get_varnode_compare_records() if varnode_cmp_record_cond is None or varnode_cmp_record_cond(record) ]
+
+    def select_primitive_varnode_compare_records(self, varnode_cmp_record_cond=None) -> List['VarnodeCompareRecord']:
+        return [ record for record in self.get_primitive_varnode_compare_records() if varnode_cmp_record_cond is None or varnode_cmp_record_cond(record) ]
+
+    def select_varnode_comparisons(self, varnode_cmp_record_cond=None, varnode_cmp2_cond=None) -> List['VarnodeCompare2']:
+        cmps = sum([ record.get_comparisons() for record in self.select_varnode_compare_records(varnode_cmp_record_cond=varnode_cmp_record_cond)], [])
+        return [ cmp for cmp in cmps if varnode_cmp2_cond is None or varnode_cmp2_cond(cmp) ]
+
+    def select_primitive_varnode_comparisons(self, varnode_cmp_record_cond=None, varnode_cmp2_cond=None) -> List['VarnodeCompare2']:
+        cmps = sum([ record.get_comparisons() for record in self.select_primitive_varnode_compare_records(varnode_cmp_record_cond=varnode_cmp_record_cond)], [])
+        return [ cmp for cmp in cmps if varnode_cmp2_cond is None or varnode_cmp2_cond(cmp) ]
 
     def __hash__(self) -> int:
         return hash((self.left, self.right))

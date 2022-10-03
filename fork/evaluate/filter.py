@@ -30,7 +30,7 @@ class FilterDataType(Filter):
         max_size: int = None,
         size: int = None,
         composition_level = None, # int|None
-        custom: function = None
+        custom = None
     ):
         self.primitive = primitive
         self.complex = complex
@@ -78,7 +78,7 @@ class FilterDataTypePrimitiveCompare2(Filter):
         max_compare_level: int = None, # DataTypePrimitiveCompareLevel
         compare_levels: List[int] = None, # DataTypePrimitiveCompareLevel
         compare_codes: List[int] = None, # DataTypePrimitiveCompareCode
-        custom: function = None # DataTypePrimitiveCompare2
+        custom = None # DataTypePrimitiveCompare2
     ):
         self.min_compare_level = min_compare_level
         self.max_compare_level = max_compare_level
@@ -117,7 +117,7 @@ class FilterDataTypeCompare2(Filter):
         left_dtype_filter: FilterDataType = None,
         right_dtype_filter: FilterDataType = None,
         primitive_compare2_filter: FilterDataTypePrimitiveCompare2 = None,
-        custom: function = None # DataTypeCompare2 -> bool
+        custom = None # DataTypeCompare2 -> bool
     ):
         self.min_compare_level = min_compare_level
         self.max_compare_level = max_compare_level
@@ -176,7 +176,7 @@ class FilterAddress(Filter):
         addrtypes: List[int] = None, # [AddressType] to allow
         rangeable: bool = None, # is the address space a "range"?
         known: bool = None, # is this a precise address? or is it unknown/external?
-        custom: function = None # Address -> bool
+        custom = None # Address -> bool
     ):
         self.addrtypes = addrtypes
         self.rangeable = rangeable
@@ -208,7 +208,7 @@ class FilterVariable(Filter):
         locations: int = None, # number of liveranges
         dtype_filter: FilterDataType = None,
         address_filter: FilterAddress = None, # apply to each Address in liveranges
-        custom: function = None # Variable -> bool
+        custom = None # Variable -> bool
     ):
         self.gbl = gbl
         self.param = param
@@ -251,7 +251,7 @@ class FilterVarnode(Filter):
         self,
         dtype_filter: FilterDataType = None,
         address_filter: FilterAddress = None,
-        custom: function = None # Varnode -> bool
+        custom = None # Varnode -> bool
     ):
         self.dtype_filter = dtype_filter
         self.address_filter = address_filter
@@ -275,7 +275,7 @@ class FilterFunction(Filter):
         params_filter: FilterVariable = None,
         locals_filter: FilterVariable = None,
         variadic: bool = None,
-        custom: function = None # Function -> bool
+        custom = None # Function -> bool
     ):
         self.names = names
         self.params_filter = params_filter
@@ -303,7 +303,7 @@ class FilterVarnodeCompare2(Filter):
         left_varnode_filter: FilterVarnode = None,
         right_varnode_filter: FilterVarnode = None,
         dtype_compare2_filter: FilterDataTypeCompare2 = None,
-        custom: function = None # VarnodeCompare2 -> bool
+        custom = None # VarnodeCompare2 -> bool
     ):
         self.compare_levels = compare_levels
         self.compare_codes = compare_codes
@@ -350,7 +350,7 @@ class FilterVarnodeCompareRecord(Filter):
         min_compared_with: int = None,
         max_compared_with: int = None,
         varnode_compare2_filter: FilterVarnodeCompare2 = None,
-        custom: function = None
+        custom = None
     ):
         self.min_compare_level = min_compare_level
         self.max_compare_level = max_compare_level

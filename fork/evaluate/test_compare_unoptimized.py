@@ -6,6 +6,7 @@ from util import *
 
 from build import *
 from compare_unoptimized import *
+from metrics import *
 
 def test_compare_dtypes(left, right, offset):
     # compare
@@ -62,7 +63,7 @@ def test_compare_unoptimized(progdir, debug=False, strip=False, rebuild=False):
 
     return (comparison, comparison.flip())
 
-def main():
+def test_compare_unoptimized_interactive():
     args = sys.argv
     if len(args) < 2:
         print("USAGE: python3 {} [opts...] <path/to/progdir>".format(args[0]))
@@ -76,8 +77,9 @@ def main():
     debug = "--debug" in args[1:-1] # provide debugging symbols to Ghidra?
     strip = "--strip" in args[1:-1] # strip symbols in Ghidra binary?
 
-    cmp_ghidra, cmp_dwarf = test_compare_unoptimized(progdir, debug=debug, strip=strip, rebuild=rebuild)
+    return test_compare_unoptimized(progdir, debug=debug, strip=strip, rebuild=rebuild)
 
+def compare_summary(cmp_ghidra: UnoptimizedProgramInfoCompare2, cmp_dwarf: UnoptimizedProgramInfoCompare2):
     print("----------GHIDRA DECOMPILER OUTPUT----------\n")
     cmp_ghidra.get_left().get_proginfo().print_summary()
 
@@ -92,6 +94,10 @@ def main():
     
     # mainfn = [ fn for fn in cmp_ghidra.get_left().get_unoptimized_functions().values() if fn.get_function().get_name() == "main" ][0]
 
+def metrics_summary(cmp: UnoptimizedProgramInfoCompare2):
+    display_metrics(cmp)
+
 if __name__ == "__main__":
     # progdir = "../progs/typecases/"
-    main()
+    cmp_ghidra, cmp_dwarf = test_compare_unoptimized_interactive()
+    metrics_summary(cmp_dwarf)
