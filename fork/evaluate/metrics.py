@@ -142,12 +142,27 @@ def array_size_error_percentage(cmp: VarnodeCompare2) -> float:
     return 100.0 * (array_size_error(cmp) / cmp.get_left().get_size())
 
 ## subtype match % -> how many of the array comparisons had matching subtypes?
-def array_subtype_match_percentage(cmps: List[VarnodeCompare2], level: int = VarnodeCompareLevel.MATCH) -> float:
-    pass
+def array_subtype_match_percentage(cmps: List[VarnodeCompare2], level: int = DataTypeCompareLevel.MATCH) -> float:
+    subtype_matches = 0
+    for cmp in cmps:
+        left_subtype = cmp.get_left().get_datatype().get_basetype()
+        right_subtype = cmp.get_right().get_datatype().get_basetype()
+        dtype_cmp = DataTypeCompare2(left_subtype, right_subtype, 0)
+        if dtype_cmp.get_compare_level() >= level:
+            subtype_matches += 1
+
+    return 100.0 * (subtype_matches / len(cmps))
     
 ## correct dimension % -> how many of the array comparisons had matching number of dimensions?
 def array_dimension_match_percentage(cmps: List[VarnodeCompare2]) -> float:
-    pass
+    dim_matches = 0
+    for cmp in cmps:
+        left_dims = cmp.get_left().get_datatype().num_dimensions()
+        right_dims = cmp.get_right().get_datatype().num_dimensions()
+        if left_dims == right_dims:
+            dim_matches += 1
+
+    return 100.0 * (dim_matches / len(cmps))
 
 # Ground-truth ARRAY varnodes matched @ or above <TAG>
 
@@ -181,6 +196,7 @@ def _mk_metrics(cmp: UnoptimizedProgramInfoCompare2) -> dict:
             "bytes found" : bytes_found(cmp),
             "bytes missed" : bytes_missed(cmp),
             "bytes extraneous" : bytes_extraneous(cmp),
+            "bytes found %" : 100.0 * (bytes_found(cmp) / bytes_truth(cmp))
         },
         "FUNCTIONS" : {
             "functions - ground truth" : len(functions_truth(cmp)),
@@ -188,43 +204,58 @@ def _mk_metrics(cmp: UnoptimizedProgramInfoCompare2) -> dict:
             "functions found" : len(functions_found(cmp)),
             "functions missed" : len(functions_missed(cmp)),
             "functions extraneous" : len(functions_extraneous(cmp)),
+            "functions found %" : 100.0 * (len(functions_found(cmp)) / len(functions_truth(cmp)))
         },
     }
 
     varnodes_group = {}
-    varnodes_group["varnodes - ground truth"] = len(varnodes_truth(cmp))
+    _varnodes_truth = len(varnodes_truth(cmp))
+    varnodes_group["varnodes - ground truth"] = _varnodes_truth
     varnodes_group["varnodes - decompiler"] = len(varnodes_decomp(cmp))
     for level in range(VarnodeCompareLevel.NO_MATCH, VarnodeCompareLevel.MATCH + 1):
         varnodes_group["varnodes matched @ or above {}".format(VarnodeCompareLevel.to_string(level))] = len(varnodes_matched_at_above_level(cmp, level))
     varnodes_group["varnodes missed"] = len(varnodes_missed(cmp))
     varnodes_group["varnodes extraneous"] = len(varnodes_extraneous(cmp))
+    varnodes_group["varnodes match %"] = 100.0 * (len(varnodes_matched_at_above_level(cmp, VarnodeCompareLevel.MATCH)) / _varnodes_truth)
     METRICS["VARNODES"] = varnodes_group
 
     primitives_group = {}
-    primitives_group["primitive varnodes - ground truth"] = len(primitive_varnodes_truth(cmp))
+    _primitives_truth = len(primitive_varnodes_truth(cmp))
+    primitives_group["primitive varnodes - ground truth"] = _primitives_truth
     primitives_group["primitive varnodes - decompiler"] = len(primitive_varnodes_decomp(cmp))
     for level in range(VarnodeCompareLevel.NO_MATCH, VarnodeCompareLevel.MATCH + 1):
         primitives_group["primitive varnodes matched @ or above {}".format(VarnodeCompareLevel.to_string(level))] = len(primitive_varnodes_matched_at_above_level(cmp, level))
     primitives_group["primitive varnodes missed"] = len(primitive_varnodes_missed(cmp))
     primitives_group["primitive varnodes extraneous"] = len(primitive_varnodes_extraneous(cmp))
+    primitives_group["primitive varnodes match %"] = 100.0 * (len(primitive_varnodes_matched_at_above_level(cmp, VarnodeCompareLevel.MATCH)) / _primitives_truth)
     METRICS["PRIMITIVE VARNODES"] = primitives_group
 
     for metatype in [MetaType.INT, MetaType.FLOAT, MetaType.POINTER, MetaType.ARRAY, MetaType.STRUCT, MetaType.UNION, MetaType.UNDEFINED]:
         metatype_group = {}
-        metatype_group["(metatype = {}) varnodes - ground truth".format(MetaType.repr(metatype))] = len(varnodes_truth_metatype(cmp, metatype))
+        truth = len(varnodes_truth_metatype(cmp, metatype))
+        metatype_group["(metatype = {}) varnodes - ground truth".format(MetaType.repr(metatype))] = truth
         metatype_group["(metatype = {}) varnodes - decompiler".format(MetaType.repr(metatype))] = len(varnodes_decomp_metatype(cmp, metatype))
         metatype_group["(metatype = {}) varnodes missed".format(MetaType.repr(metatype))] = len([ record for record in varnodes_match_levels(cmp, [VarnodeCompareLevel.NO_MATCH]) if record.get_varnode().get_datatype().get_metatype() == metatype ])
-        metatype_group["(metatype = {}) varnodes matched @ or above ALIGNED".format(MetaType.repr(metatype))] = len([ record for record in varnodes_matched_at_above_level(cmp, VarnodeCompareLevel.ALIGNED) if record.get_varnode().get_datatype().get_metatype() == metatype ])
+
+        aligned = len([ record for record in varnodes_matched_at_above_level(cmp, VarnodeCompareLevel.ALIGNED) if record.get_varnode().get_datatype().get_metatype() == metatype ])
+        metatype_group["(metatype = {}) varnodes matched @ or above ALIGNED".format(MetaType.repr(metatype))] = aligned
+
+        matched = len([ record for record in varnodes_matched_at_above_level(cmp, VarnodeCompareLevel.MATCH) if record.get_varnode().get_datatype().get_metatype() == metatype ])
+        metatype_group["(metatype = {}) varnodes matched @ MATCH".format(MetaType.repr(metatype))] = matched
+        if truth > 0:
+            metatype_group["(metatype = {}) varnodes match %".format(MetaType.repr(metatype))] = 100.0 * (matched / truth)
         METRICS["METATYPE SUMMARY ({})".format(MetaType.repr(metatype))] = metatype_group
 
     array_group = {}
     array_cmps = array_comparisons(cmp)
-    array_group["array comparisons"] = array_cmps
+    array_group["array comparisons"] = len(array_cmps)
     if array_cmps:
         array_group["array - avg elements error"] = mean([ array_elements_error(array_cmp) for array_cmp in array_cmps ])
         array_group["array - avg elements error %"] = mean([ array_elements_error_percentage(array_cmp) for array_cmp in array_cmps ])
-        array_group["array - avg size error"] = mean([ array_size_error(array_cmp) for array_cmp in array_cmps ])
-        array_group["array - avg size error %"] = mean([ array_size_error_percentage(array_cmp) for array_cmp in array_cmps ])
+        array_group["array - avg size error (bytes)"] = mean([ array_size_error(array_cmp) for array_cmp in array_cmps ])
+        array_group["array - avg size error (bytes) %"] = mean([ array_size_error_percentage(array_cmp) for array_cmp in array_cmps ])
+        array_group["array - subtype match %"] = array_subtype_match_percentage(array_cmps)
+        array_group["array - # of dimensions match %"] = array_dimension_match_percentage(array_cmps)
 
     METRICS["ARRAY RECOVERY"] = array_group
 

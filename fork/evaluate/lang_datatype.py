@@ -478,6 +478,9 @@ class DataTypeArray(DataType):
             if self.size is not None and self.basetype is not None:
                 self.dimensions = (self.size // self.basetype.get_size(),)
 
+    def get_basetype(self):
+        return self.basetype
+
     def get_num_elements(self):
         return DataTypeArray.compute_flat_length(self.dimensions)
 
