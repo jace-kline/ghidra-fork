@@ -1,0 +1,102 @@
+---------- BYTES ----------
+bytes - ground truth : 89
+bytes - decompiler : 100
+bytes found : 56
+bytes missed : 33
+bytes extraneous : 44
+bytes found % : 62.92134831460674
+
+---------- FUNCTIONS ----------
+functions - ground truth : 3
+functions - decompiler : 4
+functions found : 3
+functions missed : 0
+functions extraneous : 1
+functions found % : 100.0
+
+---------- VARNODES ----------
+varnodes - ground truth : 11
+varnodes - decompiler : 11
+varnodes matched @ or above NO_MATCH : 11
+varnodes matched @ or above OVERLAP : 5
+varnodes matched @ or above SUBSET : 5
+varnodes matched @ or above ALIGNED : 5
+varnodes matched @ or above MATCH : 5
+varnodes missed : 6
+varnodes extraneous : 6
+varnodes match % : 45.45454545454545
+
+---------- PRIMITIVE VARNODES ----------
+primitive varnodes - ground truth : 20
+primitive varnodes - decompiler : 20
+primitive varnodes matched @ or above NO_MATCH : 20
+primitive varnodes matched @ or above OVERLAP : 14
+primitive varnodes matched @ or above SUBSET : 14
+primitive varnodes matched @ or above ALIGNED : 14
+primitive varnodes matched @ or above MATCH : 14
+primitive varnodes missed : 6
+primitive varnodes extraneous : 6
+primitive varnodes match % : 70.0
+
+---------- METATYPE SUMMARY (INT) ----------
+(metatype = INT) varnodes - ground truth : 7
+(metatype = INT) varnodes - decompiler : 8
+(metatype = INT) varnodes missed : 3
+(metatype = INT) varnodes matched @ or above ALIGNED : 4
+(metatype = INT) varnodes matched @ MATCH : 4
+(metatype = INT) varnodes match % : 57.14285714285714
+
+---------- METATYPE SUMMARY (FLOAT) ----------
+(metatype = FLOAT) varnodes - ground truth : 0
+(metatype = FLOAT) varnodes - decompiler : 0
+(metatype = FLOAT) varnodes missed : 0
+(metatype = FLOAT) varnodes matched @ or above ALIGNED : 0
+(metatype = FLOAT) varnodes matched @ MATCH : 0
+
+---------- METATYPE SUMMARY (POINTER) ----------
+(metatype = POINTER) varnodes - ground truth : 3
+(metatype = POINTER) varnodes - decompiler : 2
+(metatype = POINTER) varnodes missed : 3
+(metatype = POINTER) varnodes matched @ or above ALIGNED : 0
+(metatype = POINTER) varnodes matched @ MATCH : 0
+(metatype = POINTER) varnodes match % : 0.0
+
+---------- METATYPE SUMMARY (ARRAY) ----------
+(metatype = ARRAY) varnodes - ground truth : 1
+(metatype = ARRAY) varnodes - decompiler : 1
+(metatype = ARRAY) varnodes missed : 0
+(metatype = ARRAY) varnodes matched @ or above ALIGNED : 1
+(metatype = ARRAY) varnodes matched @ MATCH : 1
+(metatype = ARRAY) varnodes match % : 100.0
+
+---------- METATYPE SUMMARY (STRUCT) ----------
+(metatype = STRUCT) varnodes - ground truth : 0
+(metatype = STRUCT) varnodes - decompiler : 0
+(metatype = STRUCT) varnodes missed : 0
+(metatype = STRUCT) varnodes matched @ or above ALIGNED : 0
+(metatype = STRUCT) varnodes matched @ MATCH : 0
+
+---------- METATYPE SUMMARY (UNION) ----------
+(metatype = UNION) varnodes - ground truth : 0
+(metatype = UNION) varnodes - decompiler : 0
+(metatype = UNION) varnodes missed : 0
+(metatype = UNION) varnodes matched @ or above ALIGNED : 0
+(metatype = UNION) varnodes matched @ MATCH : 0
+
+---------- METATYPE SUMMARY (UNDEFINED) ----------
+(metatype = UNDEFINED) varnodes - ground truth : 0
+(metatype = UNDEFINED) varnodes - decompiler : 0
+(metatype = UNDEFINED) varnodes missed : 0
+(metatype = UNDEFINED) varnodes matched @ or above ALIGNED : 0
+(metatype = UNDEFINED) varnodes matched @ MATCH : 0
+
+---------- ARRAY RECOVERY ----------
+array comparisons : 1
+arrays missed : 0
+array - avg elements error : 0
+array - avg elements error % : 0.0
+array - avg size error (bytes) : 0
+array - avg size error (bytes) % : 0.0
+array - subtype match % : 100.0
+array - # of dimensions match % : 100.0
+

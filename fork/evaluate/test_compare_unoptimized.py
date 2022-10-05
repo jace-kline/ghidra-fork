@@ -89,8 +89,8 @@ def compare_summary(cmp_ghidra: UnoptimizedProgramInfoCompare2, cmp_dwarf: Unopt
     # print("\n---------GHIDRA VS DWARF----------\n")
     # print(cmp_ghidra.show_summary())
 
-    print("\n---------DWARF VS GHIDRA----------\n")
-    print(cmp_dwarf.show_summary())
+    # print("\n---------DWARF VS GHIDRA----------\n")
+    # print(cmp_dwarf.show_summary())
     
     # mainfn = [ fn for fn in cmp_ghidra.get_left().get_unoptimized_functions().values() if fn.get_function().get_name() == "main" ][0]
 
@@ -100,4 +100,5 @@ def metrics_summary(cmp: UnoptimizedProgramInfoCompare2):
 if __name__ == "__main__":
     # progdir = "../progs/typecases/"
     cmp_ghidra, cmp_dwarf = test_compare_unoptimized_interactive()
+    # compare_summary(cmp_ghidra, cmp_dwarf)
     metrics_summary(cmp_dwarf)

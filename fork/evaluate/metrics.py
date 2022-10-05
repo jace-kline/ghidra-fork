@@ -8,11 +8,11 @@ from filter import *
 # --------------------- BYTES --------------------------
 # Ground-truth bytes
 def bytes_truth(cmp: UnoptimizedProgramInfoCompare2) -> int:
-    return sum([ varnode.get_size() for varnode in cmp.get_left().select_primitive_varnodes() ])
+    return sum([ varnode.get_size() for varnode in varnodes_truth(cmp) ])
 
 # Decompiler bytes
 def bytes_decomp(cmp: UnoptimizedProgramInfoCompare2) -> int:
-    return sum([ varnode.get_size() for varnode in cmp.get_right().select_primitive_varnodes() ])
+    return sum([ varnode.get_size() for varnode in varnodes_decomp(cmp) ])
 
 # Found bytes (in ground-truth & decompiler)
 def bytes_found(cmp: UnoptimizedProgramInfoCompare2) -> int:
@@ -50,11 +50,11 @@ def functions_extraneous(cmp: UnoptimizedProgramInfoCompare2) -> List[Unoptimize
 # ------------------ HIGH-LEVEL VARNODES -------------------
 # Ground-truth high-level varnodes
 def varnodes_truth(cmp: UnoptimizedProgramInfoCompare2) -> List[Varnode]:
-    return cmp.get_left().select_varnodes()
+    return cmp.get_left().select_varnodes(variable_cond=lambda var: not var.is_param())
 
 # Decompiler high-level varnodes
 def varnodes_decomp(cmp: UnoptimizedProgramInfoCompare2) -> List[Varnode]:
-    return cmp.get_right().select_varnodes()
+    return cmp.get_right().select_varnodes(variable_cond=lambda var: not var.is_param())
 
 # Missed high-level varnodes (ground-truth varnodes not compared with any decomp varnodes)
 def varnodes_missed(cmp: UnoptimizedProgramInfoCompare2) -> List[Varnode]:
@@ -64,10 +64,10 @@ def varnodes_missed(cmp: UnoptimizedProgramInfoCompare2) -> List[Varnode]:
 
 # Ground-truth high-level varnodes matched @ or above <TAG>
 def varnodes_match_levels(cmp: UnoptimizedProgramInfoCompare2, levels: List[int]) -> List[VarnodeCompareRecord]:
-    return cmp.select_varnode_compare_records(varnode_cmp_record_cond=lambda record: record.get_compare_level() in levels)
+    return cmp.select_varnode_compare_records(varnode_cmp_record_cond=lambda record: (record.get_var() is None or not record.get_var().is_param()) and record.get_compare_level() in levels)
 
 def varnodes_matched_at_above_level(cmp: UnoptimizedProgramInfoCompare2, level: int) -> List[VarnodeCompareRecord]:
-    return cmp.select_varnode_compare_records(varnode_cmp_record_cond=lambda record: record.get_compare_level() >= level)
+    return cmp.select_varnode_compare_records(varnode_cmp_record_cond=lambda record: (record.get_var() is None or not record.get_var().is_param()) and record.get_compare_level() >= level)
 
 # Extraneous high-level varnodes (in decompiler, not overlapped with ground truth)
 def varnodes_extraneous(cmp: UnoptimizedProgramInfoCompare2) -> List[Varnode]:
@@ -77,11 +77,11 @@ def varnodes_extraneous(cmp: UnoptimizedProgramInfoCompare2) -> List[Varnode]:
 # ---------- PRIMITIVE (DECOMPOSED) VARNODES ----------------
 # Ground-truth primitive (flattened/decomposed) varnodes
 def primitive_varnodes_truth(cmp: UnoptimizedProgramInfoCompare2) -> List[Varnode]:
-    return cmp.get_left().select_primitive_varnodes()
+    return cmp.get_left().select_primitive_varnodes(variable_cond=lambda var: not var.is_param())
 
 # Decompiler primitive varnodes
 def primitive_varnodes_decomp(cmp: UnoptimizedProgramInfoCompare2) -> List[Varnode]:
-    return cmp.get_right().select_primitive_varnodes()
+    return cmp.get_right().select_primitive_varnodes(variable_cond=lambda var: not var.is_param())
 
 # Missed primitive varnodes
 def primitive_varnodes_missed(cmp: UnoptimizedProgramInfoCompare2) -> List[Varnode]:
@@ -91,10 +91,10 @@ def primitive_varnodes_missed(cmp: UnoptimizedProgramInfoCompare2) -> List[Varno
 
 # Ground-truth primitive variables matched @ or above <TAG>
 def primitive_varnodes_match_levels(cmp: UnoptimizedProgramInfoCompare2, levels: List[int]) -> List[VarnodeCompareRecord]:
-    return cmp.select_primitive_varnode_compare_records(varnode_cmp_record_cond=lambda record: record.get_compare_level() in levels)
+    return cmp.select_primitive_varnode_compare_records(varnode_cmp_record_cond=lambda record: (record.get_var() is None or not record.get_var().is_param()) and record.get_compare_level() in levels)
 
 def primitive_varnodes_matched_at_above_level(cmp: UnoptimizedProgramInfoCompare2, level: int) -> List[VarnodeCompareRecord]:
-    return cmp.select_primitive_varnode_compare_records(varnode_cmp_record_cond=lambda record: record.get_compare_level() >= level)
+    return cmp.select_primitive_varnode_compare_records(varnode_cmp_record_cond=lambda record: (record.get_var() is None or not record.get_var().is_param()) and record.get_compare_level() >= level)
 
 # Extraneous primitive varnodes (in decompiler, not overlapped with ground truth)
 def primitive_varnodes_extraneous(cmp: UnoptimizedProgramInfoCompare2) -> List[Varnode]:
@@ -112,14 +112,6 @@ def varnodes_truth_metatype(cmp: UnoptimizedProgramInfoCompare2, metatype: int) 
 def varnodes_decomp_metatype(cmp: UnoptimizedProgramInfoCompare2, metatype: int) -> List[Varnode]:
     return _varnodes_metatype(cmp.get_right(), metatype)
 
-# Ground-truth varnode compare records w/ varnode matching metatype
-
-
-# Ground-truth ARRAY varnodes
-
-# Decompiler ARRAY varnodes
-
-# Unfound ARRAY varnodes
 
 # Recovered ARRAY varnodes (in ground-truth & in decompiler - overlapped & same metatype)
 def array_comparisons(cmp: UnoptimizedProgramInfoCompare2) -> List[VarnodeCompare2]:
@@ -164,17 +156,6 @@ def array_dimension_match_percentage(cmps: List[VarnodeCompare2]) -> float:
 
     return 100.0 * (dim_matches / len(cmps))
 
-# Ground-truth ARRAY varnodes matched @ or above <TAG>
-
-# Extraneous ARRAY varnodes
-
-
-# Ground-truth STRUCT varnodes
-
-# Decompiler STRUCT varnodes
-
-# Unfound STRUCT varnodes
-
 # Recovered STRUCT varnodes (in ground-truth & in decompiler - overlapped & same metatype)
 ## average size inaccuracy (bytes)
 ## average size inaccuracy %
@@ -183,10 +164,6 @@ def array_dimension_match_percentage(cmps: List[VarnodeCompare2]) -> float:
 # Ground-truth STRUCT varnodes matched @ or above <TAG>
 
 # Extraneous STRUCT varnodes
-
-def _len(query) -> int:
-    # query: UnoptimizedProgramInfoCompare2 -> List[*]
-    return lambda cmp: len(query(cmp))
 
 def _mk_metrics(cmp: UnoptimizedProgramInfoCompare2) -> dict:
     METRICS = {
@@ -230,6 +207,15 @@ def _mk_metrics(cmp: UnoptimizedProgramInfoCompare2) -> dict:
     primitives_group["primitive varnodes match %"] = 100.0 * (len(primitive_varnodes_matched_at_above_level(cmp, VarnodeCompareLevel.MATCH)) / _primitives_truth)
     METRICS["PRIMITIVE VARNODES"] = primitives_group
 
+    parameters_group = {}
+    params_truth = cmp.get_left().select_varnodes(variable_cond=lambda var: var.is_param())
+    parameters_group["parameter varnodes - ground truth"] = params_truth
+    params_decomp = cmp.get_right().select_varnodes(variable_cond=lambda var: var.is_param())
+    parameters_group["parameter varnodes - decompiler"] = params_decomp
+    param_overlaps = cmp.select_varnode_compare_records(varnode_cmp_record_cond=lambda record: record.get_var() is not None and record.get_var().is_param() and record.get_compare_level() > VarnodeCompareLevel.NO_MATCH)
+    parameters_group["parameter overlaps"] = param_overlaps
+    METRICS["PARAMETER VARNODES"] = parameters_group
+
     for metatype in [MetaType.INT, MetaType.FLOAT, MetaType.POINTER, MetaType.ARRAY, MetaType.STRUCT, MetaType.UNION, MetaType.UNDEFINED]:
         metatype_group = {}
         truth = len(varnodes_truth_metatype(cmp, metatype))
@@ -249,6 +235,7 @@ def _mk_metrics(cmp: UnoptimizedProgramInfoCompare2) -> dict:
     array_group = {}
     array_cmps = array_comparisons(cmp)
     array_group["array comparisons"] = len(array_cmps)
+    array_group["arrays missed"] = len([ record for record in varnodes_match_levels(cmp, [VarnodeCompareLevel.NO_MATCH]) if record.get_varnode().get_datatype().get_metatype() == MetaType.ARRAY ])
     if array_cmps:
         array_group["array - avg elements error"] = mean([ array_elements_error(array_cmp) for array_cmp in array_cmps ])
         array_group["array - avg elements error %"] = mean([ array_elements_error_percentage(array_cmp) for array_cmp in array_cmps ])

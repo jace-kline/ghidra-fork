@@ -202,46 +202,6 @@ class UnoptimizedProgramInfoCompare2(object):
         return hash((self.left, self.right))
 
     def show_summary(self, indent=0) -> str:
-        s = "--------------STATS-----------------\n"
-
-        s += "total bytes = {}\n".format(self.get_bytes())
-        s += "bytes recovered = {}\n".format(self.bytes_overlapped())
-        # s += "byte recovery % = {}%\n\n".format(self.byte_recovery_fraction())
-
-        s += "number of variables = {}\n".format(len(self.get_varnode_compare_records()))
-        level = VarnodeCompareLevel.SUBSET
-        s += "variables matched @ or above {} = {}\n".format(
-            VarnodeCompareLevel.to_string(level),
-            len(self.get_varnode_records_matched_level(level))
-        )
-        level = VarnodeCompareLevel.ALIGNED
-        s += "variables matched @ or above {} = {}\n".format(
-            VarnodeCompareLevel.to_string(level),
-            len(self.get_varnode_records_matched_level(level))
-        )
-        level = VarnodeCompareLevel.MATCH
-        s += "variables matched @ or above {} = {}\n".format(
-            VarnodeCompareLevel.to_string(level),
-            len(self.get_varnode_records_matched_level(level))
-        )
-        # s += "variable recovery % = {}%\n\n".format(0)
-
-        s += "number of primitive variables = {}\n".format(len(self.get_primitive_varnode_compare_records()))
-        level = VarnodeCompareLevel.ALIGNED
-        s += "primitive variables matched @ or above {} = {}\n".format(
-            VarnodeCompareLevel.to_string(level),
-            len(self.get_primitive_varnode_records_matched_level(level))
-        )
-        level = VarnodeCompareLevel.MATCH
-        s += "primitive variables matched @ or above {} = {}\n".format(
-            VarnodeCompareLevel.to_string(level),
-            len(self.get_primitive_varnode_records_matched_level(level))
-        )
-        # s += "primitive recovery % = {}%\n\n".format(0)
-
-        s += "total functions = {}\n".format(len(self.unoptimized_function_compare_map))
-        s += "functions found = {}\n".format(len([ fn for fn in self.unoptimized_function_compare_map.values() if fn is not None ]))
-        # s += "function recovery % = {}%\n".format(0)
 
         s += "\n----------GLOBAL COMPARISONS----------\n"
         s += "Globals:\n"

@@ -89,7 +89,7 @@ class Variable(object):
     # "instantiations"/liveranges.
     # () -> [Varnode]
     def get_varnodes(self):
-        return [ Varnode(self.dtype, liverange) for liverange in self.liveranges ]
+        return [ Varnode(self.dtype, liverange, var=self) for liverange in self.liveranges ]
 
     def select_varnodes(self, varnode_cond=None):
         return [ varnode for varnode in self.get_varnodes() if varnode_cond is None or varnode_cond(varnode) ]
@@ -107,13 +107,18 @@ class Variable(object):
 # the most atomic form of a variable-like entity
 # a datatype, address, and pc range that indicates its lifetime
 class Varnode(object):
-    def __init__(self, dtype, liverange):
+    def __init__(self, dtype, liverange, var=None):
         self.dtype = dtype
         self.liverange = liverange
+        self.var = var # the Variable that "spawned" this Varnode
 
     # () -> AddressLiveRange
     def get_liverange(self):
         return self.liverange
+
+    # () -> Variable|None
+    def get_var(self):
+        return self.var
 
     # () -> AddressRange | None
     def get_pc_range(self):
@@ -148,7 +153,7 @@ class Varnode(object):
             startpc = pc_range.get_start() if pc_range is not None else None
             endpc = pc_range.get_end() if pc_range is not None else None
             liverange = AddressLiveRange(addr=addr, startpc=startpc, endpc=endpc)
-            varnodes.append(Varnode(primtype, liverange))
+            varnodes.append(Varnode(primtype, liverange, var=self.var))
 
         return varnodes
 
