@@ -280,6 +280,9 @@ class VarnodeCompareRecord(object):
             if code in (VarnodeCompare2Code.OVERLAP, VarnodeCompare2Code.LEFT_CONTAINS_RIGHT):
                 self.status = VarnodeCompareStatus.OVERLAP_MANY
 
+        elif self.status == VarnodeCompareStatus.MATCH and code == VarnodeCompare2Code.MATCH:
+            pass
+
         else:
             raise Exception(
                 "Error: The transition from VarnodeCompareStatus={} with VarnodeCompare2Code={} should not occur"

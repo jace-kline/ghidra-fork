@@ -281,11 +281,15 @@ class DataTypeStructStub(DataTypeStub):
         membertype_offsets = list(zip(offsets, membertypes))
 
         if self.size is None:
-            # get last member's offset, then add then size of that member's type
-            offset, memtype = membertype_offsets[-1]
-            size = offset + memtype.get_size()
-            end_padding = size % DataTypeStruct.ALIGN_SIZE
-            self.size = size + end_padding
+            if not membertype_offsets:
+                # if (offset, membertype) pairs list is empty, size = 0
+                self.size = 0
+            else:
+                # get last member's offset, then add then size of that member's type
+                offset, memtype = membertype_offsets[-1]
+                size = offset + memtype.get_size()
+                end_padding = size % DataTypeStruct.ALIGN_SIZE
+                self.size = size + end_padding
 
         # correct the fields after recursion occurs
         record.obj.name = self.name

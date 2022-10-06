@@ -314,7 +314,7 @@ class ParseGhidra(object):
             rettype = dtype.getReturnType()
             rettyperef = self.register_obj(rettype)
 
-            variadic = dtype.isVarArg()
+            variadic = dtype.hasVarArgs()
             paramdefs = dtype.getArguments() # [ParameterDefinition]
             paramtypes = [ paramdef.getDataType() for paramdef in paramdefs ]
             paramtyperefs = [ self.register_obj(paramtype) for paramtype in paramtypes ]

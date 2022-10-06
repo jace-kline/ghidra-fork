@@ -104,6 +104,19 @@ def get_DIE_attr_ref_DIE_follow_abstract_origin(die, attr):
         else:
             return None
 
+# follows links (DW_AT_abstract_origin, DW_AT_specification)
+def get_DIE_attr_ref_DIE_follow(die, attr):
+    FOLLOW_ATTRS = ("DW_AT_abstract_origin", "DW_AT_specification")
+    try:
+        return die.get_DIE_from_attribute(attr)
+    except:
+        for at in FOLLOW_ATTRS:
+            followdie = get_DIE_attr_ref_DIE(die, at)
+            if followdie is not None:
+                return get_DIE_attr_ref_DIE_follow(followdie, attr)
+        return None
+
+
 # extract the low and high pc values for a function-like DIE
 # DIE -> (int, int) | None
 # returns None if either of the attributes are not present

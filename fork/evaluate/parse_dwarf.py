@@ -105,7 +105,7 @@ class ParseDWARF:
             param = die.tag == "DW_TAG_formal_parameter" and not DIE_has_attr(die, "DW_AT_abstract_origin")
 
             # get the data type reference
-            dtyperef = self.get_DIE_key(get_DIE_attr_ref_DIE_follow_abstract_origin(die, "DW_AT_type"))
+            dtyperef = self.get_DIE_key(get_DIE_attr_ref_DIE_follow(die, "DW_AT_type"))
             assert(dtyperef is not None)
 
             # get the parent function ref in the database
