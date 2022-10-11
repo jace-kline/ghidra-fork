@@ -219,3 +219,5 @@ class GhidraUtil(object):
     def is_valid_address(self, addr):
         return addr != Address.NO_ADDRESS
 
+
+

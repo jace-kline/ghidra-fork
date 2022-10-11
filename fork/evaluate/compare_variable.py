@@ -280,8 +280,10 @@ class VarnodeCompareRecord(object):
             if code in (VarnodeCompare2Code.OVERLAP, VarnodeCompare2Code.LEFT_CONTAINS_RIGHT):
                 self.status = VarnodeCompareStatus.OVERLAP_MANY
 
-        elif self.status == VarnodeCompareStatus.MATCH and code == VarnodeCompare2Code.MATCH:
-            pass
+        elif self.status in (VarnodeCompareStatus.MATCH, VarnodeCompareStatus.ALIGNED) \
+            and code in (VarnodeCompare2Code.MATCH, VarnodeCompare2Code.ALIGNED):
+            if code == VarnodeCompare2Code.MATCH:
+                self.status = VarnodeCompareStatus.MATCH
 
         else:
             raise Exception(

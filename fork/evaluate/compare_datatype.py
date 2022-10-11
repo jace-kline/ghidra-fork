@@ -320,6 +320,7 @@ class DataTypePrimitiveCompare2(object):
 
         self.left = left
         self.right = right
+        self.paths = None
 
         self.left_lattice_node = LatticeNode.from_datatype(TYPE_LATTICE, self.left)
         self.right_lattice_node = LatticeNode.from_datatype(TYPE_LATTICE, self.right)
