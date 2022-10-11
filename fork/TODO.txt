@@ -1,5 +1,0 @@
-* make changes to DWARF and Ghidra parsing to account for new 'AddressLiveRangeSet'
-* make Python modules dependencies to the project Make build
-* static PC address range variable/type comparison
-    - derive from the OrderedZipper() iterator
-* how to handle Unions during comparisons?

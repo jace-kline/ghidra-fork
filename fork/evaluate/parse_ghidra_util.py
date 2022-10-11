@@ -113,11 +113,21 @@ class GhidraUtil(object):
     # from at least one of the decompiled functions.
     # () -> Iter<HighSymbol>
     def get_referenced_global_vars(self):
-        refs = [] # holds unique ids for each seen global
+        # def addr_ref(highsym): # symbols can be referenced 
+        #     return highsym.getPCAddress()
+
+        def id_ref(highsym):
+            return highsym.getId()
+
+        # addr_refs = [] # holds unique PC addrs
+        id_refs = [] # holds unique symbol ids
+
         for highfn in self.get_decompiled_functions():
             for gblsym in self.get_highfn_global_vars(highfn):
-                if id(gblsym) not in refs:
-                    refs.append(id(gblsym))
+                # _addr_ref = addr_ref(gblsym)
+                _id_ref = id_ref(gblsym)
+                if _id_ref is not None and _id_ref not in id_refs:
+                    id_refs.append(_id_ref)
                     yield gblsym
     
     # () -> Iter<Function>

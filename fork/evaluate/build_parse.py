@@ -6,9 +6,13 @@ import subprocess
 from pathlib import Path, PosixPath
 from typing import Any, List, Union
 
+from rule import *
 import parse_dwarf
 from compare_unoptimized import *
 from metrics import *
+
+# GLOBALS
+CODEDIR = Path(__file__).resolve().parent # the path to the parent directory of this module
 
 BuildOptions = namedtuple("BuildOptions", ("debug", "strip", "optimization"), defaults=(False, False, 0))
 
@@ -35,10 +39,12 @@ class Program(object):
     def __init__(
         self,
         name: str,
-        dir: Path # path to the directory where the binary lives
+        dir: Path, # path to the directory where the binary lives
+        src_files: List[Path] = [] # list of paths of dependency source code files
     ):
         self.name = name
         self.dir = dir
+        self.src_files = src_files
 
     # mangle the options into the correct binary name
     def get_binary_name(self, opts: BuildOptions) -> str:
@@ -53,8 +59,22 @@ class Program(object):
         path = self.get_binary_path(opts)
         return path is not None and path.exists() and path.is_file()
 
+    # Given build options, this method builds the binary and returns whether it built successfully.
+    # Must implement in child classes.
     def build(self, opts: BuildOptions) -> bool:
         raise NotImplementedError()
+
+    # Get the list of source code file paths that produce this program.
+    def get_src_files(self) -> List[Path]:
+        return self.src_files
+
+    # Given build options, generate a FilesystemDependencyRule for building this program.
+    def mk_build_rule(self, opts: BuildOptions) -> FilesystemDependencyRule:
+        return FilesystemDependencyRule(
+            self.get_binary_path(opts),
+            self.get_src_files(),
+            lambda: self.build(opts)
+        )
 
     def __hash__(self) -> int:
         return hash((self.name, self.dir))
@@ -72,8 +92,15 @@ class CoreutilsProgram(Program):
         self,
         name: str
     ):
+        srcpath = __class__.COREUTILS_PATH.joinpath("src")
+        binpath = __class__.COREUTILS_PATH.joinpath("bin")
+        src_files = [ srcpath.joinpath("{}.c".format(name)) ]
 
-        super(__class__, self).__init__(name, __class__.COREUTILS_PATH.joinpath("bin"))
+        super(__class__, self).__init__(
+            name,
+            binpath,
+            src_files=src_files
+        )
 
     def build(self, opts: BuildOptions) -> bool:
         makepath = __class__.COREUTILS_PATH
@@ -107,7 +134,14 @@ class ToyProgram(Program):
         self,
         name: str
     ):
-        super(__class__, self).__init__(name, __class__.TOY_PROGS_PATH.joinpath(name))
+        progdir = __class__.TOY_PROGS_PATH.joinpath(name)
+        src_files = [ srcfile for srcfile in progdir.glob("*.c") ]
+
+        super(__class__, self).__init__(
+            name,
+            progdir,
+            src_files=src_files
+        )
 
     # mangle the options into the correct binary name
     def get_binary_name(self, opts: BuildOptions) -> str:
@@ -120,61 +154,6 @@ class ToyProgram(Program):
         cmd = "make -C {} {}".format(self.dir, self.get_binary_name(opts))
         retcode = subprocess.call(cmd.split())
         return retcode == 0
-
-# This is a rudimentary implementation of a Makefile "target".
-# A target "out path" that depends on a set of "dependency paths".
-class FilesystemDependencyRule(object):
-    def __init__(
-        self,
-        target: Path,
-        deps: List[Path],
-        build # () -> bool ... function to build the target. Returns True on success, False on failure
-    ):
-        self.target = target
-        self.deps = tuple(deps)
-        self.build = build
-
-    def get_target_path(self) -> Path:
-        return self.target
-
-    def get_target_hash(self) -> int:
-        return hash(self.target)
-
-    def get_deps(self) -> List[Path]:
-        return self.deps
-
-    # The logic to produce output to path of self.target
-    # with dependence on paths of self.deps
-    def build_target(self) -> bool:
-        raise NotImplementedError()
-
-    # Is the target date newer than the dates of all deps?
-    def target_up_to_date(self) -> bool:
-        def last_modification_ns(p: Path) -> int:
-            res = p.stat().st_mtime_ns
-            return res if res else -1
-
-        target_mtime_ns = last_modification_ns(self.target)
-        return target_mtime_ns > 0 and all([ target_mtime_ns > last_modification_ns(dep) for dep in self.deps ])
-
-    def target_exists(self) -> bool:
-        return self.target.exists()
-
-    # Tries to load the cached target.
-    # If not up to date, rebuilds it.
-    # Returns the target path on success, None on failure.
-    def make_target(self, rebuild: bool = False) -> Union[Path, None]:
-        if not rebuild and self.target_exists() and self.target_up_to_date():
-            return self.target
-        else:
-            return self.target if self.build() else None
-
-    def clean(self):
-        if self.target_exists():
-            os.remove(str(self.target))
-
-    def __hash__(self) -> int:
-        return hash((self.target, self.deps))
 
 def save_pickle(obj: Any, path: Path):
     outfile = open(str(path), 'wb')
@@ -193,19 +172,17 @@ class ProgramParser(object):
     @staticmethod
     def mangle_pickle_name(parsername: str, binpath: Path) -> str:
         binname = binpath.name # the basename of the binary file
-        binhash = hash(binpath) # the hash of the path to the binary file
+        # binhash = hash(str(binpath)) # the hash of the string representation of the path to the binary file
 
         # BINNAME-HASH(BINPATH).PARSERNAME.pickle
-        return "{}-{}.{}.pickle".format(
+        return "{}.{}.pickle".format(
             binname,
-            binhash,
             parsername
         )
 
     @staticmethod
     def gen_pickle_path(parsername: str, binpath: Path) -> Path:
-        CWD = Path(os.getcwd()).resolve()
-        PICKLE_CACHE_DIR = CWD.joinpath("pickle_cache")
+        PICKLE_CACHE_DIR = CODEDIR.joinpath("pickle_cache")
         if not PICKLE_CACHE_DIR.exists():
             PICKLE_CACHE_DIR.mkdir()
         
@@ -221,28 +198,36 @@ class ProgramParser(object):
         self.srcpaths = srcpaths
         self.parse = parse
 
-    def mk_program_pickle_builder(self, prog: Program, opts: BuildOptions):
-        # should return a function of signature () -> bool
-        def inner() -> bool:
-            proginfo = self.parse(prog.get_binary_path(opts))
-            if proginfo:
-                save_pickle(proginfo, __class__.gen_pickle_path(self.name, prog.get_binary_path(opts)))
-                return True
-            return False
-        return inner
-
     def mk_program_pickle_rule(self, prog: Program, opts: BuildOptions) -> FilesystemDependencyRule:
+        def _pickle_builder_thunk(prog: Program, opts: BuildOptions):
+            # should return a function of signature () -> bool
+            def inner() -> bool:
+                assert(prog.get_binary_path(opts).exists())
+                proginfo = self.parse(prog.get_binary_path(opts))
+                if proginfo:
+                    save_pickle(proginfo, __class__.gen_pickle_path(self.name, prog.get_binary_path(opts)))
+                    return True
+                return False
+            return inner
+
+        # make the build rule for building the program
+        # implicitly registers rule to RULE_DB
+        progrule = prog.mk_build_rule(opts)
+
+        # dependency list
+        deps = self.srcpaths + [progrule.get_target_path()]
+
         return FilesystemDependencyRule(
             __class__.gen_pickle_path(self.name, prog.get_binary_path(opts)),
-            self.srcpaths,
-            self.mk_program_pickle_builder(prog, opts)
+            deps,
+            _pickle_builder_thunk(prog, opts)
         )
 
     def parse_program(self, prog: Program, opts: BuildOptions, rebuild: bool = False) -> ProgramInfo:
-        rule = self.mk_program_pickle_rule(prog, opts)
-        path = rule.make_target(rebuild=rebuild)
-        if path:
-            return load_pickle(path)
+        pickle_rule = self.mk_program_pickle_rule(prog, opts)
+
+        if pickle_rule.make():
+            return load_pickle(pickle_rule.get_target_path())
         return None
 
 def parse_dwarf_proginfo(binpath: Path) -> ProgramInfo:
@@ -252,9 +237,8 @@ def parse_dwarf_proginfo(binpath: Path) -> ProgramInfo:
 def parse_ghidra_to_pickle(binpath: Path) -> Union[Path, None]:
     GHIDRA_BUILD_DIR = Path(os.environ["GHIDRA_BUILD"]).resolve()
     GHIDRA_ANALYZE_HEADLESS_PATH = GHIDRA_BUILD_DIR.joinpath("support/analyzeHeadless")
-    CWD = Path(os.getcwd()).resolve()
-    GHIDRA_SCRIPTS_PATH = CWD
-    PICKLE_OUT_PATH = CWD.joinpath("ghidra.pickle")
+    GHIDRA_SCRIPTS_PATH = CODEDIR
+    PICKLE_OUT_PATH = CODEDIR.joinpath("ghidra.pickle")
 
     cmd = """
     {}
@@ -266,7 +250,7 @@ def parse_ghidra_to_pickle(binpath: Path) -> Union[Path, None]:
         -deleteproject
     """.format(
         GHIDRA_ANALYZE_HEADLESS_PATH,
-        CWD,
+        CODEDIR,
         binpath,
         GHIDRA_SCRIPTS_PATH,
         PICKLE_OUT_PATH
@@ -314,11 +298,11 @@ def get_parser(name: str) -> ProgramParser:
     if not res:
         return None
     
-    CWD = Path(os.getcwd()).resolve()
-    deps = [ CWD.joinpath(dep) for dep in res["deps"] ]
+    common_deps = [ dep for dep in CODEDIR.glob("lang*.py") ]
+    deps = common_deps + [ CODEDIR.joinpath(dep) for dep in res["deps"] ]
     return ProgramParser(name, deps, res["parse"])
 
-def parse_proginfo_pair(prog: Program, opts: BuildOptions, decompiler="ghidra") -> UnoptimizedProgramInfoCompare2:
+def parse_proginfo_pair(prog: Program, opts: BuildOptions, decompiler: str = "ghidra") -> UnoptimizedProgramInfoCompare2:
     dwarf_opts = BuildOptions(debug=True, strip=False, optimization=opts.optimization)
 
     # ensure the target binaries exist (for the given build options)
@@ -336,8 +320,9 @@ def parse_proginfo_pair(prog: Program, opts: BuildOptions, decompiler="ghidra") 
 
     return dwarf_proginfo, decomp_proginfo
 
-def parse_compare(prog: Program, opts: BuildOptions, decompiler_parser=parse_ghidra_proginfo) -> UnoptimizedProgramInfoCompare2:
-    dwarf_proginfo, decomp_proginfo = parse_proginfo_pair(prog, opts, decompiler_parser=decompiler_parser)
+def parse_compare_unoptimized(prog: Program, opts: BuildOptions, decompiler: str = "ghidra") -> UnoptimizedProgramInfoCompare2:
+    assert(opts.optimization == 0)
+    dwarf_proginfo, decomp_proginfo = parse_proginfo_pair(prog, opts, decompiler=decompiler)
 
     return UnoptimizedProgramInfoCompare2(
         UnoptimizedProgramInfo(dwarf_proginfo),
@@ -348,8 +333,21 @@ def parse_compare(prog: Program, opts: BuildOptions, decompiler_parser=parse_ghi
 opts = BuildOptions()
 structcases = ToyProgram("structcases")
 ls = CoreutilsProgram("ls")
-# # dwarf_parser = get_parser("dwarf")
 
+
+cmp = parse_compare_unoptimized(ls, opts)
+# cmp.get_right().get_proginfo().print_summary()
+# dwarf_parser = get_parser("dwarf")
+# ghidra_parser = get_parser("ghidra")
+
+# proginfo = dwarf_parser.parse_program(ls, BuildOptions(debug=True))
+# proginfo = ghidra_parser.parse_program(ls, opts)
+# proginfo.print_summary()
+
+# prog_rule = structcases.mk_build_rule(opts)
+# pickle_rule = ghidra_parser.mk_program_pickle_rule(structcases, opts)
+# dwarf_proginfo = dwarf_parser.parse_program(ls, BuildOptions(debug=True))
+# ghidra_proginfo = ghidra_parser.parse_program(ls, opts)
 # dwarf, ghidra = parse_proginfo_pair(typecases, opts)
 
 # objpath = CoreutilsProgram.COREUTILS_SRC_PATH.joinpath("ls.o")

@@ -238,6 +238,7 @@ class DataType(object):
         # try to get component type at exact offset (more precise, size specified)
         size = match_type.get_size() if match_type is not None else None
         record = self.get_component_type_at_offset(offset, size=size)
+
         # if that fails, get the component type containing the offset
         record = record if record is not None else self.get_component_type_containing_offset(offset)
         if record is None:
@@ -548,7 +549,7 @@ class DataTypeArray(DataType):
         # if specified size is a multiple (> 1) of basetype size, then construct a sub array type
         if size is not None:
             sublength = size // self.basetype.size
-            if sublength > 1:
+            if 1 < sublength < self.get_num_elements():
                 relationship = DataTypeRecursiveDescent.Relationship.SUBSET
                 subtype = DataTypeArray(basetype=self.basetype, dimensions=(sublength,), size=self.basetype.get_size() * sublength)
             
