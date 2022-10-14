@@ -25,6 +25,10 @@ class VarnodeCompareLevel(object):
         ]
         return _map[code]
 
+    @staticmethod
+    def range() -> range:
+        return range(__class__.NO_MATCH, __class__.MATCH + 1)
+
 class VarnodeCompare2Code(object):
     NO_OVERLAP = 0 # variables do not overlap at all
     OVERLAP = 1 # start not aligned, types not matched

@@ -35,6 +35,10 @@ class DataTypeCompareLevel(object):
         ]
         return _map[code]
 
+    @staticmethod
+    def range() -> range:
+        return range(__class__.NO_MATCH, __class__.MATCH + 1)
+
 class DataTypeCompareCode(object):
     # no valid comparison could be made
     NO_MATCH = 0

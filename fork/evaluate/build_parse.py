@@ -330,12 +330,12 @@ def parse_compare_unoptimized(prog: Program, opts: BuildOptions, decompiler: str
     )
 
 
-opts = BuildOptions()
-structcases = ToyProgram("structcases")
-ls = CoreutilsProgram("ls")
+# opts = BuildOptions()
+# structcases = ToyProgram("structcases")
+# ls = CoreutilsProgram("ls")
 
 
-cmp = parse_compare_unoptimized(ls, opts)
+# cmp = parse_compare_unoptimized(ls, opts)
 # cmp.get_right().get_proginfo().print_summary()
 # dwarf_parser = get_parser("dwarf")
 # ghidra_parser = get_parser("ghidra")
