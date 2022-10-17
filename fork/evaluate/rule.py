@@ -25,6 +25,11 @@ class FilesystemDependencyRuleDatabase(object):
         return target.exists() if rule is None \
             else all([ self.make_target(dep, rebuild=rebuild) for dep in rule.get_deps() ]) and rule.do_rule(rebuild=rebuild)
 
+    # purges all targets
+    def clean(self):
+        for rule in self.db.values():
+            rule.clean()
+
 # singleton rule database -> injected into each rule object
 RULE_DB = FilesystemDependencyRuleDatabase()
 

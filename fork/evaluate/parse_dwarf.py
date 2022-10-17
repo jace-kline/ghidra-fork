@@ -1,4 +1,5 @@
 import sys
+import random
 from elftools.dwarf.constants import *
 from resolve import *
 from resolve_stubs import *
@@ -7,7 +8,7 @@ from parse_dwarf_util import *
 class ParseDWARFException(Exception):
     pass
 
-class ParseDWARF:
+class ParseDWARF(object):
     # DB keys are of the form (CU offset, DIE offset).
     # CU offset = -1 implies a custom added element.
 
@@ -17,7 +18,6 @@ class ParseDWARF:
         self.diemap = {}
         # holds {(CU offset, DIE offset) -> record} mappings
         self.db = ResolverDatabase()
-        self.nextkey = 0
 
     def get_DIE_key(self, die):
         if die is None:
@@ -28,9 +28,10 @@ class ParseDWARF:
         self.diemap = dict([(self.get_DIE_key(die), die) for die in get_all_DIEs(self.dwarfinfo)])
 
     def generate_unique_key(self):
-        key = (-1, self.nextkey) # -1 CU indicates we added it
-        assert(key not in self.diemap and not self.db.exists(key))
-        self.nextkey += 1 # increment key
+        while True:
+            key = (-1, random.randint(0, 999999999)) # -1 CU indicates we added it
+            if key not in self.diemap and not self.db.exists(key):
+                break
         return key
 
     # Generate a key for the stub, then insert into the DB as a record.

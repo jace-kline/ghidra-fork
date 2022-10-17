@@ -90,8 +90,8 @@ class ResolverDatabase(object):
         def __repr__(self):
             return str(self)
 
-    def __init__(self, db={}, rootkey=None):
-        self.db = db
+    def __init__(self, db=None, rootkey=None):
+        self.db = db if db is not None else {}
         # the key that marks the "root" node of the flattened structure
         self.rootkey = rootkey
 

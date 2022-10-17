@@ -486,4 +486,3 @@ class ParseGhidra(object):
             return AddressType.REGISTER
         else:
             return AddressType.UNKNOWN
-

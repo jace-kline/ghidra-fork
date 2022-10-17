@@ -203,7 +203,7 @@ class UnoptimizedProgramInfoCompare2(object):
 
     def show_summary(self, indent=0) -> str:
 
-        s += "\n----------GLOBAL COMPARISONS----------\n"
+        s = "\n----------GLOBAL COMPARISONS----------\n"
         s += "Globals:\n"
         s += self.globals_comparison.show_summary(indent=0)
 
