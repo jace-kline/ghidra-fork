@@ -1,0 +1,78 @@
+left: variable 'local_80' in function 'main'
+right: variable 'warn' in function 'main'
+chroot
+left: variable 'local_cc' in function 'build_wcs_upper_buffer'
+right: variable 'wc' in function 'build_wcs_upper_buffer'
+csplit
+left: variable 'local_428' in function '__strftime_internal'
+right: variable 'ubuf' in function '__strftime_internal'
+date
+left: variable 'local_128' in function 'dd_copy'
+right: variable 'us_bytes' in function 'dd_copy'
+dd
+left: variable 'local_88' in function 'get_fs_usage'
+right: variable 'vfsd' in function 'get_fs_usage'
+df
+left: variable 'local_428' in function '__strftime_internal'
+right: variable 'ubuf' in function '__strftime_internal'
+dir
+left: variable 'local_30' in function 'str2signum'
+right: variable 'endp' in function 'str2signum'
+env
+left: variable 'local_cc' in function 'build_wcs_upper_buffer'
+right: variable 'wc' in function 'build_wcs_upper_buffer'
+expr
+left: variable 'local_1b0' in function 'mbsstr'
+right: variable 'result' in function 'mbsstr'
+factor
+left: variable 'local_68' in function 'parse_with_separator'
+right: variable 'tmp' in function 'parse_with_separator'
+id
+left: variable 'local_30' in function 'str2signum'
+right: variable 'endp' in function 'str2signum'
+kill
+left: variable 'local_428' in function '__strftime_internal'
+right: variable 'ubuf' in function '__strftime_internal'
+ls
+left: variable 'local_b8' in function 'make_dir_parents'
+right: variable 'open_result' in function 'make_dir_parents'
+mkdir
+left: variable 'local_50' in function 'main'
+right: variable 'o1' in function 'main'
+od
+left: variable 'local_428' in function '__strftime_internal'
+right: variable 'ubuf' in function '__strftime_internal'
+pr
+left: variable 'local_38' in function 'vstrtoimax'
+right: variable 'wc' in function 'vstrtoimax'
+printf
+left: variable 'local_30' in function 'main'
+right: variable 'tmp' in function 'main'
+ptx
+left: variable 'local_30' in function 'str2signum'
+right: variable 'endp' in function 'str2signum'
+split
+left: variable 'local_428' in function '__strftime_internal'
+right: variable 'ubuf' in function '__strftime_internal'
+stat
+left: variable 'local_40' in function 'recover_mode'
+right: variable 'p' in function 'recover_mode'
+stty
+left: variable 'local_cc' in function 'build_wcs_upper_buffer'
+right: variable 'wc' in function 'build_wcs_upper_buffer'
+tac
+left: variable 'local_30' in function 'str2signum'
+right: variable 'endp' in function 'str2signum'
+timeout
+left: variable 'local_4f8' in function 'parse_datetime_body'
+right: variable 't3' in function 'parse_datetime_body'
+touch
+left: variable 'local_58' in function 'build_spec_list'
+right: variable 'closing_delim_idx' in function 'build_spec_list'
+tr
+left: variable 'local_2090' in function 'print_uptime'
+right: variable 'end_ptr' in function 'print_uptime'
+uptime
+left: variable 'local_428' in function '__strftime_internal'
+right: variable 'ubuf' in function '__strftime_internal'
+vdir

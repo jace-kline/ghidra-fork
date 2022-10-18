@@ -44,6 +44,9 @@ class ConstPCVariableSetSnapshot(object):
     def get_bytes(self) -> int:
         return sum([ varnode.get_size() for varnode in self.varnodes ])
 
+    def _find_overlaps(self) -> Tuple[Varnode, Varnode]:
+        return sum([ space._find_overlaps() for space in self.spaces.values() ], [])
+
     def __hash__(self) -> int:
         return hash(tuple(self.varnodes))
 
@@ -168,6 +171,8 @@ class ConstPCAddressSpace(object):
         for varnode in self.varnodes:
             self._verify_region(varnode)
 
+        assert(not self._find_overlaps())
+
     def _verify_region(self, varnode: Varnode):
         assert( varnode.get_addr().get_region() == self.region )
 
@@ -185,6 +190,10 @@ class ConstPCAddressSpace(object):
     # can this space be compared to another?
     def comparable(self):
         return self.rangeable()
+
+    # find erroneous overlaps within this space of varnodes
+    def _find_overlaps(self) -> Tuple[Varnode, Varnode]:
+        return [ (l, r) for l, r in self._get_comparison_pairs_rangeable(self) if l != r and l is not r and hash(l) != hash(r) ] if self.rangeable() else []
 
     # by default, no comparison pairs can be formed
     def get_comparison_pairs(self, other: 'ConstPCAddressSpace') -> 'List[Tuple[Varnode, Varnode]]':

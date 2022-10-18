@@ -285,8 +285,12 @@ class VarnodeCompareRecord(object):
                 self.status = VarnodeCompareStatus.OVERLAP_MANY
 
         else:
-            print(self.get_comparisons())
-            print(compare2)
+            # leftvar = compare2.get_left().get_var()
+            # leftfunc = leftvar.get_parent_function()
+            # rightvar = compare2.get_right().get_var()
+            # rightfunc = leftvar.get_parent_function()
+            # print("left: variable '{}' in function '{}'".format(leftvar.get_name(), leftfunc.get_name()))
+            # print("right: variable '{}' in function '{}'".format(rightvar.get_name(), rightfunc.get_name()))
             raise Exception(
                 "Error: The transition from VarnodeCompareStatus={} with VarnodeCompare2Code={} should not occur"
                 .format(VarnodeCompareStatus.to_string(self.status), VarnodeCompare2Code.to_string(code))

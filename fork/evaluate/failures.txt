@@ -1,0 +1,46 @@
+arch : build
+coreutils : build
+hostname : build
+install : build
+nl : parse
+sort : parse
+tail: parse
+chcon : compare
+chgrp : compare
+chmod : compare
+chown : compare
+cp : compare
+du : compare
+fmt : compare
+mv : compare
+rm : compare
+chroot : invalid VarnodeCompareRecord transition
+csplit : invalid VarnodeCompareRecord transition
+date : invalid VarnodeCompareRecord transition
+dd : invalid VarnodeCompareRecord transition
+df : invalid VarnodeCompareRecord transition
+dir : invalid VarnodeCompareRecord transition
+env : invalid VarnodeCompareRecord transition
+expr : invalid VarnodeCompareRecord transition
+factor : invalid VarnodeCompareRecord transition
+id : invalid VarnodeCompareRecord transition
+kill : invalid VarnodeCompareRecord transition
+ls : invalid VarnodeCompareRecord transition
+mkdir : invalid VarnodeCompareRecord transition
+od : invalid VarnodeCompareRecord transition
+pr : invalid VarnodeCompareRecord transition
+printf : invalid VarnodeCompareRecord transition
+ptx : invalid VarnodeCompareRecord transition
+split : invalid VarnodeCompareRecord transition
+stat : invalid VarnodeCompareRecord transition
+stty : invalid VarnodeCompareRecord transition
+tac : invalid VarnodeCompareRecord transition
+timeout : invalid VarnodeCompareRecord transition
+touch : invalid VarnodeCompareRecord transition
+tr : invalid VarnodeCompareRecord transition
+uptime : invalid VarnodeCompareRecord transition
+vdir : invalid VarnodeCompareRecord transition
+[ : invalid VarnodeCompareRecord transition
+pinky : invalid VarnodeCompareRecord transition
+shred : invalid VarnodeCompareRecord transition
+test : invalid VarnodeCompareRecord transition

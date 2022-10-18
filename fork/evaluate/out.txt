@@ -1,0 +1,602 @@
+----------------GLOBALS----------------------
+<VAR long_opts :: <ARRAY subtype=<STRUCT option membertypes=4 size=32> dimensions=(6,) size=192> @ [<AddressLiveRange addr=<ABSOLUTE:0xcaa0> startpc=None endpc=None>]>
+<VAR Version :: char * @ [<AddressLiveRange addr=<ABSOLUTE:0xd010> startpc=None endpc=None>]>
+<VAR file_name :: char * @ [<AddressLiveRange addr=<ABSOLUTE:0xd0f0> startpc=None endpc=None>]>
+<VAR ignore_EPIPE :: unsigned char @ [<AddressLiveRange addr=<ABSOLUTE:0xd0f8> startpc=None endpc=None>]>
+<VAR None :: int4 @ [<AddressLiveRange addr=<ABSOLUTE:0xd018> startpc=None endpc=None>]>
+<VAR None :: char * @ [<AddressLiveRange addr=<ABSOLUTE:0xd100> startpc=None endpc=None>]>
+<VAR None :: <ARRAY subtype=char * dimensions=(11,) size=88> @ [<AddressLiveRange addr=<ABSOLUTE:0xcb60> startpc=None endpc=None>]>
+<VAR None :: <ARRAY subtype=unsigned int4 dimensions=(10,) size=40> @ [<AddressLiveRange addr=<ABSOLUTE:0x9660> startpc=None endpc=None>]>
+<VAR default_quoting_options :: <STRUCT quoting_options membertypes=5 size=56> @ [<AddressLiveRange addr=<ABSOLUTE:0xd120> startpc=None endpc=None>]>
+<VAR slot0 :: <ARRAY subtype=char dimensions=(256,) size=256> @ [<AddressLiveRange addr=<ABSOLUTE:0xd160> startpc=None endpc=None>]>
+<VAR nslots :: int4 @ [<AddressLiveRange addr=<ABSOLUTE:0xd020> startpc=None endpc=None>]>
+<VAR slotvec0 :: <STRUCT slotvec membertypes=2 size=16> @ [<AddressLiveRange addr=<ABSOLUTE:0xd080> startpc=None endpc=None>]>
+<VAR slotvec :: <STRUCT slotvec membertypes=2 size=16> * @ [<AddressLiveRange addr=<ABSOLUTE:0xd090> startpc=None endpc=None>]>
+<VAR None :: <STRUCT quoting_options membertypes=5 size=56> @ [<AddressLiveRange addr=<ABSOLUTE:0xd040> startpc=None endpc=None>]>
+<VAR None :: <ARRAY subtype=char dimensions=(47,) size=47> @ [<AddressLiveRange addr=<ABSOLUTE:0x9b80> startpc=None endpc=None>]>
+----------------FUNCTIONS--------------------
+main :: (int4, char * *) -> int4 @ PC range=(<ABSOLUTE:0x30fb>, <ABSOLUTE:0x3a9b>)
+	<PARAM argc :: int4 @ [<AddressLiveRange addr=<STACK:-0xc4> startpc=<ABSOLUTE:0x30fb> endpc=<ABSOLUTE:0x3a9b>>]>
+	<PARAM argv :: char * * @ [<AddressLiveRange addr=<STACK:-0xd0> startpc=<ABSOLUTE:0x30fb> endpc=<ABSOLUTE:0x3a9b>>]>
+	<VAR c :: int4 @ [<AddressLiveRange addr=<STACK:-0xac> startpc=<ABSOLUTE:0x30fb> endpc=<ABSOLUTE:0x3a9b>>]>
+	<VAR userspec :: char * @ [<AddressLiveRange addr=<STACK:-0x80> startpc=<ABSOLUTE:0x30fb> endpc=<ABSOLUTE:0x3a9b>>]>
+	<VAR username :: char * @ [<AddressLiveRange addr=<STACK:-0x78> startpc=<ABSOLUTE:0x30fb> endpc=<ABSOLUTE:0x3a9b>>]>
+	<VAR groups :: char * @ [<AddressLiveRange addr=<STACK:-0x70> startpc=<ABSOLUTE:0x30fb> endpc=<ABSOLUTE:0x3a9b>>]>
+	<VAR skip_chdir :: unsigned char @ [<AddressLiveRange addr=<STACK:-0xb6> startpc=<ABSOLUTE:0x30fb> endpc=<ABSOLUTE:0x3a9b>>]>
+	<VAR uid :: unsigned int4 @ [<AddressLiveRange addr=<STACK:-0xb4> startpc=<ABSOLUTE:0x30fb> endpc=<ABSOLUTE:0x3a9b>>]>
+	<VAR gid :: unsigned int4 @ [<AddressLiveRange addr=<STACK:-0xb0> startpc=<ABSOLUTE:0x30fb> endpc=<ABSOLUTE:0x3a9b>>]>
+	<VAR out_gids :: unsigned int4 * @ [<AddressLiveRange addr=<STACK:-0x98> startpc=<ABSOLUTE:0x30fb> endpc=<ABSOLUTE:0x3a9b>>]>
+	<VAR n_gids :: unsigned int8 @ [<AddressLiveRange addr=<STACK:-0x90> startpc=<ABSOLUTE:0x30fb> endpc=<ABSOLUTE:0x3a9b>>]>
+	<VAR newroot :: char * @ [<AddressLiveRange addr=<STACK:-0x58> startpc=<ABSOLUTE:0x30fb> endpc=<ABSOLUTE:0x3a9b>>]>
+	<VAR is_oldroot :: unsigned char @ [<AddressLiveRange addr=<STACK:-0xb5> startpc=<ABSOLUTE:0x30fb> endpc=<ABSOLUTE:0x3a9b>>]>
+	<VAR gids :: unsigned int4 * @ [<AddressLiveRange addr=<STACK:-0x60> startpc=<ABSOLUTE:0x30fb> endpc=<ABSOLUTE:0x3a9b>>]>
+	<VAR in_gids :: unsigned int4 * @ [<AddressLiveRange addr=<STACK:-0x88> startpc=<ABSOLUTE:0x30fb> endpc=<ABSOLUTE:0x3a9b>>]>
+	<VAR exit_status :: int4 @ [<AddressLiveRange addr=<STACK:-0x9c> startpc=<ABSOLUTE:0x30fb> endpc=<ABSOLUTE:0x3a9b>>]>
+	<VAR userlen :: unsigned int8 @ [<AddressLiveRange addr=<STACK:-0x30> startpc=<ABSOLUTE:0x30fb> endpc=<ABSOLUTE:0x3a9b>>]>
+	<VAR __x :: char * @ [<AddressLiveRange addr=<STACK:-0x50> startpc=<ABSOLUTE:0x30fb> endpc=<ABSOLUTE:0x3a9b>>]>
+	<VAR pwd :: <STRUCT passwd membertypes=7 size=48> * @ [<AddressLiveRange addr=<STACK:-0x48> startpc=<ABSOLUTE:0x30fb> endpc=<ABSOLUTE:0x3a9b>>]>
+	<VAR __x :: int4 @ [<AddressLiveRange addr=<STACK:-0xa8> startpc=<ABSOLUTE:0x30fb> endpc=<ABSOLUTE:0x3a9b>>]>
+	<VAR ngroups :: int4 @ [<AddressLiveRange addr=<STACK:-0xa4> startpc=<ABSOLUTE:0x30fb> endpc=<ABSOLUTE:0x3a9b>>]>
+	<VAR shell :: char * @ [<AddressLiveRange addr=<STACK:-0x68> startpc=<ABSOLUTE:0x30fb> endpc=<ABSOLUTE:0x3a9b>>]>
+	<VAR warn :: unsigned char @ [<AddressLiveRange addr=<STACK:-0x88> startpc=<ABSOLUTE:0x30fb> endpc=<ABSOLUTE:0x3a9b>>]>
+	<VAR err :: char * @ [<AddressLiveRange addr=<STACK:-0x40> startpc=<ABSOLUTE:0x30fb> endpc=<ABSOLUTE:0x3a9b>>]>
+	<VAR pwd :: <STRUCT passwd membertypes=7 size=48> * @ [<AddressLiveRange addr=<STACK:-0x38> startpc=<ABSOLUTE:0x30fb> endpc=<ABSOLUTE:0x3a9b>>]>
+	<VAR ngroups :: int4 @ [<AddressLiveRange addr=<STACK:-0xa0> startpc=<ABSOLUTE:0x30fb> endpc=<ABSOLUTE:0x3a9b>>]>
+usage :: (int4) -> void @ PC range=(<ABSOLUTE:0x2f66>, <ABSOLUTE:0x30fc>)
+	<PARAM status :: int4 @ [<AddressLiveRange addr=<STACK:-0x24> startpc=<ABSOLUTE:0x2f66> endpc=<ABSOLUTE:0x30fc>>]>
+is_root :: (char *) -> unsigned char @ PC range=(<ABSOLUTE:0x2f00>, <ABSOLUTE:0x2f67>)
+	<PARAM dir :: char * @ [<AddressLiveRange addr=<STACK:-0x28> startpc=<ABSOLUTE:0x2f00> endpc=<ABSOLUTE:0x2f67>>]>
+	<VAR resolved :: char * @ [<AddressLiveRange addr=<STACK:-0x18> startpc=<ABSOLUTE:0x2f00> endpc=<ABSOLUTE:0x2f67>>]>
+	<VAR is_res_root :: unsigned char @ [<AddressLiveRange addr=<STACK:-0x19> startpc=<ABSOLUTE:0x2f00> endpc=<ABSOLUTE:0x2f67>>]>
+parse_additional_groups :: (char *, unsigned int4 * *, unsigned int8 *, unsigned char) -> int4 @ PC range=(<ABSOLUTE:0x2c56>, <ABSOLUTE:0x2f01>)
+	<PARAM groups :: char * @ [<AddressLiveRange addr=<STACK:-0x78> startpc=<ABSOLUTE:0x2c56> endpc=<ABSOLUTE:0x2f01>>]>
+	<PARAM pgids :: unsigned int4 * * @ [<AddressLiveRange addr=<STACK:-0x80> startpc=<ABSOLUTE:0x2c56> endpc=<ABSOLUTE:0x2f01>>]>
+	<PARAM pn_gids :: unsigned int8 * @ [<AddressLiveRange addr=<STACK:-0x88> startpc=<ABSOLUTE:0x2c56> endpc=<ABSOLUTE:0x2f01>>]>
+	<PARAM show_errors :: unsigned char @ [<AddressLiveRange addr=<STACK:-0x8c> startpc=<ABSOLUTE:0x2c56> endpc=<ABSOLUTE:0x2f01>>]>
+	<VAR gids :: unsigned int4 * @ [<AddressLiveRange addr=<STACK:-0x50> startpc=<ABSOLUTE:0x2c56> endpc=<ABSOLUTE:0x2f01>>]>
+	<VAR n_gids_allocated :: unsigned int8 @ [<AddressLiveRange addr=<STACK:-0x60> startpc=<ABSOLUTE:0x2c56> endpc=<ABSOLUTE:0x2f01>>]>
+	<VAR n_gids :: unsigned int8 @ [<AddressLiveRange addr=<STACK:-0x48> startpc=<ABSOLUTE:0x2c56> endpc=<ABSOLUTE:0x2f01>>]>
+	<VAR buffer :: char * @ [<AddressLiveRange addr=<STACK:-0x30> startpc=<ABSOLUTE:0x2c56> endpc=<ABSOLUTE:0x2f01>>]>
+	<VAR tmp :: char * @ [<AddressLiveRange addr=<STACK:-0x40> startpc=<ABSOLUTE:0x2c56> endpc=<ABSOLUTE:0x2f01>>]>
+	<VAR ret :: int4 @ [<AddressLiveRange addr=<STACK:-0x64> startpc=<ABSOLUTE:0x2c56> endpc=<ABSOLUTE:0x2f01>>]>
+	<VAR g :: <STRUCT group membertypes=4 size=32> * @ [<AddressLiveRange addr=<STACK:-0x38> startpc=<ABSOLUTE:0x2c56> endpc=<ABSOLUTE:0x2f01>>]>
+	<VAR value :: unsigned int8 @ [<AddressLiveRange addr=<STACK:-0x58> startpc=<ABSOLUTE:0x2c56> endpc=<ABSOLUTE:0x2f01>>]>
+gid_unset :: (unsigned int4) -> unsigned char @ PC range=(<ABSOLUTE:0x2c46>, <ABSOLUTE:0x2c57>)
+	<PARAM gid :: unsigned int4 @ [<AddressLiveRange addr=<STACK:-0x14> startpc=<ABSOLUTE:0x2c46> endpc=<ABSOLUTE:0x2c57>>]>
+uid_unset :: (unsigned int4) -> unsigned char @ PC range=(<ABSOLUTE:0x2c36>, <ABSOLUTE:0x2c47>)
+	<PARAM uid :: unsigned int4 @ [<AddressLiveRange addr=<STACK:-0x14> startpc=<ABSOLUTE:0x2c36> endpc=<ABSOLUTE:0x2c47>>]>
+bad_cast :: (char *) -> char * @ PC range=(<ABSOLUTE:0x2c28>, <ABSOLUTE:0x2c37>)
+	<PARAM s :: char * @ [<AddressLiveRange addr=<STACK:-0x18> startpc=<ABSOLUTE:0x2c28> endpc=<ABSOLUTE:0x2c37>>]>
+emit_ancillary_info :: (char *) -> void @ PC range=(<ABSOLUTE:0x2991>, <ABSOLUTE:0x2c29>)
+	<PARAM program :: char * @ [<AddressLiveRange addr=<STACK:-0xc8> startpc=<ABSOLUTE:0x2991> endpc=<ABSOLUTE:0x2c29>>]>
+	<VAR infomap :: <ARRAY subtype=<STRUCT infomap membertypes=2 size=16> dimensions=(7,) size=112> @ [<AddressLiveRange addr=<STACK:-0xa0> startpc=<ABSOLUTE:0x2991> endpc=<ABSOLUTE:0x2c29>>]>
+	<VAR node :: char * @ [<AddressLiveRange addr=<STACK:-0xc0> startpc=<ABSOLUTE:0x2991> endpc=<ABSOLUTE:0x2c29>>]>
+	<VAR map_prog :: <STRUCT infomap membertypes=2 size=16> * @ [<AddressLiveRange addr=<STACK:-0xb8> startpc=<ABSOLUTE:0x2991> endpc=<ABSOLUTE:0x2c29>>]>
+	<VAR lc_messages :: char * @ [<AddressLiveRange addr=<STACK:-0xb0> startpc=<ABSOLUTE:0x2991> endpc=<ABSOLUTE:0x2c29>>]>
+	<VAR url_program :: char * @ [<AddressLiveRange addr=<STACK:-0xa8> startpc=<ABSOLUTE:0x2991> endpc=<ABSOLUTE:0x2c29>>]>
+to_uchar :: (char) -> unsigned char @ PC range=(<ABSOLUTE:0x2982>, <ABSOLUTE:0x2992>)
+	<PARAM ch :: char @ [<AddressLiveRange addr=<STACK:-0x14> startpc=<ABSOLUTE:0x2982> endpc=<ABSOLUTE:0x2992>>]>
+initialize_exit_failure :: (int4) -> void @ PC range=(<ABSOLUTE:0x2969>, <ABSOLUTE:0x2983>)
+	<PARAM status :: int4 @ [<AddressLiveRange addr=<STACK:-0x14> startpc=<ABSOLUTE:0x2969> endpc=<ABSOLUTE:0x2983>>]>
+close_stdout :: () -> void @ PC range=(<ABSOLUTE:0x3ace>, <ABSOLUTE:0x3bc7>)
+	<VAR write_error :: char * @ [<AddressLiveRange addr=<STACK:-0x28> startpc=<ABSOLUTE:0x3ace> endpc=<ABSOLUTE:0x3bc7>>]>
+close_stdout_set_ignore_EPIPE :: (unsigned char) -> void @ PC range=(<ABSOLUTE:0x3ab4>, <ABSOLUTE:0x3acf>)
+	<PARAM ignore :: unsigned char @ [<AddressLiveRange addr=<STACK:-0x14> startpc=<ABSOLUTE:0x3ab4> endpc=<ABSOLUTE:0x3acf>>]>
+close_stdout_set_file_name :: (char *) -> void @ PC range=(<ABSOLUTE:0x3a9a>, <ABSOLUTE:0x3ab5>)
+	<PARAM file :: char * @ [<AddressLiveRange addr=<STACK:-0x18> startpc=<ABSOLUTE:0x3a9a> endpc=<ABSOLUTE:0x3ab5>>]>
+rpl_free :: (void *) -> void @ PC range=(<ABSOLUTE:0x3bc6>, <ABSOLUTE:0x3c4a>)
+	<PARAM p :: void * @ [<AddressLiveRange addr=<STACK:-0x38> startpc=<ABSOLUTE:0x3bc6> endpc=<ABSOLUTE:0x3c4a>>]>
+	<VAR err :: <ARRAY subtype=int4 dimensions=(2,) size=8> @ [<AddressLiveRange addr=<STACK:-0x30> startpc=<ABSOLUTE:0x3bc6> endpc=<ABSOLUTE:0x3c4a>>]>
+set_program_name :: (char *) -> void @ PC range=(<ABSOLUTE:0x3c49>, <ABSOLUTE:0x3d3f>)
+	<PARAM argv0 :: char * @ [<AddressLiveRange addr=<STACK:-0x28> startpc=<ABSOLUTE:0x3c49> endpc=<ABSOLUTE:0x3d3f>>]>
+	<VAR slash :: char * @ [<AddressLiveRange addr=<STACK:-0x20> startpc=<ABSOLUTE:0x3c49> endpc=<ABSOLUTE:0x3d3f>>]>
+	<VAR base :: char * @ [<AddressLiveRange addr=<STACK:-0x18> startpc=<ABSOLUTE:0x3c49> endpc=<ABSOLUTE:0x3d3f>>]>
+quote :: (char *) -> char * @ PC range=(<ABSOLUTE:0x5c94>, <ABSOLUTE:0x5cb8>)
+	<PARAM arg :: char * @ [<AddressLiveRange addr=<STACK:-0x18> startpc=<ABSOLUTE:0x5c94> endpc=<ABSOLUTE:0x5cb8>>]>
+quote_n :: (int4, char *) -> char * @ PC range=(<ABSOLUTE:0x5c67>, <ABSOLUTE:0x5c95>)
+	<PARAM n :: int4 @ [<AddressLiveRange addr=<STACK:-0x14> startpc=<ABSOLUTE:0x5c67> endpc=<ABSOLUTE:0x5c95>>]>
+	<PARAM arg :: char * @ [<AddressLiveRange addr=<STACK:-0x20> startpc=<ABSOLUTE:0x5c67> endpc=<ABSOLUTE:0x5c95>>]>
+quote_mem :: (char *, unsigned int8) -> char * @ PC range=(<ABSOLUTE:0x5c3c>, <ABSOLUTE:0x5c68>)
+	<PARAM arg :: char * @ [<AddressLiveRange addr=<STACK:-0x18> startpc=<ABSOLUTE:0x5c3c> endpc=<ABSOLUTE:0x5c68>>]>
+	<PARAM argsize :: unsigned int8 @ [<AddressLiveRange addr=<STACK:-0x20> startpc=<ABSOLUTE:0x5c3c> endpc=<ABSOLUTE:0x5c68>>]>
+quote_n_mem :: (int4, char *, unsigned int8) -> char * @ PC range=(<ABSOLUTE:0x5c0a>, <ABSOLUTE:0x5c3d>)
+	<PARAM n :: int4 @ [<AddressLiveRange addr=<STACK:-0x14> startpc=<ABSOLUTE:0x5c0a> endpc=<ABSOLUTE:0x5c3d>>]>
+	<PARAM arg :: char * @ [<AddressLiveRange addr=<STACK:-0x20> startpc=<ABSOLUTE:0x5c0a> endpc=<ABSOLUTE:0x5c3d>>]>
+	<PARAM argsize :: unsigned int8 @ [<AddressLiveRange addr=<STACK:-0x28> startpc=<ABSOLUTE:0x5c0a> endpc=<ABSOLUTE:0x5c3d>>]>
+quotearg_custom_mem :: (char *, char *, char *, unsigned int8) -> char * @ PC range=(<ABSOLUTE:0x5bcc>, <ABSOLUTE:0x5c0b>)
+	<PARAM left_quote :: char * @ [<AddressLiveRange addr=<STACK:-0x18> startpc=<ABSOLUTE:0x5bcc> endpc=<ABSOLUTE:0x5c0b>>]>
+	<PARAM right_quote :: char * @ [<AddressLiveRange addr=<STACK:-0x20> startpc=<ABSOLUTE:0x5bcc> endpc=<ABSOLUTE:0x5c0b>>]>
+	<PARAM arg :: char * @ [<AddressLiveRange addr=<STACK:-0x28> startpc=<ABSOLUTE:0x5bcc> endpc=<ABSOLUTE:0x5c0b>>]>
+	<PARAM argsize :: unsigned int8 @ [<AddressLiveRange addr=<STACK:-0x30> startpc=<ABSOLUTE:0x5bcc> endpc=<ABSOLUTE:0x5c0b>>]>
+quotearg_custom :: (char *, char *, char *) -> char * @ PC range=(<ABSOLUTE:0x5b99>, <ABSOLUTE:0x5bcd>)
+	<PARAM left_quote :: char * @ [<AddressLiveRange addr=<STACK:-0x18> startpc=<ABSOLUTE:0x5b99> endpc=<ABSOLUTE:0x5bcd>>]>
+	<PARAM right_quote :: char * @ [<AddressLiveRange addr=<STACK:-0x20> startpc=<ABSOLUTE:0x5b99> endpc=<ABSOLUTE:0x5bcd>>]>
+	<PARAM arg :: char * @ [<AddressLiveRange addr=<STACK:-0x28> startpc=<ABSOLUTE:0x5b99> endpc=<ABSOLUTE:0x5bcd>>]>
+quotearg_n_custom_mem :: (int4, char *, char *, char *, unsigned int8) -> char * @ PC range=(<ABSOLUTE:0x5adb>, <ABSOLUTE:0x5b9a>)
+	<PARAM n :: int4 @ [<AddressLiveRange addr=<STACK:-0x54> startpc=<ABSOLUTE:0x5adb> endpc=<ABSOLUTE:0x5b9a>>]>
+	<PARAM left_quote :: char * @ [<AddressLiveRange addr=<STACK:-0x60> startpc=<ABSOLUTE:0x5adb> endpc=<ABSOLUTE:0x5b9a>>]>
+	<PARAM right_quote :: char * @ [<AddressLiveRange addr=<STACK:-0x68> startpc=<ABSOLUTE:0x5adb> endpc=<ABSOLUTE:0x5b9a>>]>
+	<PARAM arg :: char * @ [<AddressLiveRange addr=<STACK:-0x70> startpc=<ABSOLUTE:0x5adb> endpc=<ABSOLUTE:0x5b9a>>]>
+	<PARAM argsize :: unsigned int8 @ [<AddressLiveRange addr=<STACK:-0x78> startpc=<ABSOLUTE:0x5adb> endpc=<ABSOLUTE:0x5b9a>>]>
+	<VAR o :: <STRUCT quoting_options membertypes=5 size=56> @ [<AddressLiveRange addr=<STACK:-0x50> startpc=<ABSOLUTE:0x5adb> endpc=<ABSOLUTE:0x5b9a>>]>
+quotearg_n_custom :: (int4, char *, char *, char *) -> char * @ PC range=(<ABSOLUTE:0x5aa1>, <ABSOLUTE:0x5adc>)
+	<PARAM n :: int4 @ [<AddressLiveRange addr=<STACK:-0x14> startpc=<ABSOLUTE:0x5aa1> endpc=<ABSOLUTE:0x5adc>>]>
+	<PARAM left_quote :: char * @ [<AddressLiveRange addr=<STACK:-0x20> startpc=<ABSOLUTE:0x5aa1> endpc=<ABSOLUTE:0x5adc>>]>
+	<PARAM right_quote :: char * @ [<AddressLiveRange addr=<STACK:-0x28> startpc=<ABSOLUTE:0x5aa1> endpc=<ABSOLUTE:0x5adc>>]>
+	<PARAM arg :: char * @ [<AddressLiveRange addr=<STACK:-0x30> startpc=<ABSOLUTE:0x5aa1> endpc=<ABSOLUTE:0x5adc>>]>
+quotearg_n_style_colon :: (int4, unsigned int4, char *) -> char * @ PC range=(<ABSOLUTE:0x59df>, <ABSOLUTE:0x5aa2>)
+	<PARAM n :: int4 @ [<AddressLiveRange addr=<STACK:-0x54> startpc=<ABSOLUTE:0x59df> endpc=<ABSOLUTE:0x5aa2>>]>
+	<PARAM s :: unsigned int4 @ [<AddressLiveRange addr=<STACK:-0x58> startpc=<ABSOLUTE:0x59df> endpc=<ABSOLUTE:0x5aa2>>]>
+	<PARAM arg :: char * @ [<AddressLiveRange addr=<STACK:-0x60> startpc=<ABSOLUTE:0x59df> endpc=<ABSOLUTE:0x5aa2>>]>
+	<VAR options :: <STRUCT quoting_options membertypes=5 size=56> @ [<AddressLiveRange addr=<STACK:-0x50> startpc=<ABSOLUTE:0x59df> endpc=<ABSOLUTE:0x5aa2>>]>
+quotearg_colon_mem :: (char *, unsigned int8) -> char * @ PC range=(<ABSOLUTE:0x59b1>, <ABSOLUTE:0x59e0>)
+	<PARAM arg :: char * @ [<AddressLiveRange addr=<STACK:-0x18> startpc=<ABSOLUTE:0x59b1> endpc=<ABSOLUTE:0x59e0>>]>
+	<PARAM argsize :: unsigned int8 @ [<AddressLiveRange addr=<STACK:-0x20> startpc=<ABSOLUTE:0x59b1> endpc=<ABSOLUTE:0x59e0>>]>
+quotearg_colon :: (char *) -> char * @ PC range=(<ABSOLUTE:0x598e>, <ABSOLUTE:0x59b2>)
+	<PARAM arg :: char * @ [<AddressLiveRange addr=<STACK:-0x18> startpc=<ABSOLUTE:0x598e> endpc=<ABSOLUTE:0x59b2>>]>
+quotearg_char :: (char *, char) -> char * @ PC range=(<ABSOLUTE:0x5960>, <ABSOLUTE:0x598f>)
+	<PARAM arg :: char * @ [<AddressLiveRange addr=<STACK:-0x18> startpc=<ABSOLUTE:0x5960> endpc=<ABSOLUTE:0x598f>>]>
+	<PARAM ch :: char @ [<AddressLiveRange addr=<STACK:-0x1c> startpc=<ABSOLUTE:0x5960> endpc=<ABSOLUTE:0x598f>>]>
+quotearg_char_mem :: (char *, unsigned int8, char) -> char * @ PC range=(<ABSOLUTE:0x58a5>, <ABSOLUTE:0x5961>)
+	<PARAM arg :: char * @ [<AddressLiveRange addr=<STACK:-0x58> startpc=<ABSOLUTE:0x58a5> endpc=<ABSOLUTE:0x5961>>]>
+	<PARAM argsize :: unsigned int8 @ [<AddressLiveRange addr=<STACK:-0x60> startpc=<ABSOLUTE:0x58a5> endpc=<ABSOLUTE:0x5961>>]>
+	<PARAM ch :: char @ [<AddressLiveRange addr=<STACK:-0x64> startpc=<ABSOLUTE:0x58a5> endpc=<ABSOLUTE:0x5961>>]>
+	<VAR options :: <STRUCT quoting_options membertypes=5 size=56> @ [<AddressLiveRange addr=<STACK:-0x50> startpc=<ABSOLUTE:0x58a5> endpc=<ABSOLUTE:0x5961>>]>
+quotearg_style_mem :: (unsigned int4, char *, unsigned int8) -> char * @ PC range=(<ABSOLUTE:0x5875>, <ABSOLUTE:0x58a6>)
+	<PARAM s :: unsigned int4 @ [<AddressLiveRange addr=<STACK:-0x14> startpc=<ABSOLUTE:0x5875> endpc=<ABSOLUTE:0x58a6>>]>
+	<PARAM arg :: char * @ [<AddressLiveRange addr=<STACK:-0x20> startpc=<ABSOLUTE:0x5875> endpc=<ABSOLUTE:0x58a6>>]>
+	<PARAM argsize :: unsigned int8 @ [<AddressLiveRange addr=<STACK:-0x28> startpc=<ABSOLUTE:0x5875> endpc=<ABSOLUTE:0x58a6>>]>
+quotearg_style :: (unsigned int4, char *) -> char * @ PC range=(<ABSOLUTE:0x584d>, <ABSOLUTE:0x5876>)
+	<PARAM s :: unsigned int4 @ [<AddressLiveRange addr=<STACK:-0x14> startpc=<ABSOLUTE:0x584d> endpc=<ABSOLUTE:0x5876>>]>
+	<PARAM arg :: char * @ [<AddressLiveRange addr=<STACK:-0x20> startpc=<ABSOLUTE:0x584d> endpc=<ABSOLUTE:0x5876>>]>
+quotearg_n_style_mem :: (int4, unsigned int4, char *, unsigned int8) -> char * @ PC range=(<ABSOLUTE:0x57e7>, <ABSOLUTE:0x584e>)
+	<PARAM n :: int4 @ [<AddressLiveRange addr=<STACK:-0x54> startpc=<ABSOLUTE:0x57e7> endpc=<ABSOLUTE:0x584e>>]>
+	<PARAM s :: unsigned int4 @ [<AddressLiveRange addr=<STACK:-0x58> startpc=<ABSOLUTE:0x57e7> endpc=<ABSOLUTE:0x584e>>]>
+	<PARAM arg :: char * @ [<AddressLiveRange addr=<STACK:-0x60> startpc=<ABSOLUTE:0x57e7> endpc=<ABSOLUTE:0x584e>>]>
+	<PARAM argsize :: unsigned int8 @ [<AddressLiveRange addr=<STACK:-0x68> startpc=<ABSOLUTE:0x57e7> endpc=<ABSOLUTE:0x584e>>]>
+	<VAR o :: <STRUCT quoting_options membertypes=5 size=56> @ [<AddressLiveRange addr=<STACK:-0x50> startpc=<ABSOLUTE:0x57e7> endpc=<ABSOLUTE:0x584e>>]>
+quotearg_n_style :: (int4, unsigned int4, char *) -> char * @ PC range=(<ABSOLUTE:0x577f>, <ABSOLUTE:0x57e8>)
+	<PARAM n :: int4 @ [<AddressLiveRange addr=<STACK:-0x54> startpc=<ABSOLUTE:0x577f> endpc=<ABSOLUTE:0x57e8>>]>
+	<PARAM s :: unsigned int4 @ [<AddressLiveRange addr=<STACK:-0x58> startpc=<ABSOLUTE:0x577f> endpc=<ABSOLUTE:0x57e8>>]>
+	<PARAM arg :: char * @ [<AddressLiveRange addr=<STACK:-0x60> startpc=<ABSOLUTE:0x577f> endpc=<ABSOLUTE:0x57e8>>]>
+	<VAR o :: <STRUCT quoting_options membertypes=5 size=56> @ [<AddressLiveRange addr=<STACK:-0x50> startpc=<ABSOLUTE:0x577f> endpc=<ABSOLUTE:0x57e8>>]>
+quotearg_mem :: (char *, unsigned int8) -> char * @ PC range=(<ABSOLUTE:0x5754>, <ABSOLUTE:0x5780>)
+	<PARAM arg :: char * @ [<AddressLiveRange addr=<STACK:-0x18> startpc=<ABSOLUTE:0x5754> endpc=<ABSOLUTE:0x5780>>]>
+	<PARAM argsize :: unsigned int8 @ [<AddressLiveRange addr=<STACK:-0x20> startpc=<ABSOLUTE:0x5754> endpc=<ABSOLUTE:0x5780>>]>
+quotearg :: (char *) -> char * @ PC range=(<ABSOLUTE:0x5731>, <ABSOLUTE:0x5755>)
+	<PARAM arg :: char * @ [<AddressLiveRange addr=<STACK:-0x18> startpc=<ABSOLUTE:0x5731> endpc=<ABSOLUTE:0x5755>>]>
+quotearg_n_mem :: (int4, char *, unsigned int8) -> char * @ PC range=(<ABSOLUTE:0x56ff>, <ABSOLUTE:0x5732>)
+	<PARAM n :: int4 @ [<AddressLiveRange addr=<STACK:-0x14> startpc=<ABSOLUTE:0x56ff> endpc=<ABSOLUTE:0x5732>>]>
+	<PARAM arg :: char * @ [<AddressLiveRange addr=<STACK:-0x20> startpc=<ABSOLUTE:0x56ff> endpc=<ABSOLUTE:0x5732>>]>
+	<PARAM argsize :: unsigned int8 @ [<AddressLiveRange addr=<STACK:-0x28> startpc=<ABSOLUTE:0x56ff> endpc=<ABSOLUTE:0x5732>>]>
+quotearg_n :: (int4, char *) -> char * @ PC range=(<ABSOLUTE:0x56cb>, <ABSOLUTE:0x5700>)
+	<PARAM n :: int4 @ [<AddressLiveRange addr=<STACK:-0x14> startpc=<ABSOLUTE:0x56cb> endpc=<ABSOLUTE:0x5700>>]>
+	<PARAM arg :: char * @ [<AddressLiveRange addr=<STACK:-0x20> startpc=<ABSOLUTE:0x56cb> endpc=<ABSOLUTE:0x5700>>]>
+quotearg_n_options :: (int4, char *, unsigned int8, <STRUCT quoting_options membertypes=5 size=56> *) -> char * @ PC range=(<ABSOLUTE:0x541c>, <ABSOLUTE:0x56cc>)
+	<PARAM n :: int4 @ [<AddressLiveRange addr=<STACK:-0x54> startpc=<ABSOLUTE:0x541c> endpc=<ABSOLUTE:0x56cc>>]>
+	<PARAM arg :: char * @ [<AddressLiveRange addr=<STACK:-0x60> startpc=<ABSOLUTE:0x541c> endpc=<ABSOLUTE:0x56cc>>]>
+	<PARAM argsize :: unsigned int8 @ [<AddressLiveRange addr=<STACK:-0x68> startpc=<ABSOLUTE:0x541c> endpc=<ABSOLUTE:0x56cc>>]>
+	<PARAM options :: <STRUCT quoting_options membertypes=5 size=56> * @ [<AddressLiveRange addr=<STACK:-0x70> startpc=<ABSOLUTE:0x541c> endpc=<ABSOLUTE:0x56cc>>]>
+	<VAR e :: int4 @ [<AddressLiveRange addr=<STACK:-0x4c> startpc=<ABSOLUTE:0x541c> endpc=<ABSOLUTE:0x56cc>>]>
+	<VAR sv :: <STRUCT slotvec membertypes=2 size=16> * @ [<AddressLiveRange addr=<STACK:-0x38> startpc=<ABSOLUTE:0x541c> endpc=<ABSOLUTE:0x56cc>>]>
+	<VAR nslots_max :: int4 @ [<AddressLiveRange addr=<STACK:-0x48> startpc=<ABSOLUTE:0x541c> endpc=<ABSOLUTE:0x56cc>>]>
+	<VAR preallocated :: unsigned char @ [<AddressLiveRange addr=<STACK:-0x4d> startpc=<ABSOLUTE:0x541c> endpc=<ABSOLUTE:0x56cc>>]>
+	<VAR new_nslots :: int8 @ [<AddressLiveRange addr=<STACK:-0x40> startpc=<ABSOLUTE:0x541c> endpc=<ABSOLUTE:0x56cc>>]>
+	<VAR size :: unsigned int8 @ [<AddressLiveRange addr=<STACK:-0x28> startpc=<ABSOLUTE:0x541c> endpc=<ABSOLUTE:0x56cc>>]>
+	<VAR val :: char * @ [<AddressLiveRange addr=<STACK:-0x30> startpc=<ABSOLUTE:0x541c> endpc=<ABSOLUTE:0x56cc>>]>
+	<VAR flags :: int4 @ [<AddressLiveRange addr=<STACK:-0x44> startpc=<ABSOLUTE:0x541c> endpc=<ABSOLUTE:0x56cc>>]>
+	<VAR qsize :: unsigned int8 @ [<AddressLiveRange addr=<STACK:-0x20> startpc=<ABSOLUTE:0x541c> endpc=<ABSOLUTE:0x56cc>>]>
+quotearg_free :: () -> void @ PC range=(<ABSOLUTE:0x535d>, <ABSOLUTE:0x541d>)
+	<VAR sv :: <STRUCT slotvec membertypes=2 size=16> * @ [<AddressLiveRange addr=<STACK:-0x18> startpc=<ABSOLUTE:0x535d> endpc=<ABSOLUTE:0x541d>>]>
+	<VAR i :: int4 @ [<AddressLiveRange addr=<STACK:-0x1c> startpc=<ABSOLUTE:0x535d> endpc=<ABSOLUTE:0x541d>>]>
+quotearg_alloc_mem :: (char *, unsigned int8, unsigned int8 *, <STRUCT quoting_options membertypes=5 size=56> *) -> char * @ PC range=(<ABSOLUTE:0x5231>, <ABSOLUTE:0x535e>)
+	<PARAM arg :: char * @ [<AddressLiveRange addr=<STACK:-0x38> startpc=<ABSOLUTE:0x5231> endpc=<ABSOLUTE:0x535e>>]>
+	<PARAM argsize :: unsigned int8 @ [<AddressLiveRange addr=<STACK:-0x40> startpc=<ABSOLUTE:0x5231> endpc=<ABSOLUTE:0x535e>>]>
+	<PARAM size :: unsigned int8 * @ [<AddressLiveRange addr=<STACK:-0x48> startpc=<ABSOLUTE:0x5231> endpc=<ABSOLUTE:0x535e>>]>
+	<PARAM o :: <STRUCT quoting_options membertypes=5 size=56> * @ [<AddressLiveRange addr=<STACK:-0x50> startpc=<ABSOLUTE:0x5231> endpc=<ABSOLUTE:0x535e>>]>
+	<VAR p :: <STRUCT quoting_options membertypes=5 size=56> * @ [<AddressLiveRange addr=<STACK:-0x28> startpc=<ABSOLUTE:0x5231> endpc=<ABSOLUTE:0x535e>>]>
+	<VAR e :: int4 @ [<AddressLiveRange addr=<STACK:-0x30> startpc=<ABSOLUTE:0x5231> endpc=<ABSOLUTE:0x535e>>]>
+	<VAR flags :: int4 @ [<AddressLiveRange addr=<STACK:-0x2c> startpc=<ABSOLUTE:0x5231> endpc=<ABSOLUTE:0x535e>>]>
+	<VAR bufsize :: unsigned int8 @ [<AddressLiveRange addr=<STACK:-0x20> startpc=<ABSOLUTE:0x5231> endpc=<ABSOLUTE:0x535e>>]>
+	<VAR buf :: char * @ [<AddressLiveRange addr=<STACK:-0x18> startpc=<ABSOLUTE:0x5231> endpc=<ABSOLUTE:0x535e>>]>
+quotearg_alloc :: (char *, unsigned int8, <STRUCT quoting_options membertypes=5 size=56> *) -> char * @ PC range=(<ABSOLUTE:0x51fb>, <ABSOLUTE:0x5232>)
+	<PARAM arg :: char * @ [<AddressLiveRange addr=<STACK:-0x18> startpc=<ABSOLUTE:0x51fb> endpc=<ABSOLUTE:0x5232>>]>
+	<PARAM argsize :: unsigned int8 @ [<AddressLiveRange addr=<STACK:-0x20> startpc=<ABSOLUTE:0x51fb> endpc=<ABSOLUTE:0x5232>>]>
+	<PARAM o :: <STRUCT quoting_options membertypes=5 size=56> * @ [<AddressLiveRange addr=<STACK:-0x28> startpc=<ABSOLUTE:0x51fb> endpc=<ABSOLUTE:0x5232>>]>
+quotearg_buffer :: (char *, unsigned int8, char *, unsigned int8, <STRUCT quoting_options membertypes=5 size=56> *) -> unsigned int8 @ PC range=(<ABSOLUTE:0x5153>, <ABSOLUTE:0x51fc>)
+	<PARAM buffer :: char * @ [<AddressLiveRange addr=<STACK:-0x38> startpc=<ABSOLUTE:0x5153> endpc=<ABSOLUTE:0x51fc>>]>
+	<PARAM buffersize :: unsigned int8 @ [<AddressLiveRange addr=<STACK:-0x40> startpc=<ABSOLUTE:0x5153> endpc=<ABSOLUTE:0x51fc>>]>
+	<PARAM arg :: char * @ [<AddressLiveRange addr=<STACK:-0x48> startpc=<ABSOLUTE:0x5153> endpc=<ABSOLUTE:0x51fc>>]>
+	<PARAM argsize :: unsigned int8 @ [<AddressLiveRange addr=<STACK:-0x50> startpc=<ABSOLUTE:0x5153> endpc=<ABSOLUTE:0x51fc>>]>
+	<PARAM o :: <STRUCT quoting_options membertypes=5 size=56> * @ [<AddressLiveRange addr=<STACK:-0x58> startpc=<ABSOLUTE:0x5153> endpc=<ABSOLUTE:0x51fc>>]>
+	<VAR p :: <STRUCT quoting_options membertypes=5 size=56> * @ [<AddressLiveRange addr=<STACK:-0x20> startpc=<ABSOLUTE:0x5153> endpc=<ABSOLUTE:0x51fc>>]>
+	<VAR e :: int4 @ [<AddressLiveRange addr=<STACK:-0x24> startpc=<ABSOLUTE:0x5153> endpc=<ABSOLUTE:0x51fc>>]>
+	<VAR r :: unsigned int8 @ [<AddressLiveRange addr=<STACK:-0x18> startpc=<ABSOLUTE:0x5153> endpc=<ABSOLUTE:0x51fc>>]>
+quotearg_buffer_restyled :: (char *, unsigned int8, char *, unsigned int8, unsigned int4, int4, unsigned int4 *, char *, char *) -> unsigned int8 @ PC range=(<ABSOLUTE:0x4092>, <ABSOLUTE:0x5154>)
+	<PARAM buffer :: char * @ [<AddressLiveRange addr=<STACK:-0x98> startpc=<ABSOLUTE:0x4092> endpc=<ABSOLUTE:0x5154>>]>
+	<PARAM buffersize :: unsigned int8 @ [<AddressLiveRange addr=<STACK:-0xa0> startpc=<ABSOLUTE:0x4092> endpc=<ABSOLUTE:0x5154>>]>
+	<PARAM arg :: char * @ [<AddressLiveRange addr=<STACK:-0xa8> startpc=<ABSOLUTE:0x4092> endpc=<ABSOLUTE:0x5154>>]>
+	<PARAM argsize :: unsigned int8 @ [<AddressLiveRange addr=<STACK:-0xb0> startpc=<ABSOLUTE:0x4092> endpc=<ABSOLUTE:0x5154>>]>
+	<PARAM quoting_style :: unsigned int4 @ [<AddressLiveRange addr=<STACK:-0xb4> startpc=<ABSOLUTE:0x4092> endpc=<ABSOLUTE:0x5154>>]>
+	<PARAM flags :: int4 @ [<AddressLiveRange addr=<STACK:-0xb8> startpc=<ABSOLUTE:0x4092> endpc=<ABSOLUTE:0x5154>>]>
+	<PARAM quote_these_too :: unsigned int4 * @ [<AddressLiveRange addr=<STACK:-0xc0> startpc=<ABSOLUTE:0x4092> endpc=<ABSOLUTE:0x5154>>]>
+	<PARAM left_quote :: char * @ [<AddressLiveRange addr=<STACK:-0xc8> startpc=<ABSOLUTE:0x4092> endpc=<ABSOLUTE:0x5154>>]>
+	<PARAM right_quote :: char * @ [<AddressLiveRange addr=<STACK:-0xd0> startpc=<ABSOLUTE:0x4092> endpc=<ABSOLUTE:0x5154>>]>
+	<VAR i :: unsigned int8 @ [<AddressLiveRange addr=<STACK:-0x78> startpc=<ABSOLUTE:0x4092> endpc=<ABSOLUTE:0x5154>>]>
+	<VAR len :: unsigned int8 @ [<AddressLiveRange addr=<STACK:-0x70> startpc=<ABSOLUTE:0x4092> endpc=<ABSOLUTE:0x5154>>]>
+	<VAR orig_buffersize :: unsigned int8 @ [<AddressLiveRange addr=<STACK:-0x68> startpc=<ABSOLUTE:0x4092> endpc=<ABSOLUTE:0x5154>>]>
+	<VAR quote_string :: char * @ [<AddressLiveRange addr=<STACK:-0x60> startpc=<ABSOLUTE:0x4092> endpc=<ABSOLUTE:0x5154>>]>
+	<VAR quote_string_len :: unsigned int8 @ [<AddressLiveRange addr=<STACK:-0x58> startpc=<ABSOLUTE:0x4092> endpc=<ABSOLUTE:0x5154>>]>
+	<VAR backslash_escapes :: unsigned char @ [<AddressLiveRange addr=<STACK:-0x88> startpc=<ABSOLUTE:0x4092> endpc=<ABSOLUTE:0x5154>>]>
+	<VAR unibyte_locale :: unsigned char @ [<AddressLiveRange addr=<STACK:-0x7d> startpc=<ABSOLUTE:0x4092> endpc=<ABSOLUTE:0x5154>>]>
+	<VAR elide_outer_quotes :: unsigned char @ [<AddressLiveRange addr=<STACK:-0x87> startpc=<ABSOLUTE:0x4092> endpc=<ABSOLUTE:0x5154>>]>
+	<VAR pending_shell_escape_end :: unsigned char @ [<AddressLiveRange addr=<STACK:-0x86> startpc=<ABSOLUTE:0x4092> endpc=<ABSOLUTE:0x5154>>]>
+	<VAR encountered_single_quote :: unsigned char @ [<AddressLiveRange addr=<STACK:-0x85> startpc=<ABSOLUTE:0x4092> endpc=<ABSOLUTE:0x5154>>]>
+	<VAR all_c_and_shell_quote_compat :: unsigned char @ [<AddressLiveRange addr=<STACK:-0x84> startpc=<ABSOLUTE:0x4092> endpc=<ABSOLUTE:0x5154>>]>
+	<VAR c :: unsigned char @ [<AddressLiveRange addr=<STACK:-0x83> startpc=<ABSOLUTE:0x4092> endpc=<ABSOLUTE:0x5154>>]>
+	<VAR esc :: unsigned char @ [<AddressLiveRange addr=<STACK:-0x82> startpc=<ABSOLUTE:0x4092> endpc=<ABSOLUTE:0x5154>>]>
+	<VAR is_right_quote :: unsigned char @ [<AddressLiveRange addr=<STACK:-0x81> startpc=<ABSOLUTE:0x4092> endpc=<ABSOLUTE:0x5154>>]>
+	<VAR escaping :: unsigned char @ [<AddressLiveRange addr=<STACK:-0x80> startpc=<ABSOLUTE:0x4092> endpc=<ABSOLUTE:0x5154>>]>
+	<VAR c_and_shell_quote_compat :: unsigned char @ [<AddressLiveRange addr=<STACK:-0x7f> startpc=<ABSOLUTE:0x4092> endpc=<ABSOLUTE:0x5154>>]>
+	<VAR m :: unsigned int8 @ [<AddressLiveRange addr=<STACK:-0x50> startpc=<ABSOLUTE:0x4092> endpc=<ABSOLUTE:0x5154>>]>
+	<VAR printable :: unsigned char @ [<AddressLiveRange addr=<STACK:-0x7e> startpc=<ABSOLUTE:0x4092> endpc=<ABSOLUTE:0x5154>>]>
+	<VAR mbstate :: <STRUCT membertypes=2 size=8> @ [<AddressLiveRange addr=<STACK:-0x30> startpc=<ABSOLUTE:0x4092> endpc=<ABSOLUTE:0x5154>>]>
+	<VAR w :: int4 @ [<AddressLiveRange addr=<STACK:-0x7c> startpc=<ABSOLUTE:0x4092> endpc=<ABSOLUTE:0x5154>>]>
+	<VAR bytes :: unsigned int8 @ [<AddressLiveRange addr=<STACK:-0x40> startpc=<ABSOLUTE:0x4092> endpc=<ABSOLUTE:0x5154>>]>
+	<VAR j :: unsigned int8 @ [<AddressLiveRange addr=<STACK:-0x48> startpc=<ABSOLUTE:0x4092> endpc=<ABSOLUTE:0x5154>>]>
+	<VAR ilim :: unsigned int8 @ [<AddressLiveRange addr=<STACK:-0x38> startpc=<ABSOLUTE:0x4092> endpc=<ABSOLUTE:0x5154>>]>
+gettext_quote :: (char *, unsigned int4) -> char * @ PC range=(<ABSOLUTE:0x3fcd>, <ABSOLUTE:0x4093>)
+	<PARAM msgid :: char * @ [<AddressLiveRange addr=<STACK:-0x28> startpc=<ABSOLUTE:0x3fcd> endpc=<ABSOLUTE:0x4093>>]>
+	<PARAM s :: unsigned int4 @ [<AddressLiveRange addr=<STACK:-0x2c> startpc=<ABSOLUTE:0x3fcd> endpc=<ABSOLUTE:0x4093>>]>
+	<VAR translation :: char * @ [<AddressLiveRange addr=<STACK:-0x20> startpc=<ABSOLUTE:0x3fcd> endpc=<ABSOLUTE:0x4093>>]>
+	<VAR locale_code :: char * @ [<AddressLiveRange addr=<STACK:-0x18> startpc=<ABSOLUTE:0x3fcd> endpc=<ABSOLUTE:0x4093>>]>
+quoting_options_from_style :: (unsigned int4) -> <STRUCT quoting_options membertypes=5 size=56> @ PC range=(<ABSOLUTE:0x3f08>, <ABSOLUTE:0x3fce>)
+	<PARAM style :: unsigned int4 @ [<AddressLiveRange addr=<STACK:-0x6c> startpc=<ABSOLUTE:0x3f08> endpc=<ABSOLUTE:0x3fce>>]>
+	<VAR o :: <STRUCT quoting_options membertypes=5 size=56> @ [<AddressLiveRange addr=<STACK:-0x60> startpc=<ABSOLUTE:0x3f08> endpc=<ABSOLUTE:0x3fce>>]>
+set_custom_quoting :: (<STRUCT quoting_options membertypes=5 size=56> *, char *, char *) -> void @ PC range=(<ABSOLUTE:0x3ea6>, <ABSOLUTE:0x3f09>)
+	<PARAM o :: <STRUCT quoting_options membertypes=5 size=56> * @ [<AddressLiveRange addr=<STACK:-0x18> startpc=<ABSOLUTE:0x3ea6> endpc=<ABSOLUTE:0x3f09>>]>
+	<PARAM left_quote :: char * @ [<AddressLiveRange addr=<STACK:-0x20> startpc=<ABSOLUTE:0x3ea6> endpc=<ABSOLUTE:0x3f09>>]>
+	<PARAM right_quote :: char * @ [<AddressLiveRange addr=<STACK:-0x28> startpc=<ABSOLUTE:0x3ea6> endpc=<ABSOLUTE:0x3f09>>]>
+set_quoting_flags :: (<STRUCT quoting_options membertypes=5 size=56> *, int4) -> int4 @ PC range=(<ABSOLUTE:0x3e6c>, <ABSOLUTE:0x3ea7>)
+	<PARAM o :: <STRUCT quoting_options membertypes=5 size=56> * @ [<AddressLiveRange addr=<STACK:-0x28> startpc=<ABSOLUTE:0x3e6c> endpc=<ABSOLUTE:0x3ea7>>]>
+	<PARAM i :: int4 @ [<AddressLiveRange addr=<STACK:-0x2c> startpc=<ABSOLUTE:0x3e6c> endpc=<ABSOLUTE:0x3ea7>>]>
+	<VAR r :: int4 @ [<AddressLiveRange addr=<STACK:-0x14> startpc=<ABSOLUTE:0x3e6c> endpc=<ABSOLUTE:0x3ea7>>]>
+set_char_quoting :: (<STRUCT quoting_options membertypes=5 size=56> *, char, int4) -> int4 @ PC range=(<ABSOLUTE:0x3ddc>, <ABSOLUTE:0x3e6d>)
+	<PARAM o :: <STRUCT quoting_options membertypes=5 size=56> * @ [<AddressLiveRange addr=<STACK:-0x38> startpc=<ABSOLUTE:0x3ddc> endpc=<ABSOLUTE:0x3e6d>>]>
+	<PARAM c :: char @ [<AddressLiveRange addr=<STACK:-0x3c> startpc=<ABSOLUTE:0x3ddc> endpc=<ABSOLUTE:0x3e6d>>]>
+	<PARAM i :: int4 @ [<AddressLiveRange addr=<STACK:-0x40> startpc=<ABSOLUTE:0x3ddc> endpc=<ABSOLUTE:0x3e6d>>]>
+	<VAR uc :: unsigned char @ [<AddressLiveRange addr=<STACK:-0x21> startpc=<ABSOLUTE:0x3ddc> endpc=<ABSOLUTE:0x3e6d>>]>
+	<VAR p :: unsigned int4 * @ [<AddressLiveRange addr=<STACK:-0x18> startpc=<ABSOLUTE:0x3ddc> endpc=<ABSOLUTE:0x3e6d>>]>
+	<VAR shift :: int4 @ [<AddressLiveRange addr=<STACK:-0x20> startpc=<ABSOLUTE:0x3ddc> endpc=<ABSOLUTE:0x3e6d>>]>
+	<VAR r :: int4 @ [<AddressLiveRange addr=<STACK:-0x1c> startpc=<ABSOLUTE:0x3ddc> endpc=<ABSOLUTE:0x3e6d>>]>
+set_quoting_style :: (<STRUCT quoting_options membertypes=5 size=56> *, unsigned int4) -> void @ PC range=(<ABSOLUTE:0x3db1>, <ABSOLUTE:0x3ddd>)
+	<PARAM o :: <STRUCT quoting_options membertypes=5 size=56> * @ [<AddressLiveRange addr=<STACK:-0x18> startpc=<ABSOLUTE:0x3db1> endpc=<ABSOLUTE:0x3ddd>>]>
+	<PARAM s :: unsigned int4 @ [<AddressLiveRange addr=<STACK:-0x1c> startpc=<ABSOLUTE:0x3db1> endpc=<ABSOLUTE:0x3ddd>>]>
+get_quoting_style :: (<STRUCT quoting_options membertypes=5 size=56> *) -> unsigned int4 @ PC range=(<ABSOLUTE:0x3d8d>, <ABSOLUTE:0x3db2>)
+	<PARAM o :: <STRUCT quoting_options membertypes=5 size=56> * @ [<AddressLiveRange addr=<STACK:-0x18> startpc=<ABSOLUTE:0x3d8d> endpc=<ABSOLUTE:0x3db2>>]>
+clone_quoting_options :: (<STRUCT quoting_options membertypes=5 size=56> *) -> <STRUCT quoting_options membertypes=5 size=56> * @ PC range=(<ABSOLUTE:0x3d3e>, <ABSOLUTE:0x3d8e>)
+	<PARAM o :: <STRUCT quoting_options membertypes=5 size=56> * @ [<AddressLiveRange addr=<STACK:-0x28> startpc=<ABSOLUTE:0x3d3e> endpc=<ABSOLUTE:0x3d8e>>]>
+	<VAR e :: int4 @ [<AddressLiveRange addr=<STACK:-0x1c> startpc=<ABSOLUTE:0x3d3e> endpc=<ABSOLUTE:0x3d8e>>]>
+	<VAR p :: <STRUCT quoting_options membertypes=5 size=56> * @ [<AddressLiveRange addr=<STACK:-0x18> startpc=<ABSOLUTE:0x3d3e> endpc=<ABSOLUTE:0x3d8e>>]>
+parse_user_spec :: (char *, unsigned int4 *, unsigned int4 *, char * *, char * *) -> char * @ PC range=(<ABSOLUTE:0x619e>, <ABSOLUTE:0x61e6>)
+	<PARAM spec :: char * @ [<AddressLiveRange addr=<STACK:-0x18> startpc=<ABSOLUTE:0x619e> endpc=<ABSOLUTE:0x61e6>>]>
+	<PARAM uid :: unsigned int4 * @ [<AddressLiveRange addr=<STACK:-0x20> startpc=<ABSOLUTE:0x619e> endpc=<ABSOLUTE:0x61e6>>]>
+	<PARAM gid :: unsigned int4 * @ [<AddressLiveRange addr=<STACK:-0x28> startpc=<ABSOLUTE:0x619e> endpc=<ABSOLUTE:0x61e6>>]>
+	<PARAM username :: char * * @ [<AddressLiveRange addr=<STACK:-0x30> startpc=<ABSOLUTE:0x619e> endpc=<ABSOLUTE:0x61e6>>]>
+	<PARAM groupname :: char * * @ [<AddressLiveRange addr=<STACK:-0x38> startpc=<ABSOLUTE:0x619e> endpc=<ABSOLUTE:0x61e6>>]>
+parse_user_spec_warn :: (char *, unsigned int4 *, unsigned int4 *, char * *, char * *, unsigned char *) -> char * @ PC range=(<ABSOLUTE:0x6099>, <ABSOLUTE:0x619f>)
+	<PARAM spec :: char * @ [<AddressLiveRange addr=<STACK:-0x38> startpc=<ABSOLUTE:0x6099> endpc=<ABSOLUTE:0x619f>>]>
+	<PARAM uid :: unsigned int4 * @ [<AddressLiveRange addr=<STACK:-0x40> startpc=<ABSOLUTE:0x6099> endpc=<ABSOLUTE:0x619f>>]>
+	<PARAM gid :: unsigned int4 * @ [<AddressLiveRange addr=<STACK:-0x48> startpc=<ABSOLUTE:0x6099> endpc=<ABSOLUTE:0x619f>>]>
+	<PARAM username :: char * * @ [<AddressLiveRange addr=<STACK:-0x50> startpc=<ABSOLUTE:0x6099> endpc=<ABSOLUTE:0x619f>>]>
+	<PARAM groupname :: char * * @ [<AddressLiveRange addr=<STACK:-0x58> startpc=<ABSOLUTE:0x6099> endpc=<ABSOLUTE:0x619f>>]>
+	<PARAM pwarn :: unsigned char * @ [<AddressLiveRange addr=<STACK:-0x60> startpc=<ABSOLUTE:0x6099> endpc=<ABSOLUTE:0x619f>>]>
+	<VAR colon :: char * @ [<AddressLiveRange addr=<STACK:-0x20> startpc=<ABSOLUTE:0x6099> endpc=<ABSOLUTE:0x619f>>]>
+	<VAR error_msg :: char * @ [<AddressLiveRange addr=<STACK:-0x28> startpc=<ABSOLUTE:0x6099> endpc=<ABSOLUTE:0x619f>>]>
+	<VAR warn :: unsigned char @ [<AddressLiveRange addr=<STACK:-0x29> startpc=<ABSOLUTE:0x6099> endpc=<ABSOLUTE:0x619f>>]>
+	<VAR dot :: char * @ [<AddressLiveRange addr=<STACK:-0x18> startpc=<ABSOLUTE:0x6099> endpc=<ABSOLUTE:0x619f>>]>
+parse_with_separator :: (char *, char *, unsigned int4 *, unsigned int4 *, char * *, char * *) -> char * @ PC range=(<ABSOLUTE:0x5cb7>, <ABSOLUTE:0x609a>)
+	<PARAM spec :: char * @ [<AddressLiveRange addr=<STACK:-0x88> startpc=<ABSOLUTE:0x5cb7> endpc=<ABSOLUTE:0x609a>>]>
+	<PARAM separator :: char * @ [<AddressLiveRange addr=<STACK:-0x90> startpc=<ABSOLUTE:0x5cb7> endpc=<ABSOLUTE:0x609a>>]>
+	<PARAM uid :: unsigned int4 * @ [<AddressLiveRange addr=<STACK:-0x98> startpc=<ABSOLUTE:0x5cb7> endpc=<ABSOLUTE:0x609a>>]>
+	<PARAM gid :: unsigned int4 * @ [<AddressLiveRange addr=<STACK:-0xa0> startpc=<ABSOLUTE:0x5cb7> endpc=<ABSOLUTE:0x609a>>]>
+	<PARAM username :: char * * @ [<AddressLiveRange addr=<STACK:-0xa8> startpc=<ABSOLUTE:0x5cb7> endpc=<ABSOLUTE:0x609a>>]>
+	<PARAM groupname :: char * * @ [<AddressLiveRange addr=<STACK:-0xb0> startpc=<ABSOLUTE:0x5cb7> endpc=<ABSOLUTE:0x609a>>]>
+	<VAR error_msg :: char * @ [<AddressLiveRange addr=<STACK:-0x68> startpc=<ABSOLUTE:0x5cb7> endpc=<ABSOLUTE:0x609a>>]>
+	<VAR pwd :: <STRUCT passwd membertypes=7 size=48> * @ [<AddressLiveRange addr=<STACK:-0x40> startpc=<ABSOLUTE:0x5cb7> endpc=<ABSOLUTE:0x609a>>]>
+	<VAR grp :: <STRUCT group membertypes=4 size=32> * @ [<AddressLiveRange addr=<STACK:-0x38> startpc=<ABSOLUTE:0x5cb7> endpc=<ABSOLUTE:0x609a>>]>
+	<VAR u :: char * @ [<AddressLiveRange addr=<STACK:-0x60> startpc=<ABSOLUTE:0x5cb7> endpc=<ABSOLUTE:0x609a>>]>
+	<VAR g :: char * @ [<AddressLiveRange addr=<STACK:-0x48> startpc=<ABSOLUTE:0x5cb7> endpc=<ABSOLUTE:0x609a>>]>
+	<VAR gname :: char * @ [<AddressLiveRange addr=<STACK:-0x58> startpc=<ABSOLUTE:0x5cb7> endpc=<ABSOLUTE:0x609a>>]>
+	<VAR unum :: unsigned int4 @ [<AddressLiveRange addr=<STACK:-0x78> startpc=<ABSOLUTE:0x5cb7> endpc=<ABSOLUTE:0x609a>>]>
+	<VAR gnum :: unsigned int4 @ [<AddressLiveRange addr=<STACK:-0x74> startpc=<ABSOLUTE:0x5cb7> endpc=<ABSOLUTE:0x609a>>]>
+	<VAR ulen :: int8 @ [<AddressLiveRange addr=<STACK:-0x50> startpc=<ABSOLUTE:0x5cb7> endpc=<ABSOLUTE:0x609a>>]>
+	<VAR use_login_group :: unsigned char @ [<AddressLiveRange addr=<STACK:-0x79> startpc=<ABSOLUTE:0x5cb7> endpc=<ABSOLUTE:0x609a>>]>
+	<VAR tmp :: unsigned int8 @ [<AddressLiveRange addr=<STACK:-0x70> startpc=<ABSOLUTE:0x5cb7> endpc=<ABSOLUTE:0x609a>>]>
+	<VAR buf :: <ARRAY subtype=char dimensions=(21,) size=21> @ [<AddressLiveRange addr=<STACK:-0x30> startpc=<ABSOLUTE:0x5cb7> endpc=<ABSOLUTE:0x609a>>]>
+	<VAR tmp :: unsigned int8 @ [<AddressLiveRange addr=<STACK:-0x70> startpc=<ABSOLUTE:0x5cb7> endpc=<ABSOLUTE:0x609a>>]>
+emit_bug_reporting_address :: () -> void @ PC range=(<ABSOLUTE:0x6a34>, <ABSOLUTE:0x6ad9>)
+version_etc :: (<STRUCT _IO_FILE membertypes=29 size=216> *, char *, char *, char *[...]) -> void @ PC range=(<ABSOLUTE:0x6950>, <ABSOLUTE:0x6a35>)
+	<PARAM stream :: <STRUCT _IO_FILE membertypes=29 size=216> * @ [<AddressLiveRange addr=<STACK:-0xe8> startpc=<ABSOLUTE:0x6950> endpc=<ABSOLUTE:0x6a35>>]>
+	<PARAM command_name :: char * @ [<AddressLiveRange addr=<STACK:-0xf0> startpc=<ABSOLUTE:0x6950> endpc=<ABSOLUTE:0x6a35>>]>
+	<PARAM package :: char * @ [<AddressLiveRange addr=<STACK:-0xf8> startpc=<ABSOLUTE:0x6950> endpc=<ABSOLUTE:0x6a35>>]>
+	<PARAM version :: char * @ [<AddressLiveRange addr=<STACK:-0x100> startpc=<ABSOLUTE:0x6950> endpc=<ABSOLUTE:0x6a35>>]>
+	<VAR authors :: <ARRAY subtype=<STRUCT __va_list_tag membertypes=4 size=24> dimensions=(1,) size=24> @ [<AddressLiveRange addr=<STACK:-0xe0> startpc=<ABSOLUTE:0x6950> endpc=<ABSOLUTE:0x6a35>>]>
+version_etc_va :: (<STRUCT _IO_FILE membertypes=29 size=216> *, char *, char *, char *, <STRUCT __va_list_tag membertypes=4 size=24> *) -> void @ PC range=(<ABSOLUTE:0x684a>, <ABSOLUTE:0x6951>)
+	<PARAM stream :: <STRUCT _IO_FILE membertypes=29 size=216> * @ [<AddressLiveRange addr=<STACK:-0x88> startpc=<ABSOLUTE:0x684a> endpc=<ABSOLUTE:0x6951>>]>
+	<PARAM command_name :: char * @ [<AddressLiveRange addr=<STACK:-0x90> startpc=<ABSOLUTE:0x684a> endpc=<ABSOLUTE:0x6951>>]>
+	<PARAM package :: char * @ [<AddressLiveRange addr=<STACK:-0x98> startpc=<ABSOLUTE:0x684a> endpc=<ABSOLUTE:0x6951>>]>
+	<PARAM version :: char * @ [<AddressLiveRange addr=<STACK:-0xa0> startpc=<ABSOLUTE:0x684a> endpc=<ABSOLUTE:0x6951>>]>
+	<PARAM authors :: <STRUCT __va_list_tag membertypes=4 size=24> * @ [<AddressLiveRange addr=<STACK:-0xa8> startpc=<ABSOLUTE:0x684a> endpc=<ABSOLUTE:0x6951>>]>
+	<VAR n_authors :: unsigned int8 @ [<AddressLiveRange addr=<STACK:-0x78> startpc=<ABSOLUTE:0x684a> endpc=<ABSOLUTE:0x6951>>]>
+	<VAR authtab :: <ARRAY subtype=char * dimensions=(10,) size=80> @ [<AddressLiveRange addr=<STACK:-0x70> startpc=<ABSOLUTE:0x684a> endpc=<ABSOLUTE:0x6951>>]>
+version_etc_ar :: (<STRUCT _IO_FILE membertypes=29 size=216> *, char *, char *, char *, char * *) -> void @ PC range=(<ABSOLUTE:0x67d7>, <ABSOLUTE:0x684b>)
+	<PARAM stream :: <STRUCT _IO_FILE membertypes=29 size=216> * @ [<AddressLiveRange addr=<STACK:-0x28> startpc=<ABSOLUTE:0x67d7> endpc=<ABSOLUTE:0x684b>>]>
+	<PARAM command_name :: char * @ [<AddressLiveRange addr=<STACK:-0x30> startpc=<ABSOLUTE:0x67d7> endpc=<ABSOLUTE:0x684b>>]>
+	<PARAM package :: char * @ [<AddressLiveRange addr=<STACK:-0x38> startpc=<ABSOLUTE:0x67d7> endpc=<ABSOLUTE:0x684b>>]>
+	<PARAM version :: char * @ [<AddressLiveRange addr=<STACK:-0x40> startpc=<ABSOLUTE:0x67d7> endpc=<ABSOLUTE:0x684b>>]>
+	<PARAM authors :: char * * @ [<AddressLiveRange addr=<STACK:-0x48> startpc=<ABSOLUTE:0x67d7> endpc=<ABSOLUTE:0x684b>>]>
+	<VAR n_authors :: unsigned int8 @ [<AddressLiveRange addr=<STACK:-0x18> startpc=<ABSOLUTE:0x67d7> endpc=<ABSOLUTE:0x684b>>]>
+version_etc_arn :: (<STRUCT _IO_FILE membertypes=29 size=216> *, char *, char *, char *, char * *, unsigned int8) -> void @ PC range=(<ABSOLUTE:0x61e5>, <ABSOLUTE:0x67d8>)
+	<PARAM stream :: <STRUCT _IO_FILE membertypes=29 size=216> * @ [<AddressLiveRange addr=<STACK:-0x48> startpc=<ABSOLUTE:0x61e5> endpc=<ABSOLUTE:0x67d8>>]>
+	<PARAM command_name :: char * @ [<AddressLiveRange addr=<STACK:-0x50> startpc=<ABSOLUTE:0x61e5> endpc=<ABSOLUTE:0x67d8>>]>
+	<PARAM package :: char * @ [<AddressLiveRange addr=<STACK:-0x58> startpc=<ABSOLUTE:0x61e5> endpc=<ABSOLUTE:0x67d8>>]>
+	<PARAM version :: char * @ [<AddressLiveRange addr=<STACK:-0x60> startpc=<ABSOLUTE:0x61e5> endpc=<ABSOLUTE:0x67d8>>]>
+	<PARAM authors :: char * * @ [<AddressLiveRange addr=<STACK:-0x68> startpc=<ABSOLUTE:0x61e5> endpc=<ABSOLUTE:0x67d8>>]>
+	<PARAM n_authors :: unsigned int8 @ [<AddressLiveRange addr=<STACK:-0x70> startpc=<ABSOLUTE:0x61e5> endpc=<ABSOLUTE:0x67d8>>]>
+xstrdup :: (char *) -> char * @ PC range=(<ABSOLUTE:0x7132>, <ABSOLUTE:0x7164>)
+	<PARAM string :: char * @ [<AddressLiveRange addr=<STACK:-0x18> startpc=<ABSOLUTE:0x7132> endpc=<ABSOLUTE:0x7164>>]>
+ximemdup0 :: (void *, int8) -> char * @ PC range=(<ABSOLUTE:0x70e3>, <ABSOLUTE:0x7133>)
+	<PARAM p :: void * @ [<AddressLiveRange addr=<STACK:-0x28> startpc=<ABSOLUTE:0x70e3> endpc=<ABSOLUTE:0x7133>>]>
+	<PARAM s :: int8 @ [<AddressLiveRange addr=<STACK:-0x30> startpc=<ABSOLUTE:0x70e3> endpc=<ABSOLUTE:0x7133>>]>
+	<VAR result :: char * @ [<AddressLiveRange addr=<STACK:-0x18> startpc=<ABSOLUTE:0x70e3> endpc=<ABSOLUTE:0x7133>>]>
+ximemdup :: (void *, int8) -> void * @ PC range=(<ABSOLUTE:0x70a3>, <ABSOLUTE:0x70e4>)
+	<PARAM p :: void * @ [<AddressLiveRange addr=<STACK:-0x28> startpc=<ABSOLUTE:0x70a3> endpc=<ABSOLUTE:0x70e4>>]>
+	<PARAM s :: int8 @ [<AddressLiveRange addr=<STACK:-0x30> startpc=<ABSOLUTE:0x70a3> endpc=<ABSOLUTE:0x70e4>>]>
+xmemdup :: (void *, unsigned int8) -> void * @ PC range=(<ABSOLUTE:0x706b>, <ABSOLUTE:0x70a4>)
+	<PARAM p :: void * @ [<AddressLiveRange addr=<STACK:-0x18> startpc=<ABSOLUTE:0x706b> endpc=<ABSOLUTE:0x70a4>>]>
+	<PARAM s :: unsigned int8 @ [<AddressLiveRange addr=<STACK:-0x20> startpc=<ABSOLUTE:0x706b> endpc=<ABSOLUTE:0x70a4>>]>
+xicalloc :: (int8, int8) -> void * @ PC range=(<ABSOLUTE:0x703a>, <ABSOLUTE:0x706c>)
+	<PARAM n :: int8 @ [<AddressLiveRange addr=<STACK:-0x18> startpc=<ABSOLUTE:0x703a> endpc=<ABSOLUTE:0x706c>>]>
+	<PARAM s :: int8 @ [<AddressLiveRange addr=<STACK:-0x20> startpc=<ABSOLUTE:0x703a> endpc=<ABSOLUTE:0x706c>>]>
+xcalloc :: (unsigned int8, unsigned int8) -> void * @ PC range=(<ABSOLUTE:0x7009>, <ABSOLUTE:0x703b>)
+	<PARAM n :: unsigned int8 @ [<AddressLiveRange addr=<STACK:-0x18> startpc=<ABSOLUTE:0x7009> endpc=<ABSOLUTE:0x703b>>]>
+	<PARAM s :: unsigned int8 @ [<AddressLiveRange addr=<STACK:-0x20> startpc=<ABSOLUTE:0x7009> endpc=<ABSOLUTE:0x703b>>]>
+xizalloc :: (int8) -> void * @ PC range=(<ABSOLUTE:0x6fe6>, <ABSOLUTE:0x700a>)
+	<PARAM s :: int8 @ [<AddressLiveRange addr=<STACK:-0x18> startpc=<ABSOLUTE:0x6fe6> endpc=<ABSOLUTE:0x700a>>]>
+xzalloc :: (unsigned int8) -> void * @ PC range=(<ABSOLUTE:0x6fc3>, <ABSOLUTE:0x6fe7>)
+	<PARAM s :: unsigned int8 @ [<AddressLiveRange addr=<STACK:-0x18> startpc=<ABSOLUTE:0x6fc3> endpc=<ABSOLUTE:0x6fe7>>]>
+xpalloc :: (void *, int8 *, int8, int8, int8) -> void * @ PC range=(<ABSOLUTE:0x6e07>, <ABSOLUTE:0x6fc4>)
+	<PARAM pa :: void * @ [<AddressLiveRange addr=<STACK:-0x48> startpc=<ABSOLUTE:0x6e07> endpc=<ABSOLUTE:0x6fc4>>]>
+	<PARAM pn :: int8 * @ [<AddressLiveRange addr=<STACK:-0x50> startpc=<ABSOLUTE:0x6e07> endpc=<ABSOLUTE:0x6fc4>>]>
+	<PARAM n_incr_min :: int8 @ [<AddressLiveRange addr=<STACK:-0x58> startpc=<ABSOLUTE:0x6e07> endpc=<ABSOLUTE:0x6fc4>>]>
+	<PARAM n_max :: int8 @ [<AddressLiveRange addr=<STACK:-0x60> startpc=<ABSOLUTE:0x6e07> endpc=<ABSOLUTE:0x6fc4>>]>
+	<PARAM s :: int8 @ [<AddressLiveRange addr=<STACK:-0x68> startpc=<ABSOLUTE:0x6e07> endpc=<ABSOLUTE:0x6fc4>>]>
+	<VAR n0 :: int8 @ [<AddressLiveRange addr=<STACK:-0x28> startpc=<ABSOLUTE:0x6e07> endpc=<ABSOLUTE:0x6fc4>>]>
+	<VAR n :: int8 @ [<AddressLiveRange addr=<STACK:-0x38> startpc=<ABSOLUTE:0x6e07> endpc=<ABSOLUTE:0x6fc4>>]>
+	<VAR nbytes :: int8 @ [<AddressLiveRange addr=<STACK:-0x30> startpc=<ABSOLUTE:0x6e07> endpc=<ABSOLUTE:0x6fc4>>]>
+	<VAR adjusted_nbytes :: int8 @ [<AddressLiveRange addr=<STACK:-0x20> startpc=<ABSOLUTE:0x6e07> endpc=<ABSOLUTE:0x6fc4>>]>
+x2nrealloc :: (void *, unsigned int8 *, unsigned int8) -> void * @ PC range=(<ABSOLUTE:0x6d28>, <ABSOLUTE:0x6e08>)
+	<PARAM p :: void * @ [<AddressLiveRange addr=<STACK:-0x28> startpc=<ABSOLUTE:0x6d28> endpc=<ABSOLUTE:0x6e08>>]>
+	<PARAM pn :: unsigned int8 * @ [<AddressLiveRange addr=<STACK:-0x30> startpc=<ABSOLUTE:0x6d28> endpc=<ABSOLUTE:0x6e08>>]>
+	<PARAM s :: unsigned int8 @ [<AddressLiveRange addr=<STACK:-0x38> startpc=<ABSOLUTE:0x6d28> endpc=<ABSOLUTE:0x6e08>>]>
+	<VAR n :: unsigned int8 @ [<AddressLiveRange addr=<STACK:-0x20> startpc=<ABSOLUTE:0x6d28> endpc=<ABSOLUTE:0x6e08>>]>
+x2realloc :: (void *, unsigned int8 *) -> void * @ PC range=(<ABSOLUTE:0x6cfa>, <ABSOLUTE:0x6d29>)
+	<PARAM p :: void * @ [<AddressLiveRange addr=<STACK:-0x18> startpc=<ABSOLUTE:0x6cfa> endpc=<ABSOLUTE:0x6d29>>]>
+	<PARAM ps :: unsigned int8 * @ [<AddressLiveRange addr=<STACK:-0x20> startpc=<ABSOLUTE:0x6cfa> endpc=<ABSOLUTE:0x6d29>>]>
+xinmalloc :: (int8, int8) -> void * @ PC range=(<ABSOLUTE:0x6ccf>, <ABSOLUTE:0x6cfb>)
+	<PARAM n :: int8 @ [<AddressLiveRange addr=<STACK:-0x18> startpc=<ABSOLUTE:0x6ccf> endpc=<ABSOLUTE:0x6cfb>>]>
+	<PARAM s :: int8 @ [<AddressLiveRange addr=<STACK:-0x20> startpc=<ABSOLUTE:0x6ccf> endpc=<ABSOLUTE:0x6cfb>>]>
+xnmalloc :: (unsigned int8, unsigned int8) -> void * @ PC range=(<ABSOLUTE:0x6ca4>, <ABSOLUTE:0x6cd0>)
+	<PARAM n :: unsigned int8 @ [<AddressLiveRange addr=<STACK:-0x18> startpc=<ABSOLUTE:0x6ca4> endpc=<ABSOLUTE:0x6cd0>>]>
+	<PARAM s :: unsigned int8 @ [<AddressLiveRange addr=<STACK:-0x20> startpc=<ABSOLUTE:0x6ca4> endpc=<ABSOLUTE:0x6cd0>>]>
+xireallocarray :: (void *, int8, int8) -> void * @ PC range=(<ABSOLUTE:0x6c6b>, <ABSOLUTE:0x6ca5>)
+	<PARAM p :: void * @ [<AddressLiveRange addr=<STACK:-0x18> startpc=<ABSOLUTE:0x6c6b> endpc=<ABSOLUTE:0x6ca5>>]>
+	<PARAM n :: int8 @ [<AddressLiveRange addr=<STACK:-0x20> startpc=<ABSOLUTE:0x6c6b> endpc=<ABSOLUTE:0x6ca5>>]>
+	<PARAM s :: int8 @ [<AddressLiveRange addr=<STACK:-0x28> startpc=<ABSOLUTE:0x6c6b> endpc=<ABSOLUTE:0x6ca5>>]>
+xreallocarray :: (void *, unsigned int8, unsigned int8) -> void * @ PC range=(<ABSOLUTE:0x6c11>, <ABSOLUTE:0x6c6c>)
+	<PARAM p :: void * @ [<AddressLiveRange addr=<STACK:-0x28> startpc=<ABSOLUTE:0x6c11> endpc=<ABSOLUTE:0x6c6c>>]>
+	<PARAM n :: unsigned int8 @ [<AddressLiveRange addr=<STACK:-0x30> startpc=<ABSOLUTE:0x6c11> endpc=<ABSOLUTE:0x6c6c>>]>
+	<PARAM s :: unsigned int8 @ [<AddressLiveRange addr=<STACK:-0x38> startpc=<ABSOLUTE:0x6c11> endpc=<ABSOLUTE:0x6c6c>>]>
+	<VAR r :: void * @ [<AddressLiveRange addr=<STACK:-0x18> startpc=<ABSOLUTE:0x6c11> endpc=<ABSOLUTE:0x6c6c>>]>
+xirealloc :: (void *, int8) -> void * @ PC range=(<ABSOLUTE:0x6be0>, <ABSOLUTE:0x6c12>)
+	<PARAM p :: void * @ [<AddressLiveRange addr=<STACK:-0x18> startpc=<ABSOLUTE:0x6be0> endpc=<ABSOLUTE:0x6c12>>]>
+	<PARAM s :: int8 @ [<AddressLiveRange addr=<STACK:-0x20> startpc=<ABSOLUTE:0x6be0> endpc=<ABSOLUTE:0x6c12>>]>
+xrealloc :: (void *, unsigned int8) -> void * @ PC range=(<ABSOLUTE:0x6b95>, <ABSOLUTE:0x6be1>)
+	<PARAM p :: void * @ [<AddressLiveRange addr=<STACK:-0x28> startpc=<ABSOLUTE:0x6b95> endpc=<ABSOLUTE:0x6be1>>]>
+	<PARAM s :: unsigned int8 @ [<AddressLiveRange addr=<STACK:-0x30> startpc=<ABSOLUTE:0x6b95> endpc=<ABSOLUTE:0x6be1>>]>
+	<VAR r :: void * @ [<AddressLiveRange addr=<STACK:-0x18> startpc=<ABSOLUTE:0x6b95> endpc=<ABSOLUTE:0x6be1>>]>
+xcharalloc :: (unsigned int8) -> char * @ PC range=(<ABSOLUTE:0x6b77>, <ABSOLUTE:0x6b96>)
+	<PARAM n :: unsigned int8 @ [<AddressLiveRange addr=<STACK:-0x18> startpc=<ABSOLUTE:0x6b77> endpc=<ABSOLUTE:0x6b96>>]>
+ximalloc :: (int8) -> void * @ PC range=(<ABSOLUTE:0x6b51>, <ABSOLUTE:0x6b78>)
+	<PARAM s :: int8 @ [<AddressLiveRange addr=<STACK:-0x18> startpc=<ABSOLUTE:0x6b51> endpc=<ABSOLUTE:0x6b78>>]>
+xmalloc :: (unsigned int8) -> void * @ PC range=(<ABSOLUTE:0x6b2b>, <ABSOLUTE:0x6b52>)
+	<PARAM s :: unsigned int8 @ [<AddressLiveRange addr=<STACK:-0x18> startpc=<ABSOLUTE:0x6b2b> endpc=<ABSOLUTE:0x6b52>>]>
+nonnull :: (void *) -> void * @ PC range=(<ABSOLUTE:0x6b09>, <ABSOLUTE:0x6b2c>)
+	<PARAM p :: void * @ [<AddressLiveRange addr=<STACK:-0x18> startpc=<ABSOLUTE:0x6b09> endpc=<ABSOLUTE:0x6b2c>>]>
+xnrealloc :: (void *, unsigned int8, unsigned int8) -> void * @ PC range=(<ABSOLUTE:0x6ad8>, <ABSOLUTE:0x6b0a>)
+	<PARAM p :: void * @ [<AddressLiveRange addr=<STACK:-0x18> startpc=<ABSOLUTE:0x6ad8> endpc=<ABSOLUTE:0x6b0a>>]>
+	<PARAM n :: unsigned int8 @ [<AddressLiveRange addr=<STACK:-0x20> startpc=<ABSOLUTE:0x6ad8> endpc=<ABSOLUTE:0x6b0a>>]>
+	<PARAM s :: unsigned int8 @ [<AddressLiveRange addr=<STACK:-0x28> startpc=<ABSOLUTE:0x6ad8> endpc=<ABSOLUTE:0x6b0a>>]>
+xalloc_die :: () -> void @ PC range=(<ABSOLUTE:0x7163>, <ABSOLUTE:0x71a4>)
+xgetgroups :: (char *, unsigned int4, unsigned int4 * *) -> int4 @ PC range=(<ABSOLUTE:0x71a3>, <ABSOLUTE:0x71ef>)
+	<PARAM username :: char * @ [<AddressLiveRange addr=<STACK:-0x28> startpc=<ABSOLUTE:0x71a3> endpc=<ABSOLUTE:0x71ef>>]>
+	<PARAM gid :: unsigned int4 @ [<AddressLiveRange addr=<STACK:-0x2c> startpc=<ABSOLUTE:0x71a3> endpc=<ABSOLUTE:0x71ef>>]>
+	<PARAM groups :: unsigned int4 * * @ [<AddressLiveRange addr=<STACK:-0x38> startpc=<ABSOLUTE:0x71a3> endpc=<ABSOLUTE:0x71ef>>]>
+	<VAR result :: int4 @ [<AddressLiveRange addr=<STACK:-0x14> startpc=<ABSOLUTE:0x71a3> endpc=<ABSOLUTE:0x71ef>>]>
+xstrtoul :: (char *, char * *, int4, unsigned int8 *, char *) -> unsigned int4 @ PC range=(<ABSOLUTE:0x72c5>, <ABSOLUTE:0x7724>)
+	<PARAM s :: char * @ [<AddressLiveRange addr=<STACK:-0x58> startpc=<ABSOLUTE:0x72c5> endpc=<ABSOLUTE:0x7724>>]>
+	<PARAM ptr :: char * * @ [<AddressLiveRange addr=<STACK:-0x60> startpc=<ABSOLUTE:0x72c5> endpc=<ABSOLUTE:0x7724>>]>
+	<PARAM strtol_base :: int4 @ [<AddressLiveRange addr=<STACK:-0x64> startpc=<ABSOLUTE:0x72c5> endpc=<ABSOLUTE:0x7724>>]>
+	<PARAM val :: unsigned int8 * @ [<AddressLiveRange addr=<STACK:-0x70> startpc=<ABSOLUTE:0x72c5> endpc=<ABSOLUTE:0x7724>>]>
+	<PARAM valid_suffixes :: char * @ [<AddressLiveRange addr=<STACK:-0x78> startpc=<ABSOLUTE:0x72c5> endpc=<ABSOLUTE:0x7724>>]>
+	<VAR t_ptr :: char * @ [<AddressLiveRange addr=<STACK:-0x38> startpc=<ABSOLUTE:0x72c5> endpc=<ABSOLUTE:0x7724>>]>
+	<VAR p :: char * * @ [<AddressLiveRange addr=<STACK:-0x20> startpc=<ABSOLUTE:0x72c5> endpc=<ABSOLUTE:0x7724>>]>
+	<VAR tmp :: unsigned int8 @ [<AddressLiveRange addr=<STACK:-0x30> startpc=<ABSOLUTE:0x72c5> endpc=<ABSOLUTE:0x7724>>]>
+	<VAR err :: unsigned int4 @ [<AddressLiveRange addr=<STACK:-0x48> startpc=<ABSOLUTE:0x72c5> endpc=<ABSOLUTE:0x7724>>]>
+	<VAR __PRETTY_FUNCTION__ :: <ARRAY subtype=char dimensions=(9,) size=9> @ [<AddressLiveRange addr=<ABSOLUTE:0x9cd8> startpc=<ABSOLUTE:0x72c5> endpc=<ABSOLUTE:0x7724>>]>
+	<VAR q :: char * @ [<AddressLiveRange addr=<STACK:-0x28> startpc=<ABSOLUTE:0x72c5> endpc=<ABSOLUTE:0x7724>>]>
+	<VAR ch :: unsigned char @ [<AddressLiveRange addr=<STACK:-0x49> startpc=<ABSOLUTE:0x72c5> endpc=<ABSOLUTE:0x7724>>]>
+	<VAR base :: int4 @ [<AddressLiveRange addr=<STACK:-0x44> startpc=<ABSOLUTE:0x72c5> endpc=<ABSOLUTE:0x7724>>]>
+	<VAR suffixes :: int4 @ [<AddressLiveRange addr=<STACK:-0x40> startpc=<ABSOLUTE:0x72c5> endpc=<ABSOLUTE:0x7724>>]>
+	<VAR overflow :: unsigned int4 @ [<AddressLiveRange addr=<STACK:-0x3c> startpc=<ABSOLUTE:0x72c5> endpc=<ABSOLUTE:0x7724>>]>
+bkm_scale_by_power :: (unsigned int8 *, int4, int4) -> unsigned int4 @ PC range=(<ABSOLUTE:0x7280>, <ABSOLUTE:0x72c6>)
+	<PARAM x :: unsigned int8 * @ [<AddressLiveRange addr=<STACK:-0x28> startpc=<ABSOLUTE:0x7280> endpc=<ABSOLUTE:0x72c6>>]>
+	<PARAM base :: int4 @ [<AddressLiveRange addr=<STACK:-0x2c> startpc=<ABSOLUTE:0x7280> endpc=<ABSOLUTE:0x72c6>>]>
+	<PARAM power :: int4 @ [<AddressLiveRange addr=<STACK:-0x30> startpc=<ABSOLUTE:0x7280> endpc=<ABSOLUTE:0x72c6>>]>
+	<VAR err :: unsigned int4 @ [<AddressLiveRange addr=<STACK:-0x14> startpc=<ABSOLUTE:0x7280> endpc=<ABSOLUTE:0x72c6>>]>
+bkm_scale :: (unsigned int8 *, int4) -> unsigned int4 @ PC range=(<ABSOLUTE:0x71ee>, <ABSOLUTE:0x7281>)
+	<PARAM x :: unsigned int8 * @ [<AddressLiveRange addr=<STACK:-0x28> startpc=<ABSOLUTE:0x71ee> endpc=<ABSOLUTE:0x7281>>]>
+	<PARAM scale_factor :: int4 @ [<AddressLiveRange addr=<STACK:-0x2c> startpc=<ABSOLUTE:0x71ee> endpc=<ABSOLUTE:0x7281>>]>
+	<VAR scaled :: unsigned int8 @ [<AddressLiveRange addr=<STACK:-0x20> startpc=<ABSOLUTE:0x71ee> endpc=<ABSOLUTE:0x7281>>]>
+xstrtoumax :: (char *, char * *, int4, unsigned int8 *, char *) -> unsigned int4 @ PC range=(<ABSOLUTE:0x77fa>, <ABSOLUTE:0x7c59>)
+	<PARAM s :: char * @ [<AddressLiveRange addr=<STACK:-0x58> startpc=<ABSOLUTE:0x77fa> endpc=<ABSOLUTE:0x7c59>>]>
+	<PARAM ptr :: char * * @ [<AddressLiveRange addr=<STACK:-0x60> startpc=<ABSOLUTE:0x77fa> endpc=<ABSOLUTE:0x7c59>>]>
+	<PARAM strtol_base :: int4 @ [<AddressLiveRange addr=<STACK:-0x64> startpc=<ABSOLUTE:0x77fa> endpc=<ABSOLUTE:0x7c59>>]>
+	<PARAM val :: unsigned int8 * @ [<AddressLiveRange addr=<STACK:-0x70> startpc=<ABSOLUTE:0x77fa> endpc=<ABSOLUTE:0x7c59>>]>
+	<PARAM valid_suffixes :: char * @ [<AddressLiveRange addr=<STACK:-0x78> startpc=<ABSOLUTE:0x77fa> endpc=<ABSOLUTE:0x7c59>>]>
+	<VAR t_ptr :: char * @ [<AddressLiveRange addr=<STACK:-0x38> startpc=<ABSOLUTE:0x77fa> endpc=<ABSOLUTE:0x7c59>>]>
+	<VAR p :: char * * @ [<AddressLiveRange addr=<STACK:-0x20> startpc=<ABSOLUTE:0x77fa> endpc=<ABSOLUTE:0x7c59>>]>
+	<VAR tmp :: unsigned int8 @ [<AddressLiveRange addr=<STACK:-0x30> startpc=<ABSOLUTE:0x77fa> endpc=<ABSOLUTE:0x7c59>>]>
+	<VAR err :: unsigned int4 @ [<AddressLiveRange addr=<STACK:-0x48> startpc=<ABSOLUTE:0x77fa> endpc=<ABSOLUTE:0x7c59>>]>
+	<VAR __PRETTY_FUNCTION__ :: <ARRAY subtype=char dimensions=(11,) size=11> @ [<AddressLiveRange addr=<ABSOLUTE:0x9df8> startpc=<ABSOLUTE:0x77fa> endpc=<ABSOLUTE:0x7c59>>]>
+	<VAR q :: char * @ [<AddressLiveRange addr=<STACK:-0x28> startpc=<ABSOLUTE:0x77fa> endpc=<ABSOLUTE:0x7c59>>]>
+	<VAR ch :: unsigned char @ [<AddressLiveRange addr=<STACK:-0x49> startpc=<ABSOLUTE:0x77fa> endpc=<ABSOLUTE:0x7c59>>]>
+	<VAR base :: int4 @ [<AddressLiveRange addr=<STACK:-0x44> startpc=<ABSOLUTE:0x77fa> endpc=<ABSOLUTE:0x7c59>>]>
+	<VAR suffixes :: int4 @ [<AddressLiveRange addr=<STACK:-0x40> startpc=<ABSOLUTE:0x77fa> endpc=<ABSOLUTE:0x7c59>>]>
+	<VAR overflow :: unsigned int4 @ [<AddressLiveRange addr=<STACK:-0x3c> startpc=<ABSOLUTE:0x77fa> endpc=<ABSOLUTE:0x7c59>>]>
+bkm_scale_by_power :: (unsigned int8 *, int4, int4) -> unsigned int4 @ PC range=(<ABSOLUTE:0x77b5>, <ABSOLUTE:0x77fb>)
+	<PARAM x :: unsigned int8 * @ [<AddressLiveRange addr=<STACK:-0x28> startpc=<ABSOLUTE:0x77b5> endpc=<ABSOLUTE:0x77fb>>]>
+	<PARAM base :: int4 @ [<AddressLiveRange addr=<STACK:-0x2c> startpc=<ABSOLUTE:0x77b5> endpc=<ABSOLUTE:0x77fb>>]>
+	<PARAM power :: int4 @ [<AddressLiveRange addr=<STACK:-0x30> startpc=<ABSOLUTE:0x77b5> endpc=<ABSOLUTE:0x77fb>>]>
+	<VAR err :: unsigned int4 @ [<AddressLiveRange addr=<STACK:-0x14> startpc=<ABSOLUTE:0x77b5> endpc=<ABSOLUTE:0x77fb>>]>
+bkm_scale :: (unsigned int8 *, int4) -> unsigned int4 @ PC range=(<ABSOLUTE:0x7723>, <ABSOLUTE:0x77b6>)
+	<PARAM x :: unsigned int8 * @ [<AddressLiveRange addr=<STACK:-0x28> startpc=<ABSOLUTE:0x7723> endpc=<ABSOLUTE:0x77b6>>]>
+	<PARAM scale_factor :: int4 @ [<AddressLiveRange addr=<STACK:-0x2c> startpc=<ABSOLUTE:0x7723> endpc=<ABSOLUTE:0x77b6>>]>
+	<VAR scaled :: unsigned int8 @ [<AddressLiveRange addr=<STACK:-0x20> startpc=<ABSOLUTE:0x7723> endpc=<ABSOLUTE:0x77b6>>]>
+c_strcasecmp :: (char *, char *) -> int4 @ PC range=(<ABSOLUTE:0x7c58>, <ABSOLUTE:0x7cd3>)
+	<PARAM s1 :: char * @ [<AddressLiveRange addr=<STACK:-0x38> startpc=<ABSOLUTE:0x7c58> endpc=<ABSOLUTE:0x7cd3>>]>
+	<PARAM s2 :: char * @ [<AddressLiveRange addr=<STACK:-0x40> startpc=<ABSOLUTE:0x7c58> endpc=<ABSOLUTE:0x7cd3>>]>
+	<VAR p1 :: unsigned char * @ [<AddressLiveRange addr=<REGISTER:12> startpc=<ABSOLUTE:0x7c58> endpc=<ABSOLUTE:0x7cd3>>]>
+	<VAR p2 :: unsigned char * @ [<AddressLiveRange addr=<REGISTER:3> startpc=<ABSOLUTE:0x7c58> endpc=<ABSOLUTE:0x7cd3>>]>
+	<VAR c1 :: unsigned char @ [<AddressLiveRange addr=<STACK:-0x22> startpc=<ABSOLUTE:0x7c58> endpc=<ABSOLUTE:0x7cd3>>]>
+	<VAR c2 :: unsigned char @ [<AddressLiveRange addr=<STACK:-0x21> startpc=<ABSOLUTE:0x7c58> endpc=<ABSOLUTE:0x7cd3>>]>
+close_stream :: (<STRUCT _IO_FILE membertypes=29 size=216> *) -> int4 @ PC range=(<ABSOLUTE:0x7cd2>, <ABSOLUTE:0x7d62>)
+	<PARAM stream :: <STRUCT _IO_FILE membertypes=29 size=216> * @ [<AddressLiveRange addr=<STACK:-0x28> startpc=<ABSOLUTE:0x7cd2> endpc=<ABSOLUTE:0x7d62>>]>
+	<VAR some_pending :: unsigned char @ [<AddressLiveRange addr=<STACK:-0x13> startpc=<ABSOLUTE:0x7cd2> endpc=<ABSOLUTE:0x7d62>>]>
+	<VAR prev_fail :: unsigned char @ [<AddressLiveRange addr=<STACK:-0x12> startpc=<ABSOLUTE:0x7cd2> endpc=<ABSOLUTE:0x7d62>>]>
+	<VAR fclose_fail :: unsigned char @ [<AddressLiveRange addr=<STACK:-0x11> startpc=<ABSOLUTE:0x7cd2> endpc=<ABSOLUTE:0x7d62>>]>
+rpl_fclose :: (<STRUCT _IO_FILE membertypes=29 size=216> *) -> int4 @ PC range=(<ABSOLUTE:0x7d61>, <ABSOLUTE:0x7e1b>)
+	<PARAM fp :: <STRUCT _IO_FILE membertypes=29 size=216> * @ [<AddressLiveRange addr=<STACK:-0x28> startpc=<ABSOLUTE:0x7d61> endpc=<ABSOLUTE:0x7e1b>>]>
+	<VAR saved_errno :: int4 @ [<AddressLiveRange addr=<STACK:-0x1c> startpc=<ABSOLUTE:0x7d61> endpc=<ABSOLUTE:0x7e1b>>]>
+	<VAR fd :: int4 @ [<AddressLiveRange addr=<STACK:-0x14> startpc=<ABSOLUTE:0x7d61> endpc=<ABSOLUTE:0x7e1b>>]>
+	<VAR result :: int4 @ [<AddressLiveRange addr=<STACK:-0x18> startpc=<ABSOLUTE:0x7d61> endpc=<ABSOLUTE:0x7e1b>>]>
+rpl_fflush :: (<STRUCT _IO_FILE membertypes=29 size=216> *) -> int4 @ PC range=(<ABSOLUTE:0x7e52>, <ABSOLUTE:0x7ea2>)
+	<PARAM stream :: <STRUCT _IO_FILE membertypes=29 size=216> * @ [<AddressLiveRange addr=<STACK:-0x18> startpc=<ABSOLUTE:0x7e52> endpc=<ABSOLUTE:0x7ea2>>]>
+clear_ungetc_buffer_preserving_position :: (<STRUCT _IO_FILE membertypes=29 size=216> *) -> void @ PC range=(<ABSOLUTE:0x7e1a>, <ABSOLUTE:0x7e53>)
+	<PARAM fp :: <STRUCT _IO_FILE membertypes=29 size=216> * @ [<AddressLiveRange addr=<STACK:-0x18> startpc=<ABSOLUTE:0x7e1a> endpc=<ABSOLUTE:0x7e53>>]>
+rpl_fseeko :: (<STRUCT _IO_FILE membertypes=29 size=216> *, int8, int4) -> int4 @ PC range=(<ABSOLUTE:0x7ea1>, <ABSOLUTE:0x7f60>)
+	<PARAM fp :: <STRUCT _IO_FILE membertypes=29 size=216> * @ [<AddressLiveRange addr=<STACK:-0x28> startpc=<ABSOLUTE:0x7ea1> endpc=<ABSOLUTE:0x7f60>>]>
+	<PARAM offset :: int8 @ [<AddressLiveRange addr=<STACK:-0x30> startpc=<ABSOLUTE:0x7ea1> endpc=<ABSOLUTE:0x7f60>>]>
+	<PARAM whence :: int4 @ [<AddressLiveRange addr=<STACK:-0x34> startpc=<ABSOLUTE:0x7ea1> endpc=<ABSOLUTE:0x7f60>>]>
+	<VAR pos :: int8 @ [<AddressLiveRange addr=<STACK:-0x18> startpc=<ABSOLUTE:0x7ea1> endpc=<ABSOLUTE:0x7f60>>]>
+ireallocarray :: (void *, int8, int8) -> void * @ PC range=(<ABSOLUTE:0x7ff7>, <ABSOLUTE:0x8047>)
+	<PARAM p :: void * @ [<AddressLiveRange addr=<STACK:-0x18> startpc=<ABSOLUTE:0x7ff7> endpc=<ABSOLUTE:0x8047>>]>
+	<PARAM n :: int8 @ [<AddressLiveRange addr=<STACK:-0x20> startpc=<ABSOLUTE:0x7ff7> endpc=<ABSOLUTE:0x8047>>]>
+	<PARAM s :: int8 @ [<AddressLiveRange addr=<STACK:-0x28> startpc=<ABSOLUTE:0x7ff7> endpc=<ABSOLUTE:0x8047>>]>
+icalloc :: (int8, int8) -> void * @ PC range=(<ABSOLUTE:0x7fce>, <ABSOLUTE:0x7ff8>)
+	<PARAM n :: int8 @ [<AddressLiveRange addr=<STACK:-0x18> startpc=<ABSOLUTE:0x7fce> endpc=<ABSOLUTE:0x7ff8>>]>
+	<PARAM s :: int8 @ [<AddressLiveRange addr=<STACK:-0x20> startpc=<ABSOLUTE:0x7fce> endpc=<ABSOLUTE:0x7ff8>>]>
+irealloc :: (void *, int8) -> void * @ PC range=(<ABSOLUTE:0x7f97>, <ABSOLUTE:0x7fcf>)
+	<PARAM p :: void * @ [<AddressLiveRange addr=<STACK:-0x18> startpc=<ABSOLUTE:0x7f97> endpc=<ABSOLUTE:0x7fcf>>]>
+	<PARAM s :: int8 @ [<AddressLiveRange addr=<STACK:-0x20> startpc=<ABSOLUTE:0x7f97> endpc=<ABSOLUTE:0x7fcf>>]>
+imalloc :: (int8) -> void * @ PC range=(<ABSOLUTE:0x7f79>, <ABSOLUTE:0x7f98>)
+	<PARAM s :: int8 @ [<AddressLiveRange addr=<STACK:-0x18> startpc=<ABSOLUTE:0x7f79> endpc=<ABSOLUTE:0x7f98>>]>
+_gl_alloc_nomem :: () -> void * @ PC range=(<ABSOLUTE:0x7f5f>, <ABSOLUTE:0x7f7a>)
+umaxtostr :: (unsigned int8, char *) -> char * @ PC range=(<ABSOLUTE:0x8046>, <ABSOLUTE:0x80d0>)
+	<PARAM i :: unsigned int8 @ [<AddressLiveRange addr=<STACK:-0x28> startpc=<ABSOLUTE:0x8046> endpc=<ABSOLUTE:0x80d0>>]>
+	<PARAM buf :: char * @ [<AddressLiveRange addr=<STACK:-0x30> startpc=<ABSOLUTE:0x8046> endpc=<ABSOLUTE:0x80d0>>]>
+	<VAR p :: char * @ [<AddressLiveRange addr=<STACK:-0x18> startpc=<ABSOLUTE:0x8046> endpc=<ABSOLUTE:0x80d0>>]>
+locale_charset :: () -> char * @ PC range=(<ABSOLUTE:0x80cf>, <ABSOLUTE:0x8118>)
+	<VAR codeset :: char * @ [<AddressLiveRange addr=<STACK:-0x18> startpc=<ABSOLUTE:0x80cf> endpc=<ABSOLUTE:0x8118>>]>
+rpl_mbrtowc :: (int4 *, char *, unsigned int8, <STRUCT membertypes=2 size=8> *) -> unsigned int8 @ PC range=(<ABSOLUTE:0x8117>, <ABSOLUTE:0x81c2>)
+	<PARAM pwc :: int4 * @ [<AddressLiveRange addr=<STACK:-0x38> startpc=<ABSOLUTE:0x8117> endpc=<ABSOLUTE:0x81c2>>]>
+	<PARAM s :: char * @ [<AddressLiveRange addr=<STACK:-0x40> startpc=<ABSOLUTE:0x8117> endpc=<ABSOLUTE:0x81c2>>]>
+	<PARAM n :: unsigned int8 @ [<AddressLiveRange addr=<STACK:-0x48> startpc=<ABSOLUTE:0x8117> endpc=<ABSOLUTE:0x81c2>>]>
+	<PARAM ps :: <STRUCT membertypes=2 size=8> * @ [<AddressLiveRange addr=<STACK:-0x50> startpc=<ABSOLUTE:0x8117> endpc=<ABSOLUTE:0x81c2>>]>
+	<VAR ret :: unsigned int8 @ [<AddressLiveRange addr=<STACK:-0x20> startpc=<ABSOLUTE:0x8117> endpc=<ABSOLUTE:0x81c2>>]>
+	<VAR wc :: int4 @ [<AddressLiveRange addr=<STACK:-0x24> startpc=<ABSOLUTE:0x8117> endpc=<ABSOLUTE:0x81c2>>]>
+	<VAR uc :: unsigned char @ [<AddressLiveRange addr=<STACK:-0x25> startpc=<ABSOLUTE:0x8117> endpc=<ABSOLUTE:0x81c2>>]>
+mgetgroups :: (char *, unsigned int4, unsigned int4 * *) -> int4 @ PC range=(<ABSOLUTE:0x8234>, <ABSOLUTE:0x8518>)
+	<PARAM username :: char * @ [<AddressLiveRange addr=<STACK:-0x58> startpc=<ABSOLUTE:0x8234> endpc=<ABSOLUTE:0x8518>>]>
+	<PARAM gid :: unsigned int4 @ [<AddressLiveRange addr=<STACK:-0x5c> startpc=<ABSOLUTE:0x8234> endpc=<ABSOLUTE:0x8518>>]>
+	<PARAM groups :: unsigned int4 * * @ [<AddressLiveRange addr=<STACK:-0x68> startpc=<ABSOLUTE:0x8234> endpc=<ABSOLUTE:0x8518>>]>
+	<VAR max_n_groups :: int4 @ [<AddressLiveRange addr=<STACK:-0x48> startpc=<ABSOLUTE:0x8234> endpc=<ABSOLUTE:0x8518>>]>
+	<VAR ng :: int4 @ [<AddressLiveRange addr=<STACK:-0x44> startpc=<ABSOLUTE:0x8234> endpc=<ABSOLUTE:0x8518>>]>
+	<VAR g :: unsigned int4 * @ [<AddressLiveRange addr=<STACK:-0x38> startpc=<ABSOLUTE:0x8234> endpc=<ABSOLUTE:0x8518>>]>
+	<VAR h :: unsigned int4 * @ [<AddressLiveRange addr=<STACK:-0x20> startpc=<ABSOLUTE:0x8234> endpc=<ABSOLUTE:0x8518>>]>
+	<VAR last_n_groups :: int4 @ [<AddressLiveRange addr=<STACK:-0x3c> startpc=<ABSOLUTE:0x8234> endpc=<ABSOLUTE:0x8518>>]>
+	<VAR first :: unsigned int4 @ [<AddressLiveRange addr=<STACK:-0x40> startpc=<ABSOLUTE:0x8234> endpc=<ABSOLUTE:0x8518>>]>
+	<VAR next :: unsigned int4 * @ [<AddressLiveRange addr=<STACK:-0x30> startpc=<ABSOLUTE:0x8234> endpc=<ABSOLUTE:0x8518>>]>
+	<VAR groups_end :: unsigned int4 * @ [<AddressLiveRange addr=<STACK:-0x28> startpc=<ABSOLUTE:0x8234> endpc=<ABSOLUTE:0x8518>>]>
+realloc_groupbuf :: (unsigned int4 *, unsigned int8) -> unsigned int4 * @ PC range=(<ABSOLUTE:0x81c1>, <ABSOLUTE:0x8235>)
+	<PARAM g :: unsigned int4 * @ [<AddressLiveRange addr=<STACK:-0x18> startpc=<ABSOLUTE:0x81c1> endpc=<ABSOLUTE:0x8235>>]>
+	<PARAM num :: unsigned int8 @ [<AddressLiveRange addr=<STACK:-0x20> startpc=<ABSOLUTE:0x81c1> endpc=<ABSOLUTE:0x8235>>]>
+c_toupper :: (int4) -> int4 @ PC range=(<ABSOLUTE:0x8793>, <ABSOLUTE:0x87b7>)
+	<PARAM c :: int4 @ [<AddressLiveRange addr=<STACK:-0x14> startpc=<ABSOLUTE:0x8793> endpc=<ABSOLUTE:0x87b7>>]>
+c_tolower :: (int4) -> int4 @ PC range=(<ABSOLUTE:0x8770>, <ABSOLUTE:0x8794>)
+	<PARAM c :: int4 @ [<AddressLiveRange addr=<STACK:-0x14> startpc=<ABSOLUTE:0x8770> endpc=<ABSOLUTE:0x8794>>]>
+c_isxdigit :: (int4) -> unsigned char @ PC range=(<ABSOLUTE:0x8728>, <ABSOLUTE:0x8771>)
+	<PARAM c :: int4 @ [<AddressLiveRange addr=<STACK:-0x14> startpc=<ABSOLUTE:0x8728> endpc=<ABSOLUTE:0x8771>>]>
+c_isupper :: (int4) -> unsigned char @ PC range=(<ABSOLUTE:0x8704>, <ABSOLUTE:0x8729>)
+	<PARAM c :: int4 @ [<AddressLiveRange addr=<STACK:-0x14> startpc=<ABSOLUTE:0x8704> endpc=<ABSOLUTE:0x8729>>]>
+c_isspace :: (int4) -> unsigned char @ PC range=(<ABSOLUTE:0x86d7>, <ABSOLUTE:0x8705>)
+	<PARAM c :: int4 @ [<AddressLiveRange addr=<STACK:-0x14> startpc=<ABSOLUTE:0x86d7> endpc=<ABSOLUTE:0x8705>>]>
+c_ispunct :: (int4) -> unsigned char @ PC range=(<ABSOLUTE:0x868d>, <ABSOLUTE:0x86d8>)
+	<PARAM c :: int4 @ [<AddressLiveRange addr=<STACK:-0x14> startpc=<ABSOLUTE:0x868d> endpc=<ABSOLUTE:0x86d8>>]>
+c_isprint :: (int4) -> unsigned char @ PC range=(<ABSOLUTE:0x8669>, <ABSOLUTE:0x868e>)
+	<PARAM c :: int4 @ [<AddressLiveRange addr=<STACK:-0x14> startpc=<ABSOLUTE:0x8669> endpc=<ABSOLUTE:0x868e>>]>
+c_islower :: (int4) -> unsigned char @ PC range=(<ABSOLUTE:0x8645>, <ABSOLUTE:0x866a>)
+	<PARAM c :: int4 @ [<AddressLiveRange addr=<STACK:-0x14> startpc=<ABSOLUTE:0x8645> endpc=<ABSOLUTE:0x866a>>]>
+c_isgraph :: (int4) -> unsigned char @ PC range=(<ABSOLUTE:0x8621>, <ABSOLUTE:0x8646>)
+	<PARAM c :: int4 @ [<AddressLiveRange addr=<STACK:-0x14> startpc=<ABSOLUTE:0x8621> endpc=<ABSOLUTE:0x8646>>]>
+c_isdigit :: (int4) -> unsigned char @ PC range=(<ABSOLUTE:0x85fd>, <ABSOLUTE:0x8622>)
+	<PARAM c :: int4 @ [<AddressLiveRange addr=<STACK:-0x14> startpc=<ABSOLUTE:0x85fd> endpc=<ABSOLUTE:0x8622>>]>
+c_iscntrl :: (int4) -> unsigned char @ PC range=(<ABSOLUTE:0x85d0>, <ABSOLUTE:0x85fe>)
+	<PARAM c :: int4 @ [<AddressLiveRange addr=<STACK:-0x14> startpc=<ABSOLUTE:0x85d0> endpc=<ABSOLUTE:0x85fe>>]>
+c_isblank :: (int4) -> unsigned char @ PC range=(<ABSOLUTE:0x85a8>, <ABSOLUTE:0x85d1>)
+	<PARAM c :: int4 @ [<AddressLiveRange addr=<STACK:-0x14> startpc=<ABSOLUTE:0x85a8> endpc=<ABSOLUTE:0x85d1>>]>
+c_isascii :: (int4) -> unsigned char @ PC range=(<ABSOLUTE:0x8587>, <ABSOLUTE:0x85a9>)
+	<PARAM c :: int4 @ [<AddressLiveRange addr=<STACK:-0x14> startpc=<ABSOLUTE:0x8587> endpc=<ABSOLUTE:0x85a9>>]>
+c_isalpha :: (int4) -> unsigned char @ PC range=(<ABSOLUTE:0x8555>, <ABSOLUTE:0x8588>)
+	<PARAM c :: int4 @ [<AddressLiveRange addr=<STACK:-0x14> startpc=<ABSOLUTE:0x8555> endpc=<ABSOLUTE:0x8588>>]>
+c_isalnum :: (int4) -> unsigned char @ PC range=(<ABSOLUTE:0x8517>, <ABSOLUTE:0x8556>)
+	<PARAM c :: int4 @ [<AddressLiveRange addr=<STACK:-0x14> startpc=<ABSOLUTE:0x8517> endpc=<ABSOLUTE:0x8556>>]>
+getugroups :: (int4, unsigned int4 *, char *, unsigned int4) -> int4 @ PC range=(<ABSOLUTE:0x87b6>, <ABSOLUTE:0x8935>)
+	<PARAM maxcount :: int4 @ [<AddressLiveRange addr=<STACK:-0x34> startpc=<ABSOLUTE:0x87b6> endpc=<ABSOLUTE:0x8935>>]>
+	<PARAM grouplist :: unsigned int4 * @ [<AddressLiveRange addr=<STACK:-0x40> startpc=<ABSOLUTE:0x87b6> endpc=<ABSOLUTE:0x8935>>]>
+	<PARAM username :: char * @ [<AddressLiveRange addr=<STACK:-0x48> startpc=<ABSOLUTE:0x87b6> endpc=<ABSOLUTE:0x8935>>]>
+	<PARAM gid :: unsigned int4 @ [<AddressLiveRange addr=<STACK:-0x38> startpc=<ABSOLUTE:0x87b6> endpc=<ABSOLUTE:0x8935>>]>
+	<VAR count :: int4 @ [<AddressLiveRange addr=<STACK:-0x2c> startpc=<ABSOLUTE:0x87b6> endpc=<ABSOLUTE:0x8935>>]>
+	<VAR cp :: char * * @ [<AddressLiveRange addr=<STACK:-0x20> startpc=<ABSOLUTE:0x87b6> endpc=<ABSOLUTE:0x8935>>]>
+	<VAR grp :: <STRUCT group membertypes=4 size=32> * @ [<AddressLiveRange addr=<STACK:-0x18> startpc=<ABSOLUTE:0x87b6> endpc=<ABSOLUTE:0x8935>>]>
+	<VAR n :: int4 @ [<AddressLiveRange addr=<STACK:-0x28> startpc=<ABSOLUTE:0x87b6> endpc=<ABSOLUTE:0x8935>>]>
+	<VAR saved_errno :: int4 @ [<AddressLiveRange addr=<STACK:-0x24> startpc=<ABSOLUTE:0x87b6> endpc=<ABSOLUTE:0x8935>>]>
+hard_locale :: (int4) -> unsigned char @ PC range=(<ABSOLUTE:0x8934>, <ABSOLUTE:0x89df>)
+	<PARAM category :: int4 @ [<AddressLiveRange addr=<STACK:-0x124> startpc=<ABSOLUTE:0x8934> endpc=<ABSOLUTE:0x89df>>]>
+	<VAR locale :: <ARRAY subtype=char dimensions=(257,) size=257> @ [<AddressLiveRange addr=<STACK:-0x120> startpc=<ABSOLUTE:0x8934> endpc=<ABSOLUTE:0x89df>>]>
+setlocale_null :: (int4) -> char * @ PC range=(<ABSOLUTE:0x8aec>, <ABSOLUTE:0x8b08>)
+	<PARAM category :: int4 @ [<AddressLiveRange addr=<STACK:-0x14> startpc=<ABSOLUTE:0x8aec> endpc=<ABSOLUTE:0x8b08>>]>
+setlocale_null_r :: (int4, char *, unsigned int8) -> int4 @ PC range=(<ABSOLUTE:0x8abe>, <ABSOLUTE:0x8aed>)
+	<PARAM category :: int4 @ [<AddressLiveRange addr=<STACK:-0x14> startpc=<ABSOLUTE:0x8abe> endpc=<ABSOLUTE:0x8aed>>]>
+	<PARAM buf :: char * @ [<AddressLiveRange addr=<STACK:-0x20> startpc=<ABSOLUTE:0x8abe> endpc=<ABSOLUTE:0x8aed>>]>
+	<PARAM bufsize :: unsigned int8 @ [<AddressLiveRange addr=<STACK:-0x28> startpc=<ABSOLUTE:0x8abe> endpc=<ABSOLUTE:0x8aed>>]>
+setlocale_null_unlocked :: (int4, char *, unsigned int8) -> int4 @ PC range=(<ABSOLUTE:0x8a06>, <ABSOLUTE:0x8abf>)
+	<PARAM category :: int4 @ [<AddressLiveRange addr=<STACK:-0x24> startpc=<ABSOLUTE:0x8a06> endpc=<ABSOLUTE:0x8abf>>]>
+	<PARAM buf :: char * @ [<AddressLiveRange addr=<STACK:-0x30> startpc=<ABSOLUTE:0x8a06> endpc=<ABSOLUTE:0x8abf>>]>
+	<PARAM bufsize :: unsigned int8 @ [<AddressLiveRange addr=<STACK:-0x38> startpc=<ABSOLUTE:0x8a06> endpc=<ABSOLUTE:0x8abf>>]>
+	<VAR result :: char * @ [<AddressLiveRange addr=<STACK:-0x20> startpc=<ABSOLUTE:0x8a06> endpc=<ABSOLUTE:0x8abf>>]>
+	<VAR length :: unsigned int8 @ [<AddressLiveRange addr=<STACK:-0x18> startpc=<ABSOLUTE:0x8a06> endpc=<ABSOLUTE:0x8abf>>]>
+setlocale_null_androidfix :: (int4) -> char * @ PC range=(<ABSOLUTE:0x89de>, <ABSOLUTE:0x8a07>)
+	<PARAM category :: int4 @ [<AddressLiveRange addr=<STACK:-0x24> startpc=<ABSOLUTE:0x89de> endpc=<ABSOLUTE:0x8a07>>]>
+	<VAR result :: char * @ [<AddressLiveRange addr=<STACK:-0x18> startpc=<ABSOLUTE:0x89de> endpc=<ABSOLUTE:0x8a07>>]>
