@@ -90,7 +90,7 @@ class ParseGhidra(object):
             self.parse_highfunction(functionref)
 
         for globalref in globalrefs:
-            self.parse_var_highsymbol(globalref, param=False, functionref=None)
+            self.parse_varinfo(globalref, param=False, functionref=None)
             # filter out globals that actually correspond to functions
 
 
@@ -112,10 +112,10 @@ class ParseGhidra(object):
         startaddr = AbsoluteAddress(startpc)
         endaddr = AbsoluteAddress(endpc)
 
-        params = self.util.get_highfn_params(highfn) # Iter<HighSymbol>
+        params = self.util.get_highfn_params(highfn) # Iter<VariableInfo>
         paramrefs = [ self.register_obj(v) for v in params ]
 
-        vars = self.util.get_highfn_local_vars(highfn) # Iter<HighSymbol>
+        vars = self.util.get_highfn_local_vars(highfn) # Iter<VariableInfo>
         varrefs = [ self.register_obj(v) for v in vars ]
 
         fnproto = highfn.getFunctionPrototype()
@@ -138,27 +138,27 @@ class ParseGhidra(object):
 
         # recurse on child components of this function
         for paramref in paramrefs:
-            self.parse_var_highsymbol(paramref, param=True, functionref=ref)
+            self.parse_varinfo(paramref, param=True, functionref=ref)
 
         for varref in varrefs:
-            self.parse_var_highsymbol(varref, param=False, functionref=ref)
+            self.parse_varinfo(varref, param=False, functionref=ref)
 
         self.parse_datatype(rettyperef)
 
-    # ref to a HighSymbol object that refers to a variable/parameter
-    def parse_var_highsymbol(self, ref, param=False, functionref=None):
+    # ref to a VariableInfo object that refers to a variable/parameter
+    def parse_varinfo(self, ref, param=False, functionref=None):
         if self.db.exists(ref):
             return
 
-        highsym = self.follow_objmap_ref(ref)
+        varinfo = self.follow_objmap_ref(ref)
 
-        name = highsym.getName()
+        name = varinfo.getName()
 
-        dtype = highsym.getDataType()
+        dtype = varinfo.getDataType()
         dtyperef = self.register_obj(dtype)
 
         # get the liveranges for the variable
-        liveranges = self.get_var_highsymbol_liveranges(highsym, local=(functionref is not None))
+        liveranges = self.get_varinfo_liveranges(varinfo, functionref=functionref)
 
         stub = VariableStub(
             name=name,
@@ -391,17 +391,18 @@ class ParseGhidra(object):
 
     # Given a HighSymbol, extract the VariableStorage object and translate into LiveRangeAddress objects.
     # local indicates whether or not this given HighSymbol should be considered a "local variable" for the purposes of extracting its parent function.
-    # (HighSymbol, bool?) -> [AddressLiveRange]
-    def get_var_highsymbol_liveranges(self, highsym, local=True):
+    # (VariableInfo, ref?) -> [AddressLiveRange]
+    def get_varinfo_liveranges(self, varinfo, functionref=None):
         # Should we keep the given range in the liveranges list?
         # Valid range should be non-null, have a non-null & known address
         # (AddressLiveRange | None) -> bool
         def valid_range(rng):
             return rng is not None and rng.addr is not None and rng.addr.addrtype != AddressType.UNKNOWN
 
-        storage = highsym.getStorage()
+        local = functionref is not None
+        storage = varinfo.getStorage()
         varnodes = storage.getVarnodes()
-        highfn = highsym.getHighFunction() if local else None
+        highfn = self.follow_objmap_ref(functionref) if functionref is not None else None
         liveranges = (
             self.get_varnode_liverange(varnode, highfn=highfn)
             for varnode in varnodes

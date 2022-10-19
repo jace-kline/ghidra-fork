@@ -609,7 +609,7 @@ def bytes_decomp(cmp: UnoptimizedProgramInfoCompare2) -> int:
 
 # Found bytes (in ground-truth & decompiler)
 def bytes_found(cmp: UnoptimizedProgramInfoCompare2) -> int:
-    return sum([ cmp2.bytes_overlapped() for cmp2 in cmp.select_varnode_comparisons() ])
+    return sum([ record.bytes_overlapped() for record in select_comparable_varnode_compare_records(cmp) ])
 
 # Missed bytes (in ground-truth, not in decompiler)
 def bytes_missed(cmp: UnoptimizedProgramInfoCompare2) -> int:

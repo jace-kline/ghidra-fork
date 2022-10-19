@@ -205,6 +205,10 @@ def is_variablelike_DIE(die):
         "DW_TAG_formal_parameter"
     ]
 
+def is_artificial_DIE(die):
+    res = get_DIE_attr_value(die, "DW_AT_artificial")
+    return res is not None and bool(res)
+
 def get_function_DIEs(dwarfinfo):
     dies = get_all_DIEs(dwarfinfo)
     return [ die for die in dies if is_functionlike_DIE(die) ]

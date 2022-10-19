@@ -47,7 +47,7 @@ def _f(proginfo: ProgramInfo) -> Tuple[str, str]:
 
 # print(s)
 
-prog = ToyProgram("p0")
+prog = ToyProgram("p1")
 prog.build_if_not_valid(opts)
 prog.build_if_not_valid(dwarf_opts)
 dwarf, ghidra = parse_proginfo_pair(prog, opts)
@@ -90,15 +90,50 @@ def missed_varnodes_summary(cmp: UnoptimizedProgramInfoCompare2):
                     overlap_addr_range.get_end()
                 ))
 
-print("------------------- DWARF vs GHIDRA -------------------")
-missed_varnodes_summary(cmp)
+# print("------------------- DWARF vs GHIDRA -------------------")
+# missed_varnodes_summary(cmp)
 
-print(),
+# print(),
+# print("------------------- DWARF -------------------")
+# dwarf.print_summary()
+
+# print(),
 print("------------------- GHIDRA vs DWARF -------------------")
 missed_varnodes_summary(cmp_flip)
 
-dwarf.print_summary()
-ghidra.print_summary()
+# for prog in progs:
+#     prog.build_if_not_valid(opts)
+#     prog.build_if_not_valid(dwarf_opts)
+#     dwarf, ghidra = parse_proginfo_pair(prog, opts)
+#     cmp = _compare2(dwarf, ghidra)
+#     print(cmp.show_summary())
+
+    # print(prog.get_name())
+    # missed_varnodes_summary(cmp)
+    # print(),
+
+
+# metrics_groups = make_metrics()
+# varnodes_group = metrics_groups[2]
+# # results = varnodes_group.compute_results(cmp)
+# # for res in results:
+# #     print("{} : {}".format(res.get_metric().get_display_name(), res.get_result()))
+
+# df = compute_program_metrics_dataframe_cached(progs, opts, varnodes_group, recache=True)
+# print(df)
+
+# for varnode in varnodes_missed(cmp):
+#     varname = varnode.get_var().get_name() if varnode.get_var() is not None else None
+#     addr_range = varnode.get_addr_range()
+#     print("\t{} @ ({}, {})".format(
+#         varname,
+#         # VarnodeCompareLevel.to_string(varnode_record.get_compare_level()),
+#         addr_range.get_start(),
+#         addr_range.get_end()
+#     ))
+
+# dwarf.print_summary()
+# ghidra.print_summary()
 
 # comparable_records = select_comparable_varnode_compare_records(cmp)
 # missed_records = varnode_compare_records_missed_(comparable_records)

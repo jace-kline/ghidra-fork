@@ -77,11 +77,14 @@ class ParseDWARF(object):
             if rettyperef is None:
                 rettyperef = self.make_stub(DataTypeVoidStub())
             
+            def valid_die(die):
+                return not is_artificial_DIE(die)
+
             # get the parameter and variable children DIEs
             # only keep if the variable is associated with location(s) in the binary
             paramdies, vardies = get_param_var_DIEs(die)
-            paramrefs = [ self.get_DIE_key(die) for die in paramdies ]
-            varrefs = [ self.get_DIE_key(die) for die in vardies ]
+            paramrefs = [ self.get_DIE_key(die) for die in paramdies if valid_die(die) ]
+            varrefs = [ self.get_DIE_key(die) for die in vardies if valid_die(die) ]
 
             # does the function have a variable number of parameters?
             variadic = is_variadic_function_DIE(die)

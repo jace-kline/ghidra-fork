@@ -5,6 +5,57 @@ from ghidra.app.util.bin.format.dwarf4.next import DWARFRegisterMappingsManager
 from ghidra.program.model.symbol import SymbolType
 from ghidra.program.model.address import Address
 
+class VariableInfo(object):
+    def __init__(
+        self,
+        name, # str
+        dtype, # DataType
+        storage, # VariableStorage
+    ):
+        self.name = name
+        self.dtype = dtype
+        self.storage = storage
+
+    def getName(self):
+        return self.name
+
+    def getDataType(self):
+        return self.dtype
+
+    def getStorage(self):
+        return self.storage
+
+    def get_storage_addresses(self):
+        return [ varnode.getAddress() for varnode in self.storage.getVarnodes() ]
+
+    def __str__(self):
+        return "<VariableInfo name={} dtype={} @ {}>".format(
+            self.name,
+            self.dtype,
+            self.get_storage_addresses()
+        )
+
+    def __repr__(self):
+        return self.__str__()
+
+    # HighSymbol -> VariableInfo
+    @staticmethod
+    def fromHighSymbol(highsym):
+        return VariableInfo(
+            highsym.getName(),
+            highsym.getDataType(),
+            highsym.getStorage()
+        )
+
+    # Variable -> VariableInfo
+    @staticmethod
+    def fromVariable(highsym):
+        return VariableInfo(
+            highsym.getName(),
+            highsym.getDataType(),
+            highsym.getVariableStorage()
+        )
+
 # This class tries to encapsulate the inherently stateful properties of
 # the Ghidra scripting enviornment to avoid a bunch of global variables
 # while also avoiding duplicate computation and unnecessary parameters.
@@ -79,40 +130,89 @@ class GhidraUtil(object):
         return self.decompiler.decompileFunction(func, 0, self.monitor)
 
     # get HighFunction from DecompileResults by calling .getHighFunction()
-    # HighFunction -> Iter<HighSymbol>
-    def get_highfn_params(self, highfn):
+    # HighFunction -> List[HighSymbol]
+    def get_highfn_param_highsyms(self, highfn):
         symmap = highfn.getLocalSymbolMap()
-        return (symmap.getParam(i).getSymbol() for i in range(symmap.getNumParams()) if symmap.getParam(i))
+        return [ symmap.getParam(i).getSymbol() for i in range(symmap.getNumParams()) if symmap.getParam(i) ]
 
         # HighSymbol info...
         # .getName(), .getDataType(), .getPCAddress(), .getStorage(), .isParameter()
 
+    # the low-level parameter Variables associated with the HighFunction's low-level Function
+    # HighFunction -> List[Variable]
+    def get_highfn_param_variables(self, highfn):
+        return highfn.getFunction().getParameters()
+
+    # HighFunction -> List[VariableInfo]
+    def get_highfn_params(self, highfn):
+        return self.merge_low_high_vars(
+            self.get_highfn_param_variables(highfn),
+            self.get_highfn_param_highsyms(highfn)
+        )
+
     # get the non-parameter local variables of a HighFunction object
-    # HighFunction -> Iter<HighSymbol>
-    def get_highfn_local_vars(self, highfn):
+    # HighFunction -> List[HighSymbol]
+    def get_highfn_local_var_highsyms(self, highfn):
         # Is the given HighSymbol a local (non-parameter) variable
         # HighSymbol -> bool
         def is_local_var(sym):
             return not sym.isParameter()
 
         symmap = highfn.getLocalSymbolMap()
-        return (sym for sym in symmap.getSymbols() if is_local_var(sym))
+        return [ sym for sym in symmap.getSymbols() if is_local_var(sym) ]
+
+    # the low-level variables associated with the HighFunction's low-level Function
+    # HighFunction -> List[Variable]
+    def get_highfn_local_var_variables(self, highfn):
+        return highfn.getFunction().getLocalVariables()
+
+    # HighFunction -> List[VariableInfo]
+    def get_highfn_local_vars(self, highfn):
+        return self.merge_low_high_vars(
+            self.get_highfn_local_var_variables(highfn),
+            self.get_highfn_local_var_highsyms(highfn)
+        )
+
+    # (List[Variable], List[HighSymbol]) -> List[VariableInfo]
+    def merge_low_high_vars(self, lowvars, highsyms):
+
+        # def highsym_varnode_addrs(highsym):
+        #     storage = highsym.getStorage()
+        #     varnodes = storage.getVarnodes()
+        #     return [ varnode.getAddress() for varnode in varnodes ]
+
+        # def lowvar_varnode_addrs(lowvar):
+        #     storage = lowvar.getVariableStorage()
+        #     varnodes = storage.getVarnodes()
+        #     return [ varnode.getAddress() for varnode in varnodes ]
+
+        # highaddrs = sum([ highsym_varnode_addrs(highsym) for highsym in highsyms ], [])
+        
+        # lowvars_keep = [ lowvar for lowvar in lowvars if not any([ (varnode_addr in highaddrs) for varnode_addr in lowvar_varnode_addrs(lowvar) ]) ]
+        
+        # return [ VariableInfo.fromHighSymbol(highsym) for highsym in highsyms ] \
+        #     + [ VariableInfo.fromVariable(lowvar) for lowvar in lowvars_keep ]
+
+        highs = [ VariableInfo.fromHighSymbol(highsym) for highsym in highsyms ]
+        lows = [ VariableInfo.fromVariable(lowvar) for lowvar in lowvars ]
+
+        return highs + [ low for low in lows if not any([ low.getStorage().intersects(high.getStorage()) for high in highs ]) ]
 
     # Get the global variable HighSymbol objects referenced in this function
-    # HighFunction -> Iter<HighSymbol>
-    def get_highfn_global_vars(self, highfn):
+    # HighFunction -> List[HighSymbol]
+    def get_highfn_global_var_highsyms(self, highfn):
 
         # HighSymbol -> bool
         def is_global_var(sym):
             return sym.isGlobal() and sym.getSymbol().getSymbolType() in (SymbolType.GLOBAL_VAR, SymbolType.LABEL)
         
         symmap = highfn.getGlobalSymbolMap()
-        return (sym for sym in symmap.getSymbols() if is_global_var(sym))
+        return [ sym for sym in symmap.getSymbols() if is_global_var(sym) ]
 
     # Iterator global variable HighSymbol objects from the target binary that are referenced
     # from at least one of the decompiled functions.
-    # () -> Iter<HighSymbol>
-    def get_referenced_global_vars(self):
+    # () -> Generator[HighSymbol]
+    def get_referenced_global_var_highsyms(self):
         # def addr_ref(highsym): # symbols can be referenced 
         #     return highsym.getPCAddress()
 
@@ -123,12 +223,16 @@ class GhidraUtil(object):
         id_refs = [] # holds unique symbol ids
 
         for highfn in self.get_decompiled_functions():
-            for gblsym in self.get_highfn_global_vars(highfn):
+            for gblsym in self.get_highfn_global_var_highsyms(highfn):
                 # _addr_ref = addr_ref(gblsym)
                 _id_ref = id_ref(gblsym)
                 if _id_ref is not None and _id_ref not in id_refs:
                     id_refs.append(_id_ref)
                     yield gblsym
+
+    # () -> List[VariableInfo]
+    def get_referenced_global_vars(self):
+        return [ VariableInfo.fromHighSymbol(gblsym) for gblsym in self.get_referenced_global_var_highsyms() ]
     
     # () -> Iter<Function>
     def get_functions(self, filter=True):
