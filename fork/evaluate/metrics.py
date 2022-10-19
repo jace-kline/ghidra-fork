@@ -547,12 +547,12 @@ def datatype_compare_level_to_normalized_score(lvl) -> float:
 
 # FunctionCompareRecord base filter
 # return True if the function comparison is not None
-def _function_compare_record_compared_filter(fn_cmp: UnoptimizedFunctionCompareRecord) -> bool:
+def function_compare_record_compared_filter(fn_cmp: UnoptimizedFunctionCompareRecord) -> bool:
     return fn_cmp.is_comparison()
 
 # Variable base filter
 # variable is not a parameter & has single location associated with it
-def _variable_base_filter(var: Variable) -> bool:
+def variable_base_filter(var: Variable) -> bool:
     parent_fn = var.get_parent_function()
     return not var.is_param() \
         and var.is_single_loc()
@@ -560,43 +560,43 @@ def _variable_base_filter(var: Variable) -> bool:
 # Varnode base filter
 # varnode lives in a rangeable address region (stack, global, or register offset)
 # & its parent variable matches the variable base filter
-def _varnode_base_filter(varnode: Varnode) -> bool:
+def varnode_base_filter(varnode: Varnode) -> bool:
     parent_var = varnode.get_var()
     return varnode.get_addr().get_region().is_range() \
-        and (_variable_base_filter(parent_var) if parent_var is not None else True)
+        and (variable_base_filter(parent_var) if parent_var is not None else True)
 
 # VarnodeCompareRecord base filter
 # record's varnode satisfies the Varnode base filter
-def _varnode_compare_record_base_filter(record: VarnodeCompareRecord) -> bool:
-    return _varnode_base_filter(record.get_varnode())
+def varnode_compare_record_base_filter(record: VarnodeCompareRecord) -> bool:
+    return varnode_base_filter(record.get_varnode())
 
 # select all varnodes (possibly primitive) from either the left or right program info objects
 # that satisfy the Varnode base filter
-def _select_base_varnodes(cmp: UnoptimizedProgramInfoCompare2, left: bool = True, primitive: bool = False) -> List[Varnode]:
+def select_base_varnodes(cmp: UnoptimizedProgramInfoCompare2, left: bool = True, primitive: bool = False) -> List[Varnode]:
     proginfo = cmp.get_left() if left else cmp.get_right()
     method = proginfo.select_primitive_varnodes if primitive else proginfo.select_varnodes
-    return method(variable_cond=_variable_base_filter, varnode_cond=_varnode_base_filter)
+    return method(variable_cond=variable_base_filter, varnode_cond=varnode_base_filter)
 
 # select all VarnodeCompareRecord objects (possibly primitive) from either the left or right program info objects
 # that satisfy the VarnodeCompareRecord base filter
-def _select_base_varnode_compare_records(cmp: UnoptimizedProgramInfoCompare2, primitive: bool = False) -> List[VarnodeCompareRecord]:
+def select_base_varnode_compare_records(cmp: UnoptimizedProgramInfoCompare2, primitive: bool = False) -> List[VarnodeCompareRecord]:
     method = cmp.select_primitive_varnode_compare_records if primitive else cmp.select_varnode_compare_records
-    return method(varnode_cmp_record_cond=_varnode_compare_record_base_filter)
+    return method(varnode_cmp_record_cond=varnode_compare_record_base_filter)
 
 # select all VarnodeCompareRecord objects (possibly primitive) that match the base filters
 # & contain a varnode that is either a global OR appears in a found/comparable function
-def _select_comparable_varnode_compare_records(cmp: UnoptimizedProgramInfoCompare2, primitive: bool = False) -> List[VarnodeCompareRecord]:
+def select_comparable_varnode_compare_records(cmp: UnoptimizedProgramInfoCompare2, primitive: bool = False) -> List[VarnodeCompareRecord]:
     method = cmp.select_primitive_varnode_compare_records if primitive else cmp.select_varnode_compare_records
     return method(
-        function_cmp_record_cond=_function_compare_record_compared_filter,
-        varnode_cmp_record_cond=_varnode_compare_record_base_filter
+        function_cmp_record_cond=function_compare_record_compared_filter,
+        varnode_cmp_record_cond=varnode_compare_record_base_filter
     )
 
 # select all Varnode objects (possibly primitive) that match the base filters
 # & are either globals OR appear in found functions
-def _select_comparable_varnodes(cmp: UnoptimizedProgramInfoCompare2, left: bool = True, primitive: bool = False) -> List[Varnode]:
+def select_comparable_varnodes(cmp: UnoptimizedProgramInfoCompare2, left: bool = True, primitive: bool = False) -> List[Varnode]:
     _cmp = cmp if left else cmp.flip()
-    return [ record.get_varnode() for record in _select_comparable_varnode_compare_records(_cmp, primitive=primitive) ]
+    return [ record.get_varnode() for record in select_comparable_varnode_compare_records(_cmp, primitive=primitive) ]
 
 # --------------------- BYTES --------------------------
 # Ground-truth data bytes
@@ -643,14 +643,17 @@ def functions_extraneous(cmp: UnoptimizedProgramInfoCompare2) -> List[Unoptimize
 # ------------------ HIGH-LEVEL VARNODES -------------------
 # Ground-truth high-level varnodes that are globals OR found in compared functions
 def varnodes_truth(cmp: UnoptimizedProgramInfoCompare2, primitive: bool = False) -> List[Varnode]:
-    return _select_comparable_varnodes(cmp, left=True, primitive=primitive)
+    return select_comparable_varnodes(cmp, left=True, primitive=primitive)
 
 # Decompiler high-level varnodes that are globals OR found in compared functions
 def varnodes_decomp(cmp: UnoptimizedProgramInfoCompare2, primitive: bool = False) -> List[Varnode]:
-    return _select_comparable_varnodes(cmp, left=False, primitive=primitive)
+    return select_comparable_varnodes(cmp, left=False, primitive=primitive)
 
-def _varnodes_missed(varnode_cmp_records: List[VarnodeCompareRecord]) -> List[Varnode]:
-    return [ record.get_varnode() for record in _varnode_compare_records_match_levels(varnode_cmp_records, [VarnodeCompareLevel.NO_MATCH]) ]
+def varnode_compare_records_missed_(varnode_cmp_records: List[VarnodeCompareRecord]) -> List[VarnodeCompareRecord]:
+    return _varnode_compare_records_match_levels(varnode_cmp_records, [VarnodeCompareLevel.NO_MATCH])
+
+def varnodes_missed_(varnode_cmp_records: List[VarnodeCompareRecord]) -> List[Varnode]:
+    return [ record.get_varnode() for record in varnode_compare_records_missed_(varnode_cmp_records) ]
 
 # Missed high-level varnodes (ground-truth varnodes not compared with any decomp varnodes)
 def varnodes_missed(cmp: UnoptimizedProgramInfoCompare2, primitive: bool = False) -> List[Varnode]:
@@ -666,10 +669,10 @@ def _varnode_compare_records_matched_at_above_level(varnode_cmp_records: List[Va
 
 # Ground-truth high-level varnodes matched @ or above <TAG>
 def varnode_compare_records_match_levels(cmp: UnoptimizedProgramInfoCompare2, levels: List[int], primitive: bool = False) -> List[VarnodeCompareRecord]:
-    return _varnode_compare_records_match_levels(_select_comparable_varnode_compare_records(cmp, primitive=primitive), levels)
+    return _varnode_compare_records_match_levels(select_comparable_varnode_compare_records(cmp, primitive=primitive), levels)
 
 def varnode_compare_records_matched_at_above_level(cmp: UnoptimizedProgramInfoCompare2, level: int, primitive: bool = False) -> List[VarnodeCompareRecord]:
-    return _varnode_compare_records_matched_at_above_level(_select_comparable_varnode_compare_records(cmp, primitive=primitive), level)
+    return _varnode_compare_records_matched_at_above_level(select_comparable_varnode_compare_records(cmp, primitive=primitive), level)
 
 # Extraneous high-level varnodes (in decompiler, not overlapped with ground truth)
 def varnodes_extraneous(cmp: UnoptimizedProgramInfoCompare2, primitive: bool = False) -> List[Varnode]:
@@ -681,17 +684,17 @@ def _varnodes_avg_compare_level(varnode_cmp_records: List[VarnodeCompareRecord])
 
 # map each VarnodeCompareLevel into its integer encoding and find the average across all compare records
 def varnodes_avg_compare_level(cmp: UnoptimizedProgramInfoCompare2, primitive: bool = False) -> float:
-    return _varnodes_avg_compare_level(_select_comparable_varnode_compare_records(cmp, primitive=primitive))
+    return _varnodes_avg_compare_level(select_comparable_varnode_compare_records(cmp, primitive=primitive))
 
 def varnodes_avg_compare_score(cmp: UnoptimizedProgramInfoCompare2, primitive: bool = False) -> float:
     return varnode_compare_level_to_normalized_score(varnodes_avg_compare_level(cmp, primitive=primitive))
 
 # --------------- TYPE-SPECIFIC VARNODE COMPARISONS --------------------
 def _select_comparable_varnodes_metatype(cmp: UnoptimizedProgramInfoCompare2, metatype: int, left: bool = True, primitive: bool = False) -> List[Varnode]:
-    return [ varnode for varnode in _select_comparable_varnodes(cmp, left=left, primitive=primitive) if varnode.get_datatype().get_metatype() == metatype ]
+    return [ varnode for varnode in select_comparable_varnodes(cmp, left=left, primitive=primitive) if varnode.get_datatype().get_metatype() == metatype ]
 
 def _select_comparable_varnode_compare_records_metatype(cmp: UnoptimizedProgramInfoCompare2, metatype: int, primitive: bool = False) -> List[VarnodeCompareRecord]:
-    return [ record for record in _select_comparable_varnode_compare_records(cmp, primitive=primitive) if record.get_varnode().get_datatype().get_metatype() == metatype ]
+    return [ record for record in select_comparable_varnode_compare_records(cmp, primitive=primitive) if record.get_varnode().get_datatype().get_metatype() == metatype ]
 
 # Ground-truth varnodes w/ metatype
 def varnodes_truth_metatype(cmp: UnoptimizedProgramInfoCompare2, metatype: int, primitive: bool = False) -> List[Varnode]:
@@ -702,7 +705,7 @@ def varnodes_decomp_metatype(cmp: UnoptimizedProgramInfoCompare2, metatype: int,
     return _select_comparable_varnodes_metatype(cmp, metatype, left=False, primitive=primitive)
 
 def varnodes_missed_metatype(cmp: UnoptimizedProgramInfoCompare2, metatype: int, primitive: bool = False) -> List[Varnode]:
-    return _varnodes_missed(_select_comparable_varnode_compare_records_metatype(cmp, metatype, primitive=primitive))
+    return varnodes_missed_(_select_comparable_varnode_compare_records_metatype(cmp, metatype, primitive=primitive))
 
 def _varnode_compare_records_matched_at_above_level_metatype(cmps: List[VarnodeCompareRecord], level: int, metatype: int, primitive: bool = False) -> List[VarnodeCompareRecord]:
     pass # return _varnode_compare_records_matched_at_above_level()
@@ -718,7 +721,7 @@ def varnodes_avg_compare_score_metatype(cmp: UnoptimizedProgramInfoCompare2, met
 
 # Recovered ARRAY varnodes (in ground-truth & in decompiler - overlapped & same metatype)
 def array_comparisons(cmp: UnoptimizedProgramInfoCompare2) -> List[VarnodeCompare2]:
-    return cmp.select_varnode_comparisons(varnode_cmp_record_cond=_varnode_compare_record_base_filter, varnode_cmp2_cond=lambda record: record.get_left().get_datatype().get_metatype() == MetaType.ARRAY and record.get_right().get_datatype().get_metatype() == MetaType.ARRAY)
+    return cmp.select_varnode_comparisons(varnode_cmp_record_cond=varnode_compare_record_base_filter, varnode_cmp2_cond=lambda record: record.get_left().get_datatype().get_metatype() == MetaType.ARRAY and record.get_right().get_datatype().get_metatype() == MetaType.ARRAY)
 
 # [VarnodeCompare2], (VarnodeCompare2 -> int|float) -> float
 def _summarize_array_comparisons(cmps: List[VarnodeCompare2], f: Callable, stat: Callable = mean) -> float:

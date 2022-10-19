@@ -1,3 +1,4 @@
+from build_parse import _compare2
 from parse_dwarf import *
 from build_parse import *
 from metrics import *
@@ -22,79 +23,99 @@ def _name(varnode: Varnode) -> str:
 def _f(proginfo: ProgramInfo) -> Tuple[str, str]:
     return [ (_name(l), _name(r)) for (l, r) in find_erroneous_overlaps(proginfo) ]
 
-s = ""
-for prog in COREUTILS_PROGS:
-    # prog.build_if_not_valid(opts)
-    # prog.build_if_not_valid(dwarf_opts)
-    dwarf = ghidra = None
-    cmp = None
-    results = None
-    try:
-        dwarf, ghidra = parse_proginfo_pair(prog, opts)
-        # print(prog.get_name())
-        # print(_f(dwarf))
-        # print(_f(ghidra))
-        # print(),
-        cmp = UnoptimizedProgramInfoCompare2(
-            UnoptimizedProgramInfo(dwarf),
-            UnoptimizedProgramInfo(ghidra)
-        )
-        for metrics_group in metrics_groups:
-            compute_program_metrics(prog, opts, metrics_group)
-    except:
-        s += "\"{}\", ".format(prog.get_name())
+# s = ""
+# for prog in COREUTILS_PROGS:
+#     # prog.build_if_not_valid(opts)
+#     # prog.build_if_not_valid(dwarf_opts)
+#     dwarf = ghidra = None
+#     cmp = None
+#     results = None
+#     try:
+#         dwarf, ghidra = parse_proginfo_pair(prog, opts)
+#         # print(prog.get_name())
+#         # print(_f(dwarf))
+#         # print(_f(ghidra))
+#         # print(),
+#         cmp = UnoptimizedProgramInfoCompare2(
+#             UnoptimizedProgramInfo(dwarf),
+#             UnoptimizedProgramInfo(ghidra)
+#         )
+#         for metrics_group in metrics_groups:
+#             compute_program_metrics(prog, opts, metrics_group)
+#     except:
+#         s += "\"{}\", ".format(prog.get_name())
 
-print(s)
+# print(s)
 
-# prog = CoreutilsProgram("chroot")
-# dwarf, ghidra = parse_proginfo_pair(prog, opts)
-# dwarf.print_summary()
-        # fail_status = None
-        # if dwarf is None or ghidra is None:
-        #     fail_status = "parse"
-        # elif cmp is None:
-        #     fail_status = "compare"
-    # print("{} : dwarf={} ghidra={} cmp={}".format(prog.get_name(), dwarf, ghidra, cmp))
-    # print(cmp.show_summary())
+prog = ToyProgram("p0")
+prog.build_if_not_valid(opts)
+prog.build_if_not_valid(dwarf_opts)
+dwarf, ghidra = parse_proginfo_pair(prog, opts)
+cmp = _compare2(dwarf, ghidra)
+dwarf_unopt, ghidra_unopt = cmp.get_left(), cmp.get_right()
+cmp_flip = cmp.flip()
 
-# for prog, cmp in zip(progs, cmps):
-#     if cmp is None:
-#         print(prog.get_name())
+def missed_varnodes_summary(cmp: UnoptimizedProgramInfoCompare2):
+    compared_fn_records = cmp.select_function_compare_records(function_cmp_record_cond=function_compare_record_compared_filter)
+    fn_cmps = [ fn_record.get_comparison() for fn_record in compared_fn_records ]
+    fn_names = [ fn_record.get_unoptimized_function().get_function().get_name() for fn_record in compared_fn_records ]
+    fn_scope_cmps = [ fn_cmp.get_variable_set_comparison() for fn_cmp in fn_cmps ] 
+    gbl_scope_cmp = cmp.get_globals_comparison()
+    named_scope_cmps: List[Tuple[str, ConstPCVariableSetSnapshotCompare2]] = [("GLOBALS", gbl_scope_cmp)] + list(zip(fn_names, fn_scope_cmps))
+    for scopename, scopecmp in named_scope_cmps:
+        varnode_records = scopecmp.select_varnode_compare_records(varnode_cmp_record_cond=varnode_base_filter)
+        missed_records = [ record for record in varnode_records if record.get_status() == VarnodeCompareStatus.NO_MATCH ]
+        if missed_records:
+            print(scopename)
+        for varnode_record in missed_records:
+            varnode = varnode_record.get_varnode()
+            varname = varnode.get_var().get_name() if varnode.get_var() is not None else None
+            addr_range = varnode.get_addr_range()
+            print("\t{} @ ({}, {})".format(
+                varname,
+                # VarnodeCompareLevel.to_string(varnode_record.get_compare_level()),
+                addr_range.get_start(),
+                addr_range.get_end()
+            ))
+            
+            right_varnodes = [ varnode for varnode in scopecmp.get_right().get_varnodes() if varnode_base_filter(varnode) ]
+            overlapped_varnodes = [ varnode for varnode in right_varnodes if addr_range.does_overlap(varnode.get_addr_range()) ]
+            for overlap_varnode in overlapped_varnodes:
+                overlap_varname = overlap_varnode.get_var().get_name() if varnode.get_var() is not None else None
+                overlap_addr_range = varnode.get_addr_range()
+                print("\t{} @ ({}, {})".format(
+                    overlap_varname,
+                    # VarnodeCompareLevel.to_string(varnode_record.get_compare_level()),
+                    overlap_addr_range.get_start(),
+                    overlap_addr_range.get_end()
+                ))
 
-# for metrics_grp in make_metrics():
-#     grid = compute_program_metrics_dataframe(
-#         progs,
-#         opts,
-#         metrics_grp
-#     )
-#     print(grid)
-# cmps = [ parse_compare_unoptimized(prog, opts) for prog in progs ]
+print("------------------- DWARF vs GHIDRA -------------------")
+missed_varnodes_summary(cmp)
 
-# dwarf_parser = get_parser("dwarf")
-# ghidra_parser = get_parser("ghidra")
+print(),
+print("------------------- GHIDRA vs DWARF -------------------")
+missed_varnodes_summary(cmp_flip)
 
-# pairs = []
-# cmps = []
-# for prog in progs:
-#     dwarf = dwarf_parser(prog, dwarf_opts)
-#     ghidra = ghidra_parser(prog, opts)
-#     pairs.append((dwarf, ghidra))
-#     cmps.append(compare2(dwarf, ghidra))
+dwarf.print_summary()
+ghidra.print_summary()
 
-# pairs = [ parse_proginfo_pair(prog, opts) for prog in progs ]
-# cmps = [ compare2(l, r) for (l, r) in pairs ]
+# comparable_records = select_comparable_varnode_compare_records(cmp)
+# missed_records = varnode_compare_records_missed_(comparable_records)
 
-# proginfos = []
-# for prog in progs:
-#     binpath = prog.get_binary_path(dwarf_opts)
-#     _, dwarfinfo = get_elf_dwarf_info(binpath)
-#     parser = ParseDWARF(dwarfinfo)
-#     proginfo = parser.parse()
-#     proginfos.append(proginfo)
+# for record in missed_records:
+#     varnode = record.get_varnode()
+#     var = varnode.get_var()
+#     fn = var.get_parent_function() if var is not None else None
+#     addr_range = varnode.get_addr_range()
+#     print("{} : {} @ ({}, {})".format(
+#         fn.get_name() if fn is not None else None,
+#         var.get_name() if var is not None else None,
+#         addr_range.get_start(),
+#         addr_range.get_end()
+#     ))
 
 
-# cmps = [ parse_compare_unoptimized(prog, opts) for prog in progs ]
-# pairs = [ parse_proginfo_pair(prog, opts) for prog in progs ]
-# cmps = [ compare2(l, r) for (l, r) in pairs ]
+
 
 
