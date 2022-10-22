@@ -47,7 +47,8 @@ def _f(proginfo: ProgramInfo) -> Tuple[str, str]:
 
 # print(s)
 
-prog = ToyProgram("p1")
+# prog = ToyProgram("p1")
+prog = CoreutilsProgram("ls")
 prog.build_if_not_valid(opts)
 prog.build_if_not_valid(dwarf_opts)
 dwarf, ghidra = parse_proginfo_pair(prog, opts)
@@ -90,16 +91,18 @@ def missed_varnodes_summary(cmp: UnoptimizedProgramInfoCompare2):
                     overlap_addr_range.get_end()
                 ))
 
-# print("------------------- DWARF vs GHIDRA -------------------")
-# missed_varnodes_summary(cmp)
+print("------------------- DWARF vs GHIDRA -------------------")
+missed_varnodes_summary(cmp)
 
 # print(),
 # print("------------------- DWARF -------------------")
 # dwarf.print_summary()
 
 # print(),
-print("------------------- GHIDRA vs DWARF -------------------")
-missed_varnodes_summary(cmp_flip)
+# print("------------------- GHIDRA vs DWARF -------------------")
+# missed_varnodes_summary(cmp_flip)
+
+# dwarf.print_summary()
 
 # for prog in progs:
 #     prog.build_if_not_valid(opts)

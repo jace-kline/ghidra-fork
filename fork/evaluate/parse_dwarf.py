@@ -19,6 +19,9 @@ class ParseDWARF(object):
         # holds {(CU offset, DIE offset) -> record} mappings
         self.db = ResolverDatabase()
 
+        # holds the static local variables (that should be treated as globals)
+        self.static_local_refs = []
+
     def get_DIE_key(self, die):
         if die is None:
             return None
@@ -78,7 +81,7 @@ class ParseDWARF(object):
                 rettyperef = self.make_stub(DataTypeVoidStub())
             
             def valid_die(die):
-                return not is_artificial_DIE(die)
+                return not is_artificial_DIE(die)    
 
             # get the parameter and variable children DIEs
             # only keep if the variable is associated with location(s) in the binary
@@ -131,6 +134,13 @@ class ParseDWARF(object):
                 scopestartpc=scopestartpc,
                 scopeendpc=scopeendpc
             )
+
+            is_static_local = functionref is not None \
+                and liveranges \
+                and liveranges[0].get_addr().get_addrtype() == AddressType.ABSOLUTE
+
+            if is_static_local:
+                self.static_local_refs.append(ref)
 
             # assert(len(liveranges) > 0) # if the high-level variable DIE has no location info, then it is not actualized in the assembly code
 
@@ -366,6 +376,15 @@ class ParseDWARF(object):
 
         # resolve the functions, variables, & types -> ProgramInfo
         proginfo = self.db.resolve_root()
+
+        # for local variables with 'static' keyword, move these to globals
+        for ref in self.static_local_refs:
+            record = self.db.lookup(ref)
+            if record and record.obj and record.obj.function:
+                record.obj.function.vars.remove(record.obj)
+                record.obj.function = None
+                proginfo.globals.append(record.obj)
+        
         return proginfo
 
 
