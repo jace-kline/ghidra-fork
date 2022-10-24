@@ -4,6 +4,7 @@ from ghidra.app.util.opinion import ElfLoader
 from ghidra.app.util.bin.format.dwarf4.next import DWARFRegisterMappingsManager
 from ghidra.program.model.symbol import SymbolType
 from ghidra.program.model.address import Address
+from ghidra.program.model.listing import VariableStorage
 
 class VariableInfo(object):
     def __init__(
@@ -37,6 +38,9 @@ class VariableInfo(object):
 
     def __repr__(self):
         return self.__str__()
+
+    def __hash__(self):
+        return hash((self.name, self.dtype, self.storage))
 
     # HighSymbol -> VariableInfo
     @staticmethod
@@ -197,6 +201,35 @@ class GhidraUtil(object):
         lows = [ VariableInfo.fromVariable(lowvar) for lowvar in lowvars ]
 
         return highs + [ low for low in lows if not any([ low.getStorage().intersects(high.getStorage()) for high in highs ]) ]
+
+    # () -> list[VariableInfo]
+    def get_global_vars(self):
+        # Symbol -> bool
+        def is_global_var_symbol(sym):
+            return sym.getSymbolType() in [SymbolType.LABEL, SymbolType.GLOBAL, SymbolType.GLOBAL_VAR]
+
+        # Symbol -> Data|None
+        def extract_global_var_symbol_data(sym):
+            if is_global_var_symbol(sym):
+                return self.curr.getListing().getDefinedDataAt(sym.getAddress())
+        
+        syms = self.curr.getSymbolTable().getAllSymbols(True)
+        rets = []
+        for sym in syms:
+            data = extract_global_var_symbol_data(sym)
+            if data:
+                dtype = data.getBaseDataType()
+                size = dtype.getLength()
+                if size > 0:
+                    storage = VariableStorage(self.curr, sym.getAddress(), size)
+                    rets.append(VariableInfo(
+                        sym.getName(),
+                        dtype,
+                        storage
+                    ))
+        return rets
+        # return [ (sym, data) for (sym, data) in zip(syms, datas) if data is not None ]
+
 
     # Get the global variable HighSymbol objects referenced in this function
     # HighFunction -> List[HighSymbol]

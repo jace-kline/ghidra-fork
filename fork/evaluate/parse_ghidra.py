@@ -39,6 +39,8 @@ class ParseGhidra(object):
         k = self.to_key(obj)
         if (not self.db.exists(k)) and (k not in self.objmap):
             self.objmap[k] = obj
+        # else:
+        #     raise Exception("Tried to register object {} of type {} at existing key".format(obj, type(obj)))
         return k
 
     # def generate_unique_key(self):
@@ -75,8 +77,8 @@ class ParseGhidra(object):
         functionrefs = [ self.register_obj(highfn) for highfn in self.util.get_decompiled_functions() ]
 
         # for each HighFunction, register the global HighSymbol objects referenced
-        globalsyms = self.util.get_referenced_global_vars()
-        globalrefs = [ self.register_obj(sym) for sym in globalsyms ]
+        global_varinfos = self.util.get_global_vars()
+        globalrefs = [ self.register_obj(varinfo) for varinfo in global_varinfos ]
 
         stub = ProgramInfoStub(
             globalrefs=globalrefs,
@@ -188,6 +190,7 @@ class ParseGhidra(object):
         # we want to create a stub & recursively capture sub-types to resolve
         stub = None
         subtyperefs = []
+        basetype = None
 
         # switch on the metatype & generate correct stub
         # possibly recursive if complex data type
@@ -206,7 +209,9 @@ class ParseGhidra(object):
 
         elif metatype == MetaType.POINTER:
             basetype = dtype.getDataType()
-            basetyperef = self.register_obj(basetype)
+            basetyperef = self.register_obj(basetype) \
+                if basetype is not None \
+                else self.make_stub(DataTypeVoidStub())
 
             stub = DataTypePointerStub(
                 basetyperef=basetyperef,
@@ -302,7 +307,7 @@ class ParseGhidra(object):
                 membertyperefs=membertyperefs,
                 size=size
             )
-            # subtyperefs += membertyperefs
+            subtyperefs += membertyperefs
 
         elif metatype == MetaType.UNDEFINED:
             stub = DataTypeUndefinedStub(size=size)
@@ -340,19 +345,20 @@ class ParseGhidra(object):
         elif metatype == MetaType.ENUM:
             # create and add stub for the underlying integer type
             basetyperef = self.make_stub(DataTypeIntStub(size=size, signed=True))
+            self.objmap[basetyperef] = 1
 
             stub = DataTypeEnumStub(basetyperef=basetyperef)
 
         elif metatype == MetaType.STRING:
             # convert "strings" to char array
             basetyperef = self.make_stub(DataTypeIntStub(size=1, signed=True))
-            length = dtype.getLength()
+            self.objmap[basetyperef] = 1
+            dimensions = (dtype.getLength(),)
 
             stub = DataTypeArrayStub(
                 basetyperef=basetyperef,
-                length=length
+                dimensions=dimensions
             )
-            subtyperefs.append(basetyperef)
 
         else:
             raise NotImplementedError("MetaType code does not exist")
@@ -362,7 +368,17 @@ class ParseGhidra(object):
 
         # Recurse on sub-refs
         for subtyperef in subtyperefs:
-            self.parse_datatype(subtyperef)
+            try:
+                self.parse_datatype(subtyperef)
+            except:
+                print(dtype)
+                print(stub)
+                print(subtyperef)
+                print(hash(None))
+                if basetype:
+                    print(basetype)
+                    print(hash(basetype))
+                raise
 
     # Convert a Ghidra-represented Address into our Address representation
     # Address (Ghidra) -> Address (our language)
