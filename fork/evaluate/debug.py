@@ -91,8 +91,8 @@ def missed_varnodes_summary(cmp: UnoptimizedProgramInfoCompare2):
                     overlap_addr_range.get_end()
                 ))
 
-print("------------------- DWARF vs GHIDRA -------------------")
-missed_varnodes_summary(cmp)
+# print("------------------- DWARF vs GHIDRA -------------------")
+# missed_varnodes_summary(cmp)
 
 # print(),
 # print("------------------- DWARF -------------------")
@@ -103,6 +103,28 @@ missed_varnodes_summary(cmp)
 # missed_varnodes_summary(cmp_flip)
 
 # dwarf.print_summary()
+
+import time
+def get_timestamp_ns() -> int:
+    nano = 10 ** 9
+    return round(time.time() * nano)
+
+deppath = CODEDIR.joinpath("parse_dwarf.py")
+modtime = last_modification_ns(deppath)
+curtime = get_timestamp_ns()
+
+print(modtime)
+print(curtime)
+print(modtime < curtime)
+
+time.sleep(3)
+
+deppath.touch()
+modtime = last_modification_ns(deppath)
+
+print(modtime)
+print(curtime)
+print(modtime < curtime)
 
 # for prog in progs:
 #     prog.build_if_not_valid(opts)
