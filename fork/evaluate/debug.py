@@ -1,4 +1,3 @@
-from build_parse import _compare2
 from parse_dwarf import *
 from build_parse import *
 from metrics import *
@@ -49,10 +48,7 @@ def _f(proginfo: ProgramInfo) -> Tuple[str, str]:
 
 # prog = ToyProgram("p1")
 prog = CoreutilsProgram("ls")
-prog.build_if_not_valid(opts)
-prog.build_if_not_valid(dwarf_opts)
-dwarf, ghidra = parse_proginfo_pair(prog, opts)
-cmp = _compare2(dwarf, ghidra)
+cmp = build_parse_compare_program(prog, opts)
 dwarf_unopt, ghidra_unopt = cmp.get_left(), cmp.get_right()
 cmp_flip = cmp.flip()
 
@@ -91,8 +87,9 @@ def missed_varnodes_summary(cmp: UnoptimizedProgramInfoCompare2):
                     overlap_addr_range.get_end()
                 ))
 
-# print("------------------- DWARF vs GHIDRA -------------------")
-# missed_varnodes_summary(cmp)
+print("------------------- DWARF vs GHIDRA -------------------")
+missed_varnodes_summary(cmp)
+# print(cmp.show_summary())
 
 # print(),
 # print("------------------- DWARF -------------------")
@@ -103,28 +100,6 @@ def missed_varnodes_summary(cmp: UnoptimizedProgramInfoCompare2):
 # missed_varnodes_summary(cmp_flip)
 
 # dwarf.print_summary()
-
-import time
-def get_timestamp_ns() -> int:
-    nano = 10 ** 9
-    return round(time.time() * nano)
-
-deppath = CODEDIR.joinpath("parse_dwarf.py")
-modtime = last_modification_ns(deppath)
-curtime = get_timestamp_ns()
-
-print(modtime)
-print(curtime)
-print(modtime < curtime)
-
-time.sleep(3)
-
-deppath.touch()
-modtime = last_modification_ns(deppath)
-
-print(modtime)
-print(curtime)
-print(modtime < curtime)
 
 # for prog in progs:
 #     prog.build_if_not_valid(opts)

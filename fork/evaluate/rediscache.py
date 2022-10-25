@@ -306,14 +306,16 @@ class SimpleCache(object):
 
 def cache_it(limit=10000, expire=DEFAULT_EXPIRY, cache=None,
              use_json=False, namespace=None,
-             recache_callback=None # object -> bool ... if this returns True, recompute and recache the result
+             recache_callback=None, # object -> bool ... if this returns True, recompute and recache the result
+             store_transform=None, # object -> object ... callable to transform the result value before caching
+             load_transform=None # object -> object ... callable to transform the retrieved cached value
             ):
     """
     Arguments and function result must be pickleable.
     :param limit: maximum number of keys to maintain in the set
     :param expire: period after which an entry in cache is considered expired
     :param cache: SimpleCache object, if created separately
-    :param recache_callback: Callable (() -> bool). If this returns True, recompute & recache the value.
+    :param recache_callback: Callable (object -> bool). If this returns True, recompute & recache the value.
     :return: decorated function
     """
     cache_ = cache  ## Since python 2.x doesn't have the nonlocal keyword, we need to do this
@@ -350,10 +352,12 @@ def cache_it(limit=10000, expire=DEFAULT_EXPIRY, cache=None,
 
             try:
                 res = fetcher(cache_key)
-                if recache_callback is not None and recache_callback(res):
+                if recache_callback and recache_callback(res):
                     raise RecacheException
-                else:
-                    return res
+                
+                if load_transform:
+                    res = load_transform(res)
+                return res
             except (ExpiredKeyException, CacheMissException, RecacheException) as e:
                 ## Add some sort of cache miss handing here.
                 pass
@@ -362,6 +366,8 @@ def cache_it(limit=10000, expire=DEFAULT_EXPIRY, cache=None,
 
             try:
                 result = function(*args, **kwargs)
+                if store_transform:
+                    result = store_transform(result)
             except DoNotCache as e:
                 result = e.result
             else:
@@ -370,6 +376,8 @@ def cache_it(limit=10000, expire=DEFAULT_EXPIRY, cache=None,
                 except redis.ConnectionError as e:
                     logging.exception(e)
 
+            if load_transform:
+                result = load_transform(result)
             return result
         return func
     return decorator

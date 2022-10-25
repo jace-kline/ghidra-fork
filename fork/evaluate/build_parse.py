@@ -6,7 +6,7 @@ import subprocess
 from pathlib import Path, PosixPath
 from typing import Any, List, Union
 
-from rule import *
+from cache import *
 import parse_dwarf
 from compare_unoptimized import *
 from metrics import *
@@ -183,67 +183,67 @@ def load_pickle(path: Path):
     infile.close()
     return obj
 
-class ProgramBuildPickleCacher(object):
+# class ProgramBuildPickleCacher(object):
 
-    @staticmethod
-    def gen_pickle_cache_dir() -> Path:
-        if not PICKLE_CACHE_DIR.exists():
-            PICKLE_CACHE_DIR.mkdir()
-        return PICKLE_CACHE_DIR
+#     @staticmethod
+#     def gen_pickle_cache_dir() -> Path:
+#         if not PICKLE_CACHE_DIR.exists():
+#             PICKLE_CACHE_DIR.mkdir()
+#         return PICKLE_CACHE_DIR
 
-    def __init__(
-        self,
-        id: Any, # an ID (str, int, etc) that uniquely identifies the resource being cached
-        objtype: type, # the type that this object caches in the pickle file & returns
-        deps: List[Path], # dependency paths that trigger recache
-        produce: Callable # (Program, BuildOptions) -> objtype ... The function that produces an object of the given type, given a path to a program binary
-    ):
-        self.id = id
-        self.objtype = objtype
-        self.deps = deps
-        self.produce = produce
+#     def __init__(
+#         self,
+#         id: Any, # an ID (str, int, etc) that uniquely identifies the resource being cached
+#         objtype: type, # the type that this object caches in the pickle file & returns
+#         deps: List[Path], # dependency paths that trigger recache
+#         produce: Callable # (Program, BuildOptions) -> objtype ... The function that produces an object of the given type, given a path to a program binary
+#     ):
+#         self.id = id
+#         self.objtype = objtype
+#         self.deps = deps
+#         self.produce = produce
 
-    def get_deps(self, prog: Program, opts: BuildOptions) -> List[Path]:
-        return self.deps + [ prog.get_binary_path(opts) ]
+#     def get_deps(self, prog: Program, opts: BuildOptions) -> List[Path]:
+#         return self.deps + [ prog.get_binary_path(opts) ]
 
-    def mangle_pickle_name(self, prog: Program, opts: BuildOptions) -> str:
-        binname = prog.get_binary_name(opts)
+#     def mangle_pickle_name(self, prog: Program, opts: BuildOptions) -> str:
+#         binname = prog.get_binary_name(opts)
 
-        # BINNAME.OBJTYPE.ID.pickle
-        return "{}.{}.{}.pickle".format(
-            binname,
-            self.objtype.__name__,
-            self.id
-        )
+#         # BINNAME.OBJTYPE.ID.pickle
+#         return "{}.{}.{}.pickle".format(
+#             binname,
+#             self.objtype.__name__,
+#             self.id
+#         )
 
-    def get_pickle_path(self, prog: Program, opts: BuildOptions) -> Path:
-        return __class__.gen_pickle_cache_dir().joinpath(self.mangle_pickle_name(prog, opts))
+#     def get_pickle_path(self, prog: Program, opts: BuildOptions) -> Path:
+#         return __class__.gen_pickle_cache_dir().joinpath(self.mangle_pickle_name(prog, opts))
 
-    # does the cached pickle file exist and is it in sync with its dependencies?
-    # assume the program is already built with the given opts
-    def is_cached(self, prog: Program, opts: BuildOptions) -> bool:
-        assert(prog.valid_build(opts))
-        return up_to_date(self.get_pickle_path(prog, opts), self.get_deps(prog, opts))
+#     # does the cached pickle file exist and is it in sync with its dependencies?
+#     # assume the program is already built with the given opts
+#     def is_cached(self, prog: Program, opts: BuildOptions) -> bool:
+#         assert(prog.valid_build(opts))
+#         return up_to_date(self.get_pickle_path(prog, opts), self.get_deps(prog, opts))
 
-    # # child class must implement
-    # def produce(self, binpath: Path) -> Union[Any, None]:
-    #     raise NotImplementedError()
+#     # # child class must implement
+#     # def produce(self, binpath: Path) -> Union[Any, None]:
+#     #     raise NotImplementedError()
 
-    def __call__(
-        self,
-        prog: Program,
-        opts: BuildOptions,
-        recache: bool = False
-    ) -> ProgramInfo:
-        assert(prog.valid_build(opts))
+#     def __call__(
+#         self,
+#         prog: Program,
+#         opts: BuildOptions,
+#         recache: bool = False
+#     ) -> ProgramInfo:
+#         assert(prog.valid_build(opts))
 
-        if self.is_cached(prog, opts) and not recache:
-            return load_pickle(self.get_pickle_path(prog, opts))
-        else:
-            obj = self.produce(prog, opts)
-            if obj:
-                save_pickle(obj, self.get_pickle_path(prog, opts))
-                return obj
+#         if self.is_cached(prog, opts) and not recache:
+#             return load_pickle(self.get_pickle_path(prog, opts))
+#         else:
+#             obj = self.produce(prog, opts)
+#             if obj:
+#                 save_pickle(obj, self.get_pickle_path(prog, opts))
+#                 return obj
 
 # # A class that takes in a program, parses, and caches/stores/loads the results
 # # Standardizes the convention for caching and recovering saved pickle files
@@ -265,21 +265,21 @@ class ProgramBuildPickleCacher(object):
 #             self.parse
 #         )
 
-def mk_program_parser_cacher(
-    name: str, # the name of the parser entity, e.g., dwarf, ghidra, ida
-    srcpaths: List[Path], # the paths of the source files associated with this parser
-    parse: Callable # Path -> ProgramInfo
-):
+# def mk_program_parser_cacher(
+#     name: str, # the name of the parser entity, e.g., dwarf, ghidra, ida
+#     srcpaths: List[Path], # the paths of the source files associated with this parser
+#     parse: Callable # Path -> ProgramInfo
+# ):
 
-    def produce(prog: Program, opts: BuildOptions) -> ProgramInfo:
-        return parse(prog.get_binary_path(opts))
+#     def produce(prog: Program, opts: BuildOptions) -> ProgramInfo:
+#         return parse(prog.get_binary_path(opts))
 
-    return ProgramBuildPickleCacher(
-        name,
-        ProgramInfo,
-        srcpaths,
-        produce
-    )
+#     return ProgramBuildPickleCacher(
+#         name,
+#         ProgramInfo,
+#         srcpaths,
+#         produce
+#     )
 
 def parse_dwarf_proginfo(binpath: Path) -> ProgramInfo:
     return parse_dwarf.parse_from_objfile(str(binpath))
@@ -332,7 +332,7 @@ def parse_ghidra_proginfo(binpath: Path) -> ProgramInfo:
     # Return the parsed program info
     return proginfo
 
-def get_parser(name: str) -> ProgramBuildPickleCacher:
+def get_parser_cached(name: str) -> Callable:
     _map = {
         "dwarf": {
             "deps": ["parse_dwarf.py", "parse_dwarf_util.py"],
@@ -350,7 +350,7 @@ def get_parser(name: str) -> ProgramBuildPickleCacher:
         return None
     
     deps = LANG_DEPS + RESOLVE_DEPS + [ CODEDIR.joinpath(dep) for dep in res["deps"] ]
-    return mk_program_parser_cacher(name, deps, res["parse"])
+    return path_dependent_cacher(deps)(res["parse"])
 
 def parse_proginfo_pair(prog: Program, opts: BuildOptions, decompiler: str = "ghidra") -> Tuple[ProgramInfo, ProgramInfo]:
 
@@ -360,43 +360,44 @@ def parse_proginfo_pair(prog: Program, opts: BuildOptions, decompiler: str = "gh
     assert(prog.valid_build(opts))
     assert(prog.valid_build(dwarf_opts))
 
-    dwarf_parser = get_parser("dwarf")
-    decomp_parser = get_parser(decompiler)
+    dwarf_parser = get_parser_cached("dwarf")
+    decomp_parser = get_parser_cached(decompiler)
 
-    dwarf_proginfo = dwarf_parser(prog, dwarf_opts)
-    decomp_proginfo = decomp_parser(prog, opts)
+    dwarf_proginfo = dwarf_parser(prog.get_binary_path(dwarf_opts))
+    decomp_proginfo = decomp_parser(prog.get_binary_path(opts))
 
     return (dwarf_proginfo, decomp_proginfo)
 
-def _compare2(l: ProgramInfo, r: ProgramInfo) -> UnoptimizedProgramInfoCompare2:
+def compare2(l: ProgramInfo, r: ProgramInfo) -> UnoptimizedProgramInfoCompare2:
     return UnoptimizedProgramInfoCompare2(
         UnoptimizedProgramInfo(l),
         UnoptimizedProgramInfo(r)
     )
 
-def mk_compare2_cacher(decompiler: str = "ghidra"):
+compare2_cached = path_dependent_cacher(LANG_DEPS + RESOLVE_DEPS + COMPARE_DEPS)(compare2)
 
-    deps = LANG_DEPS + COMPARE_DEPS + RESOLVE_DEPS
+# def mk_compare2_cacher(decompiler: str = "ghidra"):
 
-    def produce(prog: Program, opts: BuildOptions) -> UnoptimizedProgramInfoCompare2:
-        dwarf, decomp = parse_proginfo_pair(prog, opts, decompiler=decompiler)
-        return _compare2(dwarf, decomp)
+#     deps = LANG_DEPS + COMPARE_DEPS + RESOLVE_DEPS
 
-    return ProgramBuildPickleCacher(
-        "compare2",
-        UnoptimizedProgramInfoCompare2,
-        deps,
-        produce
-    )
+#     def produce(prog: Program, opts: BuildOptions) -> UnoptimizedProgramInfoCompare2:
+#         dwarf, decomp = parse_proginfo_pair(prog, opts, decompiler=decompiler)
+#         return _compare2(dwarf, decomp)
+
+#     return ProgramBuildPickleCacher(
+#         "compare2",
+#         UnoptimizedProgramInfoCompare2,
+#         deps,
+#         produce
+#     )
 
 def parse_compare_program(
     prog: Program,
     opts: BuildOptions,
-    decompiler: str = "ghidra",
-    recache: bool = False
+    decompiler: str = "ghidra"
 ) -> UnoptimizedProgramInfoCompare2:
-    compare_cacher = mk_compare2_cacher(decompiler=decompiler)
-    return compare_cacher(prog, opts, recache=recache)
+    dwarf, decomp = parse_proginfo_pair(prog, opts, decompiler=decompiler)
+    return compare2_cached(dwarf, decomp)
 
 def build_parse_compare_program(
     prog: Program,
@@ -412,28 +413,3 @@ def build_parse_compare_program(
 
     # get the comparison object
     return parse_compare_program(prog, opts, decompiler=decompiler)
-
-# opts = BuildOptions()
-# structcases = ToyProgram("structcases")
-# ls = CoreutilsProgram("ls")
-
-
-# cmp = parse_compare_unoptimized(ls, opts)
-# cmp.get_right().get_proginfo().print_summary()
-# dwarf_parser = get_parser("dwarf")
-# ghidra_parser = get_parser("ghidra")
-
-# proginfo = dwarf_parser.parse_program(ls, BuildOptions(debug=True))
-# proginfo = ghidra_parser.parse_program(ls, opts)
-# proginfo.print_summary()
-
-# prog_rule = structcases.mk_build_rule(opts)
-# pickle_rule = ghidra_parser.mk_program_pickle_rule(structcases, opts)
-# dwarf_proginfo = dwarf_parser.parse_program(ls, BuildOptions(debug=True))
-# ghidra_proginfo = ghidra_parser.parse_program(ls, opts)
-# dwarf, ghidra = parse_proginfo_pair(typecases, opts)
-
-# objpath = CoreutilsProgram.COREUTILS_SRC_PATH.joinpath("ls.o")
-
-# dwarf_proginfo = parse_dwarf_proginfo(objpath)
-# ghidra_proginfo = parse_ghidra_proginfo(objpath)
