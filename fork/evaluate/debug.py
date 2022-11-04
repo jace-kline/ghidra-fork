@@ -5,8 +5,6 @@ from program_metrics import *
 
 prognames = [ "ndarray", "typecases", "p0", "structcases" ]
 progs = [ ToyProgram(progname) for progname in prognames ]
-opts = BuildOptions()
-dwarf_opts = BuildOptions(debug=True, strip=False, optimization=opts.optimization)
 metrics_groups = make_metrics()
 
 def find_erroneous_overlaps(proginfo: ProgramInfo) -> List[Tuple[Varnode, Varnode]]:
@@ -47,10 +45,19 @@ def _f(proginfo: ProgramInfo) -> Tuple[str, str]:
 # print(s)
 
 # prog = ToyProgram("p1")
+dwarf_parser = get_parser_cached("dwarf")
+ghidra_parser = get_parser_cached("ghidra")
+
+opts = BuildOptions()
+dwarf_opts = BuildOptions(debug=True, strip=False, optimization=opts.optimization)
 prog = CoreutilsProgram("ls")
-cmp = build_parse_compare_program(prog, opts)
-dwarf_unopt, ghidra_unopt = cmp.get_left(), cmp.get_right()
-cmp_flip = cmp.flip()
+
+dwarf = dwarf_parser(prog.get_binary_path(dwarf_opts))
+ghidra = ghidra_parser(prog.get_binary_path(opts))
+cmp = compare2_cached(dwarf, ghidra)
+
+# dwarf_unopt, ghidra_unopt = cmp.get_left(), cmp.get_right()
+# cmp_flip = cmp.flip()
 
 def missed_varnodes_summary(cmp: UnoptimizedProgramInfoCompare2):
     compared_fn_records = cmp.select_function_compare_records(function_cmp_record_cond=function_compare_record_compared_filter)
@@ -61,7 +68,7 @@ def missed_varnodes_summary(cmp: UnoptimizedProgramInfoCompare2):
     named_scope_cmps: List[Tuple[str, ConstPCVariableSetSnapshotCompare2]] = [("GLOBALS", gbl_scope_cmp)] + list(zip(fn_names, fn_scope_cmps))
     for scopename, scopecmp in named_scope_cmps:
         varnode_records = scopecmp.select_varnode_compare_records(varnode_cmp_record_cond=varnode_base_filter)
-        missed_records = [ record for record in varnode_records if record.get_status() == VarnodeCompareStatus.NO_MATCH ]
+        missed_records = [ record for record in varnode_records if record.get_compare_level() == VarnodeCompareLevel.NO_MATCH ]
         if missed_records:
             print(scopename)
         for varnode_record in missed_records:
@@ -92,7 +99,7 @@ missed_varnodes_summary(cmp)
 # print(cmp.show_summary())
 
 # print(),
-# print("------------------- DWARF -------------------")
+print("------------------- DWARF -------------------")
 # dwarf.print_summary()
 
 # print(),

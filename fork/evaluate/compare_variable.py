@@ -192,51 +192,6 @@ class VarnodeCompare2(object):
 
         return indent_str(s, indent)
 
-class VarnodeCompareStatus(object):
-    NOT_COMPARABLE = 0 # this varnode cannot be compared with others (due to its address most likely)
-    NO_MATCH = 1 # this varnode does not overlap with any others
-    OVERLAP = 2 # not precisely aligned, types not matched with 1 varnode.
-    ALIGNED = 3 # start aligned, same size, types not matched with 1 varnode
-    MATCH = 4 # start aligned, same size, types match with 1 varnode
-    CONTAINS = 5 # right matches a subset of left
-    CONTAINS_MANY = 6 # multiple vars are contained within this var & align as subvars
-    CONTAINED = 7 # left matches a subset of right
-    OVERLAP_MANY = 8 # this varnode overlaps >1 varnodes from other set
-
-    @staticmethod
-    def to_string(code: int):
-        _map = [
-            "NOT_COMPARABLE",
-            "NO_MATCH",
-            "OVERLAP",
-            "ALIGNED",
-            "MATCH",
-            "CONTAINS",
-            "CONTAINS_MANY",
-            "CONTAINED",
-            "OVERLAP_MANY"
-        ]
-        return _map[code]
-
-    # VarnodeCompareStatus -> VarnodeCompareLevel
-    @staticmethod
-    def to_level(status: int):
-        _cls = VarnodeCompareStatus
-        _lvl_cls = VarnodeCompareLevel
-
-        _map = {
-            _cls.NOT_COMPARABLE: _lvl_cls.NO_MATCH,
-            _cls.NO_MATCH: _lvl_cls.NO_MATCH,
-            _cls.OVERLAP: _lvl_cls.OVERLAP,
-            _cls.ALIGNED: _lvl_cls.ALIGNED,
-            _cls.MATCH: _lvl_cls.MATCH,
-            _cls.CONTAINS: _lvl_cls.SUBSET,
-            _cls.CONTAINS_MANY: _lvl_cls.SUBSET,
-            _cls.CONTAINED: _lvl_cls.SUBSET,
-            _cls.OVERLAP_MANY: _lvl_cls.OVERLAP
-        }
-        return _map[status]
-
 # wraps a Varnode object (Variable at a single Address)
 # collects comparisons made between this varnode and others, and exposes
 # methods for sharing information about those comparisons & status overall
@@ -250,64 +205,8 @@ class VarnodeCompareRecord(object):
         # this varnode is always the "left" varnode in these comparisons
         self.varnode_comparison_map: dict[Varnode, VarnodeCompare2] = {}
 
-        # set the default status to NO_MATCH or NOT_COMPARABLE, depending on address type
-        self.status: int = VarnodeCompareStatus.NO_MATCH if self.is_comparable() else VarnodeCompareStatus.NOT_COMPARABLE
-
-    # compute new status given a new comparison
-    def _update_status(self, compare2: VarnodeCompare2):
-        # valid transitions...
-        # NO_MATCH -> * (except for NOT_COMPARABLE)
-        # CONTAINS -> CONTAINS_MANY | OVERLAP_MANY
-        # CONTAINS_MANY -> CONTAINS_MANY | OVERLAP_MANY
-        # OVERLAP -> OVERLAP_MANY
-        # OVERLAP_MANY -> OVERLAP_MANY
-        code = compare2.get_compare_code()
-        if self.status == VarnodeCompareStatus.NO_MATCH:
-            if code == VarnodeCompare2Code.OVERLAP:
-                self.status = VarnodeCompareStatus.OVERLAP
-            elif code == VarnodeCompare2Code.ALIGNED:
-                self.status = VarnodeCompareStatus.ALIGNED
-            elif code == VarnodeCompare2Code.MATCH:
-                self.status = VarnodeCompareStatus.MATCH
-            elif code == VarnodeCompare2Code.LEFT_CONTAINS_RIGHT:
-                self.status = VarnodeCompareStatus.CONTAINS
-            elif code == VarnodeCompare2Code.RIGHT_CONTAINS_LEFT:
-                self.status = VarnodeCompareStatus.CONTAINED
-
-        elif self.status in (VarnodeCompareStatus.CONTAINS, VarnodeCompareStatus.CONTAINS_MANY):
-            if code == VarnodeCompare2Code.OVERLAP:
-                self.status = VarnodeCompareStatus.OVERLAP_MANY
-            elif code == VarnodeCompare2Code.LEFT_CONTAINS_RIGHT:
-                self.status = VarnodeCompareStatus.CONTAINS_MANY
-
-        elif self.status == VarnodeCompareStatus.CONTAINED:
-            if code == VarnodeCompare2Code.RIGHT_CONTAINS_LEFT:
-                pass
-
-        elif self.status in (VarnodeCompareStatus.OVERLAP, VarnodeCompareStatus.OVERLAP_MANY):
-            if code in (VarnodeCompare2Code.OVERLAP, VarnodeCompare2Code.LEFT_CONTAINS_RIGHT):
-                self.status = VarnodeCompareStatus.OVERLAP_MANY
-
-        else:
-            # leftvar = compare2.get_left().get_var()
-            # leftfunc = leftvar.get_parent_function()
-            # rightvar = compare2.get_right().get_var()
-            # rightfunc = leftvar.get_parent_function()
-            # print("left: variable '{}' in function '{}'".format(leftvar.get_name(), leftfunc.get_name()))
-            # print("right: variable '{}' in function '{}'".format(rightvar.get_name(), rightfunc.get_name()))
-            raise Exception(
-                "Error: The transition from VarnodeCompareStatus={} with VarnodeCompare2Code={} should not occur"
-                .format(VarnodeCompareStatus.to_string(self.status), VarnodeCompare2Code.to_string(code))
-            )
-    
-    def get_status(self) -> int:
-        return self.status
-
-    def get_status_str(self) -> str:
-        return VarnodeCompareStatus.to_string(self.status)
-
     def get_compare_level(self) -> int:
-        return VarnodeCompareStatus.to_level(self.status)
+        return max([VarnodeCompareLevel.NO_MATCH] + [cmp2.get_compare_level() for cmp2 in self.get_comparisons()])
 
     def compared_with(self) -> int:
         return len(self.varnode_comparison_map)
@@ -318,12 +217,10 @@ class VarnodeCompareRecord(object):
         return addr.get_region().is_range()
 
     def does_overlap(self) -> bool:
-        _cls = VarnodeCompareStatus
-        return self.status not in (_cls.NOT_COMPARABLE, _cls.NO_MATCH)
+        return self.get_compare_level() >= VarnodeCompareLevel.OVERLAP
 
     def exact_match(self) -> bool:
-        _cls = VarnodeCompareStatus
-        return self.status == _cls.MATCH
+        return self.get_compare_level() == VarnodeCompareLevel.MATCH
 
     def get_varnode(self) -> Varnode:
         return self.varnode
@@ -350,7 +247,6 @@ class VarnodeCompareRecord(object):
         # been inserted
         if compare2.get_right() not in self.varnode_comparison_map:
             self.varnode_comparison_map[compare2.get_right()] = compare2
-            self._update_status(compare2)
 
     def get_compared_varnodes(self) -> List[Varnode]:
         return list(self.varnode_comparison_map.keys())
@@ -374,9 +270,9 @@ class VarnodeCompareRecord(object):
         return indent_str(s, indent)
 
     def __str__(self) -> str:
-        return "<VarnodeCompareRecord varnode={} status={}>".format(
+        return "<VarnodeCompareRecord varnode={} level={}>".format(
             self.varnode,
-            self.get_status_str()
+            self.get_compare_level()
         )
 
     def __repr__(self) -> str:
