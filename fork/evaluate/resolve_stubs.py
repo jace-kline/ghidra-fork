@@ -5,7 +5,31 @@ from resolve import *
 # in our target language. It is assumed that each stub object is
 # stored within a "ResolverRecord" object within a "ResolverDatabase".
 # Every record (& therefore stub) is uniquely identified by a key in the database.
-# We ultimately want to create a nested/recursive structure from the stubs.
+# We ultimately want to create a nested/recursive structure from the stubs. 
+
+# filter a list of variables during resolution...
+# a 0-sized variable should not exist
+def filter_variables(vars):
+    def cond(var):
+        return not var.get_size() == 0 and not var.get_size() is None
+    
+    return [ var for var in vars if cond(var) ]
+
+# eliminate the aliasing redirections
+def db_resolve_subtype_ref(db, ref):
+    ALIAS_TYPES = (DataTypeQualifierStub, DataTypeTypedefStub, DataTypeEnumStub)
+    curref = ref
+    ref_record = db.lookup(curref)
+    while isinstance(ref_record.stub, ALIAS_TYPES):
+        curref = ref_record.stub.basetyperef
+        ref_record = db.lookup(curref)
+    return curref
+
+def db_resolve_subtype(db, ref):
+    return db.resolve(db_resolve_subtype_ref(db, ref))
+
+def db_resolve_subtypes(db, refs):
+    return [ db_resolve_subtype(db, ref) for ref in refs ]
 
 # This is the root node of the translation.
 # It references all global variables and functions for a target program.
@@ -20,7 +44,7 @@ class ProgramInfoStub(ResolverDatabase.ResolverStub):
         globals = record.db.resolve_many(self.globalrefs)
         functions = record.db.resolve_many(self.functionrefs)
 
-        record.obj.globals = globals
+        record.obj.globals = filter_variables(globals)
         record.obj.functions = functions
         return record.obj
 
@@ -50,7 +74,7 @@ class FunctionStub(ResolverDatabase.ResolverStub):
         record.obj = Function()
 
         # startaddr = record.db.resolve(self.startaddrref)
-        rettype = DataTypeVoid() if self.rettyperef is None else record.db.resolve(self.rettyperef)
+        rettype = DataTypeVoid() if self.rettyperef is None else db_resolve_subtype(record.db, self.rettyperef)
         params = record.db.resolve_many(self.paramrefs)
         vars = record.db.resolve_many(self.varrefs)
 
@@ -58,8 +82,8 @@ class FunctionStub(ResolverDatabase.ResolverStub):
         record.obj.startaddr = self.startaddr
         record.obj.endaddr = self.endaddr
         record.obj.rettype = rettype
-        record.obj.params = params
-        record.obj.vars = vars
+        record.obj.params = filter_variables(params)
+        record.obj.vars = filter_variables(vars)
         record.obj.variadic = self.variadic
         return record.obj
 
@@ -90,7 +114,7 @@ class VariableStub(ResolverDatabase.ResolverStub):
         if self.functionref is not None:
             function = record.db.resolve(self.functionref)
 
-        dtype = record.db.resolve(self.dtyperef)
+        dtype = db_resolve_subtype(record.db, self.dtyperef)
 
         record.obj.name = self.name
         record.obj.dtype = dtype
@@ -132,7 +156,7 @@ class DataTypeFunctionPrototypeStub(DataTypeStub):
 
         # if rettype is None, assume void return type
         rettype = DataTypeVoid() if self.rettyperef is None else record.db.resolve(self.rettyperef)
-        paramtypes = record.db.resolve_many(self.paramtyperefs)
+        paramtypes = db_resolve_subtypes(record.db, self.paramtyperefs)
 
         record.obj.rettype = rettype
         record.obj.paramtypes = paramtypes
@@ -215,7 +239,12 @@ class DataTypePointerStub(DataTypeStub):
             size=self.size
         )
 
-        basetype = record.db.resolve(self.basetyperef)
+        basetype = db_resolve_subtype(record.db, self.basetyperef)
+        # if basetype is None:
+        #     print(self.basetyperef)
+        #     refrecord = record.db.lookup(self.basetyperef)
+        #     print(refrecord)
+        #     raise Exception("Pointer basetype is None")
 
         record.obj.basetype = basetype
         return record.obj
@@ -244,7 +273,22 @@ class DataTypeArrayStub(DataTypeStub):
 
         record.obj = DataTypeArray()
 
-        basetype = record.db.resolve(self.basetyperef)
+        basetype = db_resolve_subtype(record.db, self.basetyperef)
+        if basetype is None:
+            print(self.basetyperef)
+            basetyperef = self.basetyperef
+            while True:
+                try:
+                    refrecord = record.db.lookup(basetyperef)
+                    print(refrecord)
+                    basetyperef = refrecord.stub.basetyperef
+                except:
+                    break
+            subtyperef = db_resolve_subtype_ref(record.db, self.basetyperef)
+            print(subtyperef)
+            print(record.db.lookup(subtyperef))
+            print(record.db.resolve(subtyperef))
+            raise Exception("Array basetype is None")
         if self.size is None:
             self.size = DataTypeArray.compute_size(self.dimensions, basetype.size)
 
@@ -277,7 +321,7 @@ class DataTypeStructStub(DataTypeStub):
         membertyperefs = [ ref for _, ref in self.membertyperef_offsets ]
 
         record.obj = DataTypeStruct()
-        membertypes = record.db.resolve_many(membertyperefs)
+        membertypes = db_resolve_subtypes(record.db, membertyperefs)
         membertype_offsets = list(zip(offsets, membertypes))
 
         if self.size is None:
@@ -317,7 +361,7 @@ class DataTypeUnionStub(DataTypeStub):
 
     def resolve(self, record):
         record.obj = DataTypeUnion()
-        membertypes = record.db.resolve_many(self.membertyperefs)
+        membertypes = db_resolve_subtypes(record.db, self.membertyperefs)
 
         if self.size is None:
             self.size = max([ subtype.size for subtype in membertypes ])
@@ -347,7 +391,7 @@ class DataTypeTypedefStub(DataTypeStub):
 
     def resolve(self, record):
         # for typedefs, no reference => void alias
-        record.obj = DataTypeVoid() if self.basetyperef is None else record.db.resolve(self.basetyperef)
+        record.obj = record.db.resolve(self.basetyperef)
         return record.obj
 
     def __str__(self):

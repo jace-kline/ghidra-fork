@@ -368,17 +368,7 @@ class ParseGhidra(object):
 
         # Recurse on sub-refs
         for subtyperef in subtyperefs:
-            try:
-                self.parse_datatype(subtyperef)
-            except:
-                print(dtype)
-                print(stub)
-                print(subtyperef)
-                print(hash(None))
-                if basetype:
-                    print(basetype)
-                    print(hash(basetype))
-                raise
+            self.parse_datatype(subtyperef)
 
     # Convert a Ghidra-represented Address into our Address representation
     # Address (Ghidra) -> Address (our language)

@@ -1,6 +1,7 @@
 from typing import List, Any
 import time
 from pathlib import Path
+from functools import lru_cache
 from rediscache import SimpleCache, cache_it
 
 # SimpleCache(
@@ -40,7 +41,12 @@ CACHE = SimpleCache(
     hashkeys=True # uses hashes instead of pickled objects as keys
 )
 
-def path_dependent_cacher(paths: List[Path]):
+# caches function call to local Redis database
+redis_cacher = cache_it(cache=CACHE)
+
+# caches function call to local Redis database
+# checks dependency paths on load to determine whether to recompute, similar to Makefile
+def redis_path_dependent_cacher(paths: List[Path]):
     def recache_callback(wrapper: CacheObjectWrapper) -> bool:
         return not wrapper.is_up_to_date(paths)
 
@@ -50,3 +56,6 @@ def path_dependent_cacher(paths: List[Path]):
         store_transform=lambda obj: CacheObjectWrapper(obj),
         load_transform=lambda wrapper: wrapper.get_obj()
     )
+
+# a cache decorator for intra-run caching (not persisted to Redis)
+cache = lru_cache(maxsize=None)

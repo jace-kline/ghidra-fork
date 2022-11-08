@@ -1,7 +1,6 @@
 from parse_dwarf import *
 from build_parse import *
 from metrics import *
-from program_metrics import *
 
 prognames = [ "ndarray", "typecases", "p0", "structcases" ]
 progs = [ ToyProgram(progname) for progname in prognames ]
@@ -45,16 +44,6 @@ def _f(proginfo: ProgramInfo) -> Tuple[str, str]:
 # print(s)
 
 # prog = ToyProgram("p1")
-dwarf_parser = get_parser_cached("dwarf")
-ghidra_parser = get_parser_cached("ghidra")
-
-opts = BuildOptions()
-dwarf_opts = BuildOptions(debug=True, strip=False, optimization=opts.optimization)
-prog = CoreutilsProgram("ls")
-
-dwarf = dwarf_parser(prog.get_binary_path(dwarf_opts))
-ghidra = ghidra_parser(prog.get_binary_path(opts))
-cmp = compare2_cached(dwarf, ghidra)
 
 # dwarf_unopt, ghidra_unopt = cmp.get_left(), cmp.get_right()
 # cmp_flip = cmp.flip()
@@ -94,12 +83,65 @@ def missed_varnodes_summary(cmp: UnoptimizedProgramInfoCompare2):
                     overlap_addr_range.get_end()
                 ))
 
-print("------------------- DWARF vs GHIDRA -------------------")
-missed_varnodes_summary(cmp)
+def test_progs_parse_compare(progs: List[Program]):
+    dwarf_parser = get_parser("dwarf")
+    ghidra_parser = get_parser("ghidra")
+
+    opts = BuildOptions()
+    dwarf_opts = BuildOptions(debug=True, strip=False, optimization=opts.optimization)
+
+    errs = []
+    for prog in progs:
+        dwarf = ghidra = cmp = None
+        try:
+            dwarf = dwarf_parser(prog.get_binary_path(dwarf_opts))
+        except:
+            errs.append((prog.get_name(), "dwarf parse"))
+            dwarf = None
+
+        try:
+            ghidra = ghidra_parser(prog.get_binary_path(opts))
+        except:
+            errs.append((prog.get_name(), "ghidra parse"))
+            ghidra = None
+
+        if dwarf is not None and ghidra is not None:
+            try:
+                cmp = compare2(dwarf, ghidra)
+            except:
+                errs.append((prog.get_name(), "comparison"))
+
+        progname = prog.get_name()
+        save_pickle(dwarf, PICKLE_CACHE_DIR.joinpath("{}_dwarf.pickle".format(progname)))
+        save_pickle(ghidra, PICKLE_CACHE_DIR.joinpath("{}_ghidra.pickle".format(progname)))
+        save_pickle(cmp, PICKLE_CACHE_DIR.joinpath("{}_cmp.pickle".format(progname)))
+
+    for progname, reason in errs:
+        print("{} : {}".format(progname, reason))
+
+    return errs
+
+
+# failed = [ "chcon", "chgrp", "chmod", "cp", "du", "fmt", "mv", "rm", "sort" ]
+# dwarf_parser = get_parser("dwarf")
+# ghidra_parser = get_parser("ghidra")
+# opts = BuildOptions()
+# dwarf_opts = BuildOptions(debug=True, strip=False, optimization=opts.optimization)
+
+# progname = "sort"
+# prog = CoreutilsProgram(progname)
+# dwarf = dwarf_parser(prog.get_binary_path(dwarf_opts))
+# ghidra = ghidra_parser(prog.get_binary_path(opts))
+# cmp = compare2_uncached(dwarf, ghidra)
+
+errs = test_progs_parse_compare(COREUTILS_PROGS)
+
+# print("------------------- DWARF vs GHIDRA -------------------")
+# missed_varnodes_summary(cmp)
 # print(cmp.show_summary())
 
 # print(),
-print("------------------- DWARF -------------------")
+# print("------------------- DWARF -------------------")
 # dwarf.print_summary()
 
 # print(),

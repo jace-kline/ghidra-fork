@@ -56,6 +56,9 @@ class Variable(object):
     def get_datatype(self):
         return self.dtype
 
+    def get_size(self):
+        return self.get_datatype().get_size()
+
     # returns AddressLiveRangeSet
     def get_liveranges(self):
         return self.liveranges

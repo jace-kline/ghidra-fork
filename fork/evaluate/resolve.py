@@ -25,10 +25,6 @@ class ResolverDatabase(object):
         def resolve(self, record):
             raise NotImplementedError("Must implement resolve() method in subclass")
 
-    class ResolverTag(object):
-        STUB = 0
-        RESOLVED = 1
-
     # holds a stub and/or resolved object, depending on the tag
     class ResolverRecord(object):
         def __init__(self, db, key, stub):
@@ -36,8 +32,6 @@ class ResolverDatabase(object):
             self.db = db
             # this record's key in the ResolverDatabase
             self.key = key
-            # indicates whether this record is resolved
-            self.tag = ResolverDatabase.ResolverTag.STUB
             # the "flattened" object information
             self.stub = stub
             # the "resolved"/nested object, initially unset
@@ -66,26 +60,41 @@ class ResolverDatabase(object):
                 raise ResolverException("Tried to unset a non-'resolving' record")
 
         def resolve(self, db):
+
+            # if not self.resolved:
+            #     if not self.is_resolving():
+            #         self.set_resolving()
+            #         self.stub.resolve(self)
+
+            # if self.resolving:
+            #     self.unset_resolving()
+            #     self.resolved = True
+
+            # return self.obj
+
+
             # If this record is resolved, just return the self.obj.
             # If this record is already resolving, we are in a recursive cycle.
             # Otherwise, we are calling for first time.
-            if (not self.is_resolving()) and self.tag == ResolverDatabase.ResolverTag.STUB:
+            if (not self.is_resolving()) and not self.obj:
                 
             # if this record is still a stub, we must resolve the stub
-                if self.tag == ResolverDatabase.ResolverTag.STUB:
+                if not self.obj:
                     self.set_resolving()
                     self.obj = self.stub.resolve(self)
 
 
                 # not recursive
+                # assert(self.obj is not None)
                 if self.is_resolving():
                     self.unset_resolving()
-                    self.tag = ResolverDatabase.ResolverTag.RESOLVED
+                    # self.resolved = True
             
+            # assert(self.obj is not None)
             return self.obj
 
         def __str__(self):
-            return "<ResolverRecord key={} tag={} stub={}>".format(self.key, self.tag, self.stub)
+            return "<ResolverRecord key={} obj={} stub={}>".format(self.key, self.obj, self.stub)
 
         def __repr__(self):
             return str(self)

@@ -330,7 +330,7 @@ class ParseDWARF(object):
         elif die.tag == "DW_TAG_enumeration_type":
             # get basetype ref
             basetyperef = self.get_DIE_key(get_DIE_attr_ref_DIE(die, "DW_AT_type"))
-            assert(basetyperef is not None)
+            # assert(basetyperef is not None)
             # if basetype ref is None, generate a VoidDataTypeStub in the DB to point to
             if basetyperef is None:
                 basetyperef = self.make_stub(DataTypeVoidStub())
