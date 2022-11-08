@@ -134,7 +134,10 @@ def test_progs_parse_compare(progs: List[Program]):
 # ghidra = ghidra_parser(prog.get_binary_path(opts))
 # cmp = compare2_uncached(dwarf, ghidra)
 
-errs = test_progs_parse_compare(COREUTILS_PROGS)
+metrics_groups = make_metrics()
+print(metrics_groups[7].get_name())
+
+# errs = test_progs_parse_compare(COREUTILS_PROGS)
 
 # print("------------------- DWARF vs GHIDRA -------------------")
 # missed_varnodes_summary(cmp)
